@@ -4,7 +4,7 @@ import { Activity, Server, Users, AlertCircle } from "lucide-react";
 
 export default function AdminDashboard() {
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-8xl mx-auto space-y-8">
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-black text-[#1A1A1B]">System Overview</h1>
