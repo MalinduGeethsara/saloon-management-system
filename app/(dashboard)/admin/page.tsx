@@ -1,43 +1,70 @@
 "use client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Server, Users, AlertCircle } from "lucide-react";
+import React from 'react';
+import { Card, Row, Col, Typography, Avatar, Space, Divider } from 'antd';
+import { 
+  RocketOutlined, 
+  ShopOutlined, 
+  TeamOutlined, 
+  BellOutlined,
+  CheckCircleFilled 
+} from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 export default function AdminDashboard() {
+  const activities = [
+    { id: 1, title: 'Database Backup BK-001', time: 'Feb 01, 2026' },
+    { id: 2, title: 'Database Backup BK-002', time: 'Feb 02, 2026' },
+    { id: 3, title: 'Database Backup BK-003', time: 'Feb 03, 2026' },
+  ];
+
   return (
-    <div className="max-w-8xl mx-auto space-y-8">
-      <header className="flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-black text-[#1A1A1B]">System Overview</h1>
-          <p className="text-gray-500 mt-1">Real-time status of your Salon network.</p>
-        </div>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <header style={{ marginBottom: '32px' }}>
+        <Title level={1} style={{ fontWeight: 800, margin: 0 }}>System Overview</Title>
+        <Text type="secondary">Real-time status of your Salon network.</Text>
       </header>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Active Connections" value="124" icon={<Activity />} color="text-blue-500" />
-        <StatCard title="Global Shops" value="12" icon={<Server />} color="text-[#C5A059]" />
-        <StatCard title="Active Barbers" value="48" icon={<Users />} color="text-purple-500" />
-        <StatCard title="System Alerts" value="0" icon={<AlertCircle />} color="text-emerald-500" />
-      </div>
+      <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
+        <Col xs={24} sm={12} lg={6}>
+          <StatCard title="Active Connections" value="124" icon={<RocketOutlined />} color="#3182CE" />
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <StatCard title="Global Shops" value="12" icon={<ShopOutlined />} color="#7C4DFF" />
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <StatCard title="Active Barbers" value="48" icon={<TeamOutlined />} color="#E53E3E" />
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <StatCard title="System Alerts" value="0" icon={<BellOutlined />} color="#48BB78" />
+        </Col>
+      </Row>
 
-      {/* Activity Log */}
-      <Card className="border-none shadow-sm overflow-hidden">
-        <CardHeader className="bg-white border-b border-gray-50">
-          <CardTitle className="text-lg font-bold">Recent System Activity</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="divide-y divide-gray-50">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex justify-between items-center p-4 hover:bg-gray-50 transition">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-sm text-gray-700 font-medium">Automatic Database Backup BK-00{i}</span>
-                </div>
-                <span className="text-xs font-mono text-gray-400">Feb 0{i}, 2026 - 10:00 AM</span>
+      {/* FIX: Replaced List component with a manual map inside a Card */}
+      <Card 
+        variant="borderless" 
+        title={<span style={{ fontWeight: 800 }}>Recent Activity</span>} 
+        style={{ borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {activities.map((item, index) => (
+            <React.Fragment key={item.id}>
+              <div style={{ padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Space size="middle">
+                  <CheckCircleFilled style={{ color: '#48BB78', fontSize: '20px' }} />
+                  <div>
+                    <Text strong style={{ display: 'block' }}>{item.title}</Text>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>Snapshot completed successfully.</Text>
+                  </div>
+                </Space>
+                <Text type="secondary" style={{ fontSize: '12px', fontFamily: 'monospace' }}>
+                  {item.time}
+                </Text>
               </div>
-            ))}
-          </div>
-        </CardContent>
+              {index !== activities.length - 1 && <Divider style={{ margin: 0 }} />}
+            </React.Fragment>
+          ))}
+        </div>
       </Card>
     </div>
   );
@@ -45,14 +72,14 @@ export default function AdminDashboard() {
 
 function StatCard({ title, value, icon, color }: any) {
   return (
-    <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xs font-bold uppercase tracking-widest text-gray-400">{title}</CardTitle>
-        <div className={color}>{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-black text-[#1A1A1B]">{value}</div>
-      </CardContent>
+    <Card variant="borderless" style={{ borderRadius: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+        <div>
+          <Text type="secondary" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>{title}</Text>
+          <Title level={2} style={{ margin: '4px 0 0 0', fontWeight: 800 }}>{value}</Title>
+        </div>
+        <Avatar size={40} icon={icon} style={{ backgroundColor: `${color}15`, color: color, borderRadius: '12px' }} />
+      </div>
     </Card>
   );
 }

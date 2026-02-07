@@ -1,7 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Save, User, Scissors, Clock, Calendar as CalIcon, CheckCircle2 } from "lucide-react";
+import React, { useEffect, useState } from 'react';
+import { 
+  Modal, 
+  Form, 
+  Input, 
+  Select, 
+  DatePicker, 
+  TimePicker, 
+  Slider, 
+  Button, 
+  ConfigProvider, 
+  Typography, 
+  Divider,
+  message 
+} from 'antd';
+import { 
+  UserOutlined, 
+  ScissorOutlined, 
+  CalendarOutlined, 
+  ClockCircleOutlined, 
+  CheckCircleOutlined 
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
+
+const { Text } = Typography;
+const { Option } = Select;
 
 interface Barber {
   id: number;
@@ -14,179 +38,132 @@ interface NewBookingModalProps {
   onClose: () => void;
   onSave: (booking: any) => void;
   barbers: Barber[];
-  defaultDate?: Date;
+  defaultDate?: Date | null;
   defaultBarberId?: number;
 }
 
-export function NewBookingModal({ isOpen, onClose, onSave, barbers, defaultDate, defaultBarberId }: NewBookingModalProps) {
-  const [clientName, setClientName] = useState("");
-  const [service, setService] = useState("Haircut");
-  const [barberId, setBarberId] = useState(defaultBarberId || barbers[0]?.id);
-  const [startTime, setStartTime] = useState("09:00");
-  const [dateStr, setDateStr] = useState("");
+export function NewBookingModal({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  barbers, 
+  defaultDate, 
+  defaultBarberId 
+}: NewBookingModalProps) {
+  const [form] = Form.useForm();
   const [duration, setDuration] = useState(60);
 
-  // Reset form when modal opens
   useEffect(() => {
-    if (isOpen && defaultDate) {
-      const d = new Date(defaultDate);
-      setDateStr(d.toISOString().split('T')[0]);
-      const hours = String(d.getHours()).padStart(2, '0');
-      const mins = String(d.getMinutes()).padStart(2, '0');
-      setStartTime(`${hours}:${mins}`);
-      if (defaultBarberId) setBarberId(defaultBarberId);
+    if (isOpen) {
+      form.resetFields();
+      const initialDate = defaultDate ? dayjs(defaultDate) : dayjs();
+      form.setFieldsValue({
+        clientName: '',
+        service: 'Haircut',
+        barberId: defaultBarberId || barbers[0]?.id,
+        date: initialDate,
+        time: initialDate,
+        duration: 60
+      });
+      setDuration(60);
     }
-  }, [isOpen, defaultDate, defaultBarberId]);
+  }, [isOpen, defaultDate, defaultBarberId, barbers, form]);
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFinish = (values: any) => {
+    const startDateTime = values.date
+      .hour(values.time.hour())
+      .minute(values.time.minute())
+      .second(0)
+      .toDate();
     
-    const startDateTime = new Date(`${dateStr}T${startTime}`);
     const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
-    const selectedBarber = barbers.find(b => b.id === Number(barberId));
+    const selectedBarber = barbers.find(b => b.id === values.barberId);
 
-    onSave({
+    const newBooking = {
       id: String(Date.now()),
-      title: `${clientName}`, // Title is just client name, details in props
+      title: values.clientName,
       start: startDateTime,
       end: endDateTime,
       backgroundColor: selectedBarber?.color || '#1A1A1B',
       borderColor: selectedBarber?.color || '#1A1A1B',
-      // We store all details in extendedProps to access them in the render function
+      textColor: '#FFFFFF',
       extendedProps: {
-        barberId: Number(barberId),
+        barberId: values.barberId,
         barberName: selectedBarber?.name,
-        service: service,
-        status: "Confirmed"
+        service: values.service,
+        status: 'Confirmed'
       }
-    });
-    
+    };
+
+    onSave(newBooking);
+    message.success('Appointment scheduled successfully');
     onClose();
-    setClientName("");
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 transition-all">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-        
-        {/* Header */}
-        <div className="bg-[#1A1A1B] px-6 py-4 flex justify-between items-center border-b border-[#C5A059]">
-          <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <CalIcon className="text-[#C5A059]" size={20} /> New Appointment
-            </h2>
-            <p className="text-xs text-gray-400 mt-1">Enter client details below.</p>
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: '#7C4DFF',
+          borderRadius: 12,
+        }
+      }}
+    >
+      <Modal
+        title={<div className="flex items-center gap-2"><CalendarOutlined style={{ color: '#7C4DFF' }} /> New Appointment</div>}
+        open={isOpen}
+        onCancel={onClose}
+        footer={null}
+        destroyOnClose
+        centered
+        width={480}
+      >
+        <Form form={form} layout="vertical" onFinish={handleFinish} className="flex flex-col gap-1">
+          <div className="bg-[#F8F9FF] p-4 rounded-xl border border-[#E2E8F0] mb-4">
+            <Text type="secondary" className="text-xs uppercase font-bold tracking-wider mb-2 block">Client Details</Text>
+            <Form.Item name="clientName" rules={[{ required: true }]} style={{ marginBottom: 0 }}>
+              <Input size="large" placeholder="Client Name" prefix={<UserOutlined />} />
+            </Form.Item>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition bg-white/10 p-2 rounded-full"><X size={20} /></button>
-        </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
-          
-          {/* Client Input */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Client Details</label>
-            <div className="flex items-center gap-3 border border-gray-200 rounded-xl p-3 focus-within:ring-2 ring-[#C5A059] transition-all bg-gray-50 focus-within:bg-white">
-              <User size={20} className="text-gray-400" />
-              <input 
-                required
-                className="w-full outline-none text-base font-semibold bg-transparent text-[#1A1A1B] placeholder:text-gray-300" 
-                placeholder="Client Full Name"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                autoFocus
-              />
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="service" label="Service" rules={[{ required: true }]}>
+              <Select size="large" suffixIcon={<ScissorOutlined />}>
+                <Option value="Haircut">Haircut</Option>
+                <Option value="Beard Trim">Beard Trim</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="barberId" label="Specialist" rules={[{ required: true }]}>
+              <Select size="large">
+                {barbers.map(b => (
+                  <Option key={b.id} value={b.id}>{b.name}</Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="date" label="Date" rules={[{ required: true }]}>
+              <DatePicker size="large" format="MMM D, YYYY" className="w-full" suffixIcon={<CalendarOutlined />} />
+            </Form.Item>
+            <Form.Item name="time" label="Time" rules={[{ required: true }]}>
+              <TimePicker size="large" use12Hours format="h:mm a" minuteStep={15} className="w-full" suffixIcon={<ClockCircleOutlined />} />
+            </Form.Item>
+          </div>
+
+          <div className="mb-4 bg-white p-2">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs uppercase font-bold text-gray-500">Duration</span>
+              <span className="text-sm font-bold text-[#7C4DFF]">{duration} Minutes</span>
             </div>
+            <Form.Item name="duration" style={{ marginBottom: 0 }}>
+              <Slider min={15} max={180} step={15} value={duration} onChange={setDuration} />
+            </Form.Item>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Service Selection */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Service Type</label>
-              <div className="relative">
-                <Scissors className="absolute left-3 top-3 text-gray-400" size={18} />
-                <select 
-                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm font-medium outline-none focus:border-[#C5A059] bg-white appearance-none"
-                  value={service}
-                  onChange={(e) => setService(e.target.value)}
-                >
-                  <option>Haircut</option>
-                  <option>Beard Trim</option>
-                  <option>Full Service</option>
-                  <option>Hair Coloring</option>
-                  <option>Consultation</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Barber Selection */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Specialist</label>
-              <div className="grid grid-cols-1 gap-2">
-                 <select 
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm font-medium outline-none focus:border-[#C5A059] bg-white"
-                  value={barberId}
-                  onChange={(e) => setBarberId(Number(e.target.value))}
-                >
-                  {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Date & Time Row */}
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 grid grid-cols-2 gap-4">
-             <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400">Date</label>
-                <input 
-                  type="date"
-                  required
-                  className="w-full bg-transparent font-bold text-[#1A1A1B] outline-none"
-                  value={dateStr}
-                  onChange={(e) => setDateStr(e.target.value)}
-                />
-             </div>
-             <div className="space-y-1 border-l pl-4 border-gray-200">
-                <label className="text-xs font-bold text-gray-400">Start Time</label>
-                <input 
-                  type="time" 
-                  required
-                  className="w-full bg-transparent font-bold text-[#1A1A1B] outline-none"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                />
-             </div>
-          </div>
-
-          {/* Duration Slider */}
-          <div className="space-y-3">
-             <div className="flex justify-between text-xs font-bold text-gray-500 uppercase">
-                <span>Duration</span>
-                <span className="text-[#C5A059]">{duration} Minutes</span>
-             </div>
-             <input 
-               type="range" 
-               min="15" 
-               max="180" 
-               step="15" 
-               value={duration} 
-               onChange={(e) => setDuration(Number(e.target.value))}
-               className="w-full accent-[#1A1A1B] h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-             />
-             <div className="flex justify-between text-[10px] text-gray-400">
-               <span>15m</span>
-               <span>3h</span>
-             </div>
-          </div>
-
-          <button type="submit" className="w-full bg-[#1A1A1B] hover:bg-black text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95 group">
-            <CheckCircle2 size={20} className="text-[#C5A059] group-hover:scale-110 transition-transform" /> 
-            Confirm Booking
-          </button>
-
-        </form>
-      </div>
-    </div>
+          <Button type="primary" htmlType="submit" block size="large" icon={<CheckCircleOutlined />}>Confirm Booking</Button>
+        </Form>
+      </Modal>
+    </ConfigProvider>
   );
 }
