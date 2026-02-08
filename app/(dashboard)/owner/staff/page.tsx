@@ -13,7 +13,8 @@ import {
   MenuProps,
   Statistic,
   Row,
-  Col 
+  Col,
+  Input 
 } from 'antd';
 import { 
   UserOutlined, 
@@ -23,8 +24,12 @@ import {
   DollarOutlined, 
   ScissorOutlined,
   EditOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  SearchOutlined,
+  MailOutlined,
+  PhoneOutlined
 } from '@ant-design/icons';
+import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { StaffModal } from "@/components/modals/StaffModal";
 
 const { Title, Text } = Typography;
@@ -77,10 +82,13 @@ const STAFF_DATA = [
   },
 ];
 
-export default function OwnerStaff() {
+function StaffContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { showAlert } = useAlert();
 
   // --- Handlers ---
   const handleAdd = () => {
@@ -95,6 +103,16 @@ export default function OwnerStaff() {
     setIsModalOpen(true);
   };
 
+  const handleDelete = (key: string) => {
+    showAlert('success', 'Staff member deactivated.');
+  };
+
+  // --- Filter ---
+  const filteredData = STAFF_DATA.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.role.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // --- Table Configuration ---
   const columns = [
     {
@@ -103,7 +121,10 @@ export default function OwnerStaff() {
       key: 'name',
       render: (text: string, record: any) => (
         <Space>
-          <Avatar style={{ backgroundColor: '#F0EBFF', color: '#7C4DFF' }} icon={<UserOutlined />} />
+          <Avatar 
+            style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} 
+            icon={<UserOutlined />} 
+          />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontWeight: 600, fontSize: '14px', color: '#1f2937' }}>{text}</span>
             <span style={{ fontSize: '11px', color: '#9ca3af' }}>{record.email}</span>
@@ -128,13 +149,17 @@ export default function OwnerStaff() {
       key: 'branch',
     },
     {
-      title: 'Commission',
-      dataIndex: 'comm',
-      key: 'comm',
-      render: (text: string) => <Tag bordered={false}>{text}</Tag>,
+      title: 'Contact',
+      key: 'contact',
+      render: (_: any, record: any) => (
+        <Space>
+           <Button type="text" size="small" icon={<PhoneOutlined className="text-slate-400" />} href={`tel:${record.phone}`} />
+           <Button type="text" size="small" icon={<MailOutlined className="text-slate-400" />} href={`mailto:${record.email}`} />
+        </Space>
+      ),
     },
     {
-      title: 'MDT Earnings',
+      title: 'Earnings',
       dataIndex: 'earnings',
       key: 'earnings',
       render: (text: string) => <span style={{ fontWeight: 700, color: '#059669', fontFamily: 'monospace' }}>{text}</span>,
@@ -145,7 +170,7 @@ export default function OwnerStaff() {
       key: 'status',
       render: (status: string) => {
         let color = status === 'Active' ? 'green' : status === 'On Leave' ? 'orange' : 'red';
-        return <Tag color={color} style={{ borderRadius: '12px' }}>{status.toUpperCase()}</Tag>;
+        return <Tag color={color} style={{ borderRadius: '12px', fontWeight: 600 }}>{status.toUpperCase()}</Tag>;
       },
     },
     {
@@ -154,14 +179,29 @@ export default function OwnerStaff() {
       align: 'right' as const,
       render: (_: any, record: any) => {
         const items: MenuProps['items'] = [
-          { key: '1', label: 'Edit Details', icon: <EditOutlined />, onClick: () => handleEdit(record) },
-          { key: '2', label: 'View Performance', icon: <DollarOutlined /> },
+          { 
+            key: '1', 
+            label: 'Edit Details', 
+            icon: <EditOutlined />, 
+            onClick: () => handleEdit(record) 
+          },
+          { 
+            key: '2', 
+            label: 'View Performance', 
+            icon: <DollarOutlined /> 
+          },
           { type: 'divider' },
-          { key: '3', label: 'Deactivate', icon: <DeleteOutlined />, danger: true },
+          { 
+            key: '3', 
+            label: 'Deactivate', 
+            icon: <DeleteOutlined />, 
+            danger: true,
+            onClick: () => handleDelete(record.key)
+          },
         ];
         return (
           <Dropdown menu={{ items }} trigger={['click']}>
-            <Button type="text" shape="circle" icon={<MoreOutlined />} />
+            <Button type="text" shape="circle" icon={<MoreOutlined style={{ fontSize: '18px' }} />} />
           </Dropdown>
         );
       },
@@ -169,59 +209,65 @@ export default function OwnerStaff() {
   ];
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
       
       {/* Header Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Staff Directory</Title>
           <Text type="secondary">Manage your team profiles, roles, and payroll.</Text>
         </div>
-        <Button 
-          type="primary" 
-          size="large" 
-          icon={<PlusOutlined />} 
-          onClick={handleAdd}
-          style={{ 
-            backgroundColor: '#1A1A1B', 
-            borderRadius: '12px', 
-            height: '48px', 
-            padding: '0 24px', 
-            fontWeight: 600 
-          }}
-        >
-          Add New Staff
-        </Button>
+        
+        <div className="flex gap-3 w-full md:w-auto">
+          <Input 
+            prefix={<SearchOutlined className="text-gray-400" />} 
+            placeholder="Search staff..." 
+            size="large"
+            className="rounded-xl w-full md:w-64"
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          <Button 
+            type="primary" 
+            size="large" 
+            icon={<PlusOutlined />} 
+            onClick={handleAdd}
+            // THEME: Purple Background
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
+          >
+            Add New Staff
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={8}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={8}>
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
-              title={<span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', color: '#9CA3AF' }}>Total Staff</span>}
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Staff</span>}
               value={12} 
-              prefix={<TeamOutlined style={{ color: '#7C4DFF' }} />}
-              valueStyle={{ fontWeight: 800, fontSize: 28 }}
+              prefix={<TeamOutlined style={{ color: '#7C4DFF', marginRight: 8 }} />}
+              valueStyle={{ fontWeight: 800 }}
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={8}>
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
-              title={<span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', color: '#9CA3AF' }}>Active Today</span>}
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Active Today</span>}
               value={9} 
-              prefix={<ScissorOutlined style={{ color: '#059669' }} />}
-              valueStyle={{ fontWeight: 800, fontSize: 28 }}
+              prefix={<ScissorOutlined style={{ color: '#059669', marginRight: 8 }} />}
+              valueStyle={{ fontWeight: 800 }}
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={8}>
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
-              title={<span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', color: '#9CA3AF' }}>Total Payroll (MDT)</span>}
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Payroll (MDT)</span>}
               value="Rs. 653,500" 
-              valueStyle={{ fontWeight: 800, fontSize: 28, color: '#1A1A1B' }}
+              prefix={<DollarOutlined style={{ color: '#F59E0B', marginRight: 8 }} />}
+              valueStyle={{ fontWeight: 800, color: '#1A1A1B' }}
             />
           </Card>
         </Col>
@@ -235,8 +281,8 @@ export default function OwnerStaff() {
       >
         <Table 
           columns={columns} 
-          dataSource={STAFF_DATA} 
-          pagination={{ pageSize: 6 }}
+          dataSource={filteredData} 
+          pagination={{ pageSize: 8 }}
           rowKey="key"
         />
       </Card>
@@ -249,5 +295,14 @@ export default function OwnerStaff() {
         mode={modalMode}
       />
     </div>
+  );
+}
+
+// Wrapper
+export default function OwnerStaff() {
+  return (
+    <AlertProvider>
+      <StaffContent />
+    </AlertProvider>
   );
 }

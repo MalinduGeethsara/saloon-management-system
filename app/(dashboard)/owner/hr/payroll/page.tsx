@@ -1,44 +1,201 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Download, FileText } from "lucide-react";
+"use client";
 
-export default function PayrollSystem() {
-  const payroll = [
-    { name: "Alex Rivers", base: 1200, commission: 850, deductions: 50, total: 2000 },
-    { name: "Jordan Smith", base: 2500, commission: 0, deductions: 100, total: 2400 },
+import React, { useState } from 'react';
+import { 
+  Table, 
+  Card, 
+  Typography, 
+  Tag, 
+  Button, 
+  Input, 
+  Statistic, 
+  Row, 
+  Col, 
+  Avatar, 
+  Dropdown,
+  MenuProps
+} from 'antd';
+import { 
+  SearchOutlined, 
+  BankOutlined, 
+  DollarCircleOutlined, 
+  MoreOutlined,
+  PayCircleOutlined,
+  PrinterOutlined
+} from '@ant-design/icons';
+import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
+
+const { Title, Text } = Typography;
+
+// --- Mock Data ---
+const INITIAL_PAYROLL = [
+  { key: '1', name: "Kasun Perera", role: "Senior Barber", basic: 75000, bonus: 10000, total: 85000, status: "Paid" },
+  { key: '2', name: "Amila Silva", role: "Junior Barber", basic: 40000, bonus: 5000, total: 45000, status: "Pending" },
+  { key: '3', name: "Nimali Dias", role: "Receptionist", basic: 35000, bonus: 5000, total: 40000, status: "Processing" },
+];
+
+function PayrollContent() {
+  const [payroll, setPayroll] = useState(INITIAL_PAYROLL);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { showAlert } = useAlert();
+
+  const handleProcessPayment = (key: string) => {
+    setPayroll(prev => prev.map(p => p.key === key ? { ...p, status: 'Paid' } : p));
+    showAlert('success', 'Payment marked as Paid.');
+  };
+
+  // --- Filter ---
+  const filteredData = payroll.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // --- Columns ---
+  const columns = [
+    {
+      title: 'Employee',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text: string, record: any) => (
+        <div className="flex items-center gap-3">
+          <Avatar style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }}>{text[0]}</Avatar>
+          <div className="flex flex-col">
+            <span className="font-bold text-slate-800">{text}</span>
+            <span className="text-xs text-slate-500">{record.role}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: 'Basic Salary',
+      dataIndex: 'basic',
+      key: 'basic',
+      render: (val: number) => <span>Rs. {val.toLocaleString()}</span>,
+    },
+    {
+      title: 'Bonus/Comms',
+      dataIndex: 'bonus',
+      key: 'bonus',
+      render: (val: number) => <span className="text-emerald-600">+ Rs. {val.toLocaleString()}</span>,
+    },
+    {
+      title: 'Total Payable',
+      dataIndex: 'total',
+      key: 'total',
+      render: (val: number) => <span className="font-bold text-slate-800">Rs. {val.toLocaleString()}</span>,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        let color = 'blue';
+        if (status === 'Paid') color = 'green';
+        if (status === 'Pending') color = 'gold';
+        return <Tag color={color} className="rounded-full px-3 font-semibold">{status.toUpperCase()}</Tag>;
+      },
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      align: 'right' as const,
+      render: (_: any, record: any) => {
+        const menuItems: MenuProps['items'] = [
+          {
+            key: 'pay',
+            label: 'Mark as Paid',
+            icon: <PayCircleOutlined />,
+            disabled: record.status === 'Paid',
+            onClick: () => handleProcessPayment(record.key),
+          },
+          {
+            key: 'print',
+            label: 'Print Slip',
+            icon: <PrinterOutlined />,
+          },
+        ];
+
+        return (
+          <Dropdown menu={{ items: menuItems }} trigger={['click']}>
+            <Button type="text" shape="circle" icon={<MoreOutlined />} />
+          </Dropdown>
+        );
+      },
+    },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">HR: Payroll Management</h1>
-        <button className="bg-[#1A1A1B] text-[#C5A059] px-4 py-2 rounded-lg font-bold flex items-center gap-2">
-          <Download size={18} /> Export CSV
-        </button>
+    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Payroll Management</Title>
+          <Text type="secondary">Manage employee salaries, bonuses, and payment status.</Text>
+        </div>
+        <div className="flex gap-3 w-full md:w-auto">
+          <Input 
+            prefix={<SearchOutlined className="text-gray-400" />} 
+            placeholder="Search payroll..." 
+            size="large"
+            className="rounded-xl w-full md:w-64"
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          <Button 
+            type="primary" 
+            size="large" 
+            icon={<BankOutlined />} 
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200"
+          >
+            Run Payroll
+          </Button>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {payroll.map((pay, i) => (
-          <Card key={i} className="border-none shadow-sm hover:shadow-md transition">
-            <CardContent className="p-6 flex flex-col md:flex-row justify-between items-center">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gray-50 rounded-full text-[#C5A059]"><DollarSign /></div>
-                <div>
-                  <h3 className="font-bold text-lg">{pay.name}</h3>
-                  <p className="text-sm text-gray-400">Monthly Payout Statement</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-8 mt-4 md:mt-0 text-center">
-                <div><p className="text-xs text-gray-400 uppercase">Base</p><p className="font-bold">${pay.base}</p></div>
-                <div><p className="text-xs text-gray-400 uppercase">Comm.</p><p className="font-bold">${pay.commission}</p></div>
-                <div><p className="text-xs text-gray-400 uppercase">Total</p><p className="font-bold text-[#C5A059]">${pay.total}</p></div>
-              </div>
-
-              <button className="mt-4 md:mt-0 p-2 text-gray-400 hover:text-[#1A1A1B]"><FileText /></button>
-            </CardContent>
+      {/* KPI Stats */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12}>
+          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            <Statistic 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Disbursed</span>}
+              value={payroll.filter(p => p.status === 'Paid').reduce((acc, curr) => acc + curr.total, 0)} 
+              prefix={<span className="text-emerald-500 text-2xl mr-2">Rs.</span>}
+              valueStyle={{ fontWeight: 800, color: '#10B981' }}
+            />
           </Card>
-        ))}
-      </div>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            <Statistic 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Pending Payments</span>}
+              value={payroll.filter(p => p.status !== 'Paid').reduce((acc, curr) => acc + curr.total, 0)} 
+              prefix={<span className="text-amber-500 text-2xl mr-2">Rs.</span>}
+              valueStyle={{ fontWeight: 800, color: '#F59E0B' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Table */}
+      <Card 
+        bordered={false} 
+        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
+        bodyStyle={{ padding: 0 }}
+      >
+        <Table 
+          columns={columns} 
+          dataSource={filteredData} 
+          pagination={{ pageSize: 8 }}
+          rowKey="key"
+        />
+      </Card>
     </div>
+  );
+}
+
+export default function PayrollPage() {
+  return (
+    <AlertProvider>
+      <PayrollContent />
+    </AlertProvider>
   );
 }

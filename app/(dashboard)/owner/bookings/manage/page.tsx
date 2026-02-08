@@ -1,22 +1,58 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, X, Printer, FileText } from "lucide-react";
+import { 
+  Table, 
+  Card, 
+  Typography, 
+  Tag, 
+  Button, 
+  Statistic, 
+  Row, 
+  Col, 
+  Tooltip,
+  Input
+} from 'antd';
+import { 
+  CheckCircleOutlined, 
+  CloseCircleOutlined, 
+  PrinterOutlined, 
+  SearchOutlined,
+  CalendarOutlined,
+  UserOutlined,
+  PlusOutlined // Imported for the new button
+} from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+// 1. IMPORT THE MODAL
+import { NewBookingModal } from "@/components/modals/NewBookingModal";
+import dayjs from 'dayjs';
+
+const { Title, Text } = Typography;
 
 // --- Mock Initial Data ---
 const INITIAL_BOOKINGS = [
-  { id: "B-101", client: "Kamal Perera", barber: "Nuwan Pradeep", status: "Pending", total: "Rs. 2,500" },
-  { id: "B-102", client: "Saman Kumara", barber: "Kasun Perera", status: "Confirmed", total: "Rs. 1,800" },
-  { id: "B-103", client: "Nimal Siripala", barber: "Lahiru Thirimanne", status: "Pending", total: "Rs. 3,200" },
+  { key: "1", id: "B-101", client: "Kamal Perera", barber: "Nuwan Pradeep", status: "Pending", total: 2500, date: "2023-10-26" },
+  { key: "2", id: "B-102", client: "Saman Kumara", barber: "Kasun Perera", status: "Confirmed", total: 1800, date: "2023-10-26" },
+  { key: "3", id: "B-103", client: "Nimal Siripala", barber: "Lahiru Thirimanne", status: "Pending", total: 3200, date: "2023-10-27" },
+  { key: "4", id: "B-104", client: "Ruwan Fernando", barber: "Nuwan Pradeep", status: "Cancelled", total: 1500, date: "2023-10-25" },
+];
+
+// --- Barber Data for the Modal ---
+const BARBERS_LIST = [
+  { id: 1, name: 'Nuwan Pradeep', color: '#18181b' },
+  { id: 2, name: 'Kasun Perera', color: '#7C4DFF' },
+  { id: 3, name: 'Lahiru Thirimanne', color: '#2563eb' },
 ];
 
 function ManageBookingsContent() {
   const [bookings, setBookings] = useState(INITIAL_BOOKINGS);
+  const [searchTerm, setSearchTerm] = useState('');
   
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // --- Modal States ---
+  const [isModalOpen, setIsModalOpen] = useState(false); // For Confirmation
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false); // For New Booking
+  
   const [modalType, setModalType] = useState<'accept' | 'decline' | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   
@@ -45,10 +81,27 @@ function ManageBookingsContent() {
       showAlert("error", `Booking ${selectedBookingId} was declined.`);
     }
 
-    // Reset Modal
     setIsModalOpen(false);
     setSelectedBookingId(null);
     setModalType(null);
+  };
+
+  // 2. HANDLE SAVING FROM THE NEW BOOKING MODAL
+  const handleSaveNewBooking = (newBookingData: any) => {
+    // Transform the data from the modal to match the table structure
+    const newEntry = {
+      key: newBookingData.id,
+      id: `B-${Math.floor(1000 + Math.random() * 9000)}`, // Generate ID
+      client: newBookingData.title,
+      barber: newBookingData.extendedProps.barberName,
+      status: "Confirmed", // Manual bookings are usually confirmed immediately
+      total: 2000, // Placeholder price (since modal doesn't calculate it yet)
+      date: dayjs(newBookingData.start).format("YYYY-MM-DD")
+    };
+
+    setBookings(prev => [newEntry, ...prev]);
+    setIsAddModalOpen(false);
+    showAlert("success", "Manual booking created successfully.");
   };
 
   const handlePrint = (id: string) => {
@@ -58,94 +111,189 @@ function ManageBookingsContent() {
     }, 1000);
   };
 
+  // --- Filter ---
+  const filteredBookings = bookings.filter(b => 
+    b.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    b.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // --- Columns ---
+  const columns = [
+    {
+      title: 'Booking ID',
+      dataIndex: 'id',
+      key: 'id',
+      render: (text: string) => <span className="font-mono text-xs font-bold text-slate-500">{text}</span>,
+    },
+    {
+      title: 'Client',
+      dataIndex: 'client',
+      key: 'client',
+      render: (text: string) => <span className="font-bold text-slate-800">{text}</span>,
+    },
+    {
+      title: 'Specialist',
+      dataIndex: 'barber',
+      key: 'barber',
+      render: (text: string) => (
+        <div className="flex items-center gap-2 text-slate-600">
+          <UserOutlined /> {text}
+        </div>
+      ),
+    },
+    {
+      title: 'Total',
+      dataIndex: 'total',
+      key: 'total',
+      render: (amount: number) => <span className="font-bold text-slate-800">Rs. {amount.toLocaleString()}</span>,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        let color = 'default';
+        if (status === 'Confirmed') color = 'green';
+        if (status === 'Pending') color = 'gold';
+        if (status === 'Cancelled') color = 'red';
+        
+        return (
+          <Tag color={color} className="rounded-full px-3 font-semibold border-0">
+            {status.toUpperCase()}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      align: 'right' as const,
+      render: (_: any, record: any) => (
+        <div className="flex justify-end gap-2">
+          {record.status === "Pending" && (
+            <>
+              <Tooltip title="Accept Booking">
+                <Button 
+                  type="text" 
+                  shape="circle" 
+                  icon={<CheckCircleOutlined className="text-emerald-500" />} 
+                  onClick={() => handleActionClick(record.id, 'accept')}
+                  className="bg-emerald-50 hover:bg-emerald-100"
+                />
+              </Tooltip>
+              <Tooltip title="Decline Booking">
+                <Button 
+                  type="text" 
+                  shape="circle" 
+                  icon={<CloseCircleOutlined className="text-red-500" />} 
+                  onClick={() => handleActionClick(record.id, 'decline')}
+                  className="bg-red-50 hover:bg-red-100"
+                />
+              </Tooltip>
+            </>
+          )}
+          
+          <Tooltip title="Print Invoice">
+            <Button 
+              type="text" 
+              shape="circle" 
+              icon={<PrinterOutlined className="text-slate-500" />} 
+              onClick={() => handlePrint(record.id)}
+            />
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Booking Requests</h1>
-          <p className="text-slate-500">Manage incoming appointments and invoices.</p>
+          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Booking Requests</Title>
+          <Text type="secondary">Manage incoming appointments and invoices.</Text>
         </div>
-        <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm text-sm font-medium">
-          Total Requests: <span className="text-[#7C4DFF] font-bold">{bookings.length}</span>
+        
+        <div className="flex gap-3 w-full md:w-auto">
+          <Input 
+            prefix={<SearchOutlined className="text-gray-400" />} 
+            placeholder="Search bookings..." 
+            size="large"
+            className="rounded-xl w-full md:w-48"
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          {/* 3. NEW MANUAL BOOKING BUTTON */}
+          <Button 
+            type="primary" 
+            size="large" 
+            icon={<PlusOutlined />} 
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
+          >
+            Manual Booking
+          </Button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-50/50">
-            <tr>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Booking ID</th>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Client</th>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Specialist</th>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</th>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-              <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {bookings.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400">
-                  <FileText className="w-10 h-10 mx-auto mb-2 opacity-20" />
-                  No pending booking requests.
-                </td>
-              </tr>
-            ) : (
-              bookings.map((b) => (
-                <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="p-4 font-mono text-xs font-medium text-slate-500">{b.id}</td>
-                  <td className="p-4 font-bold text-slate-900">{b.client}</td>
-                  <td className="p-4 text-sm text-slate-600">{b.barber}</td>
-                  <td className="p-4 text-sm font-mono font-medium text-slate-700">{b.total}</td>
-                  <td className="p-4">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border ${
-                        b.status === "Pending"
-                          ? "bg-amber-50 text-amber-700 border-amber-200"
-                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      }`}
-                    >
-                      {b.status}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex justify-end gap-2">
-                      {b.status === "Pending" && (
-                        <>
-                          <button
-                            onClick={() => handleActionClick(b.id, 'accept')}
-                            className="p-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200 transition-all active:scale-95"
-                            title="Accept Booking"
-                          >
-                            <Check size={16} strokeWidth={2.5} />
-                          </button>
-                          <button
-                            onClick={() => handleActionClick(b.id, 'decline')}
-                            className="p-2 bg-red-50 text-red-600 rounded-lg border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all active:scale-95"
-                            title="Decline Booking"
-                          >
-                            <X size={16} strokeWidth={2.5} />
-                          </button>
-                        </>
-                      )}
-                      
-                      <button
-                        onClick={() => handlePrint(b.id)}
-                        className="p-2 bg-slate-50 text-slate-600 rounded-lg border border-slate-200 hover:bg-white hover:shadow-sm transition-all active:scale-95"
-                        title="Print Invoice"
-                      >
-                        <Printer size={16} strokeWidth={2} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* KPI Stats */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            <Statistic 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Requests</span>}
+              value={bookings.length} 
+              prefix={<CalendarOutlined style={{ color: '#7C4DFF', marginRight: 8 }} />}
+              valueStyle={{ fontWeight: 800 }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            <Statistic 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Pending</span>}
+              value={bookings.filter(b => b.status === 'Pending').length} 
+              prefix={<CheckCircleOutlined style={{ color: '#F59E0B', marginRight: 8 }} />}
+              valueStyle={{ fontWeight: 800, color: '#F59E0B' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            <Statistic 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Confirmed Today</span>}
+              value={bookings.filter(b => b.status === 'Confirmed').length} 
+              prefix={<CheckCircleOutlined style={{ color: '#10B981', marginRight: 8 }} />}
+              valueStyle={{ fontWeight: 800, color: '#10B981' }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-      {/* Dynamic Confirmation Modal */}
+      {/* Main Table */}
+      <Card 
+        bordered={false} 
+        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
+        bodyStyle={{ padding: 0 }}
+      >
+        <Table 
+          columns={columns} 
+          dataSource={filteredBookings} 
+          pagination={{ pageSize: 8 }}
+          rowKey="key"
+        />
+      </Card>
+
+      {/* 4. LINKED NEW BOOKING MODAL */}
+      <NewBookingModal 
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={handleSaveNewBooking}
+        barbers={BARBERS_LIST}
+      />
+
+      {/* Confirmation Modal */}
       <ConfirmationModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

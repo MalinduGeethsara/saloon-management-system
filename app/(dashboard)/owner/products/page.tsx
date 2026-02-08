@@ -37,7 +37,7 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-// --- Mock Initial Data with Images ---
+// --- Mock Initial Data ---
 const INITIAL_PRODUCTS = [
   { 
     key: '1', 
@@ -99,7 +99,7 @@ const INITIAL_PRODUCTS = [
 function ProductsContent() {
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid'); // Default to Grid (Folder view)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -162,9 +162,9 @@ function ProductsContent() {
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // --- Render Helpers ---
+  // --- Render Views ---
 
-  // 1. Grid View (Folder Style)
+  // 1. Grid View
   const renderGridView = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {filteredProducts.map((product) => (
@@ -174,12 +174,11 @@ function ProductsContent() {
           className="overflow-hidden border border-slate-200 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md group"
           bodyStyle={{ padding: 0 }}
           cover={
-            <div className="relative h-48 w-full bg-white flex items-center justify-center overflow-hidden p-4">
+            <div className="relative h-48 w-full bg-white flex items-center justify-center overflow-hidden p-4 group">
               <div 
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                style={{ backgroundImage: `url(${product.image})`, opacity: 0.9 }}
+                style={{ backgroundImage: `url(${product.image})`, opacity: 0.95 }}
               />
-              {/* Overlay Actions */}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
                 <Button 
                   shape="circle" 
@@ -195,7 +194,6 @@ function ProductsContent() {
                   className="border-none bg-white/90 hover:bg-white"
                 />
               </div>
-              {/* Stock Badge */}
               <div className="absolute top-3 right-3">
                 <Tag color={product.status === 'Out of Stock' ? 'red' : product.status === 'Low Stock' ? 'orange' : 'green'} className="m-0 border-none shadow-sm font-semibold">
                   {product.status === 'In Stock' ? `${product.stock} left` : product.status}
@@ -225,7 +223,7 @@ function ProductsContent() {
     </div>
   );
 
-  // 2. List View (Table Style)
+  // 2. List View
   const renderListView = () => {
     const columns: any = [
       {
@@ -245,12 +243,7 @@ function ProductsContent() {
       },
       { title: 'Category', dataIndex: 'category', key: 'category', render: (t: string) => <Tag>{t}</Tag> },
       { title: 'Price (LKR)', dataIndex: 'price', key: 'price', render: (p: number) => <span className="font-mono font-medium">Rs. {p.toLocaleString()}</span> },
-      { 
-        title: 'Stock', 
-        dataIndex: 'stock', 
-        key: 'stock', 
-        render: (s: number) => <span style={{ color: s > 10 ? '#059669' : '#DC2626', fontWeight: 700 }}>{s} units</span> 
-      },
+      { title: 'Stock', dataIndex: 'stock', key: 'stock', render: (s: number) => <span style={{ color: s > 10 ? '#059669' : '#DC2626', fontWeight: 700 }}>{s} units</span> },
       {
         title: 'Status',
         dataIndex: 'status',
@@ -288,13 +281,14 @@ function ProductsContent() {
     <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
       
       {/* Header Section */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
-        <div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex-1">
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Inventory Management</Title>
           <Text type="secondary">Track stock levels, manage suppliers, and update pricing.</Text>
         </div>
         
-        <div className="flex flex-wrap gap-3 items-center w-full lg:w-auto">
+        {/* Controls Container - Aligned on one line for md+ screens */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
           {/* View Toggle */}
           <Segmented
             options={[
@@ -304,14 +298,14 @@ function ProductsContent() {
             value={viewMode}
             onChange={(val) => setViewMode(val as 'list' | 'grid')}
             size="large"
-            className="hidden sm:block"
+            className="hidden sm:block" 
           />
 
           <Input 
             prefix={<SearchOutlined className="text-gray-400" />} 
-            placeholder="Search products..." 
+            placeholder="Search..." 
             size="large"
-            className="w-full sm:w-64 rounded-xl"
+            className="flex-1 md:w-64 rounded-xl"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           
@@ -320,8 +314,9 @@ function ProductsContent() {
             size="large" 
             icon={<PlusOutlined />} 
             onClick={handleAdd}
-            style={{ backgroundColor: '#1A1A1B', borderRadius: '12px', fontWeight: 600 }}
-            className="w-full sm:w-auto"
+            // CHANGED: Background color updated to #7C4DFF
+            style={{ backgroundColor: '#7C4DFF', borderRadius: '12px', fontWeight: 600 }}
+            className="shrink-0"
           >
             Add Product
           </Button>
@@ -362,7 +357,7 @@ function ProductsContent() {
         </Col>
       </Row>
 
-      {/* Content Area (Grid or List) */}
+      {/* Content Area */}
       <div className="min-h-[400px]">
         {viewMode === 'grid' ? renderGridView() : renderListView()}
       </div>

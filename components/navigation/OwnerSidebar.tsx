@@ -10,7 +10,8 @@ import {
   BarChartOutlined,
   CarryOutOutlined,
   SolutionOutlined,
-  UsergroupAddOutlined
+  UsergroupAddOutlined,
+  ScissorOutlined // <--- 1. NEW IMPORT ADDED HERE
 } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -35,6 +36,11 @@ export function OwnerSidebar() {
       ]
     },
     { key: '/owner/shops', icon: <ShopOutlined />, label: 'My Shops' },
+    
+    // --- 2. NEW ITEM ADDED HERE ---
+    { key: '/owner/services', icon: <ScissorOutlined />, label: 'Services' },
+    // -----------------------------
+
     { key: '/owner/products', icon: <TeamOutlined />, label: 'Products' },
     { key: '/owner/payments', icon: <DollarCircleOutlined />, label: 'Payments' },
     { key: '/owner/reports', icon: <BarChartOutlined />, label: 'Reports' },
@@ -54,7 +60,8 @@ export function OwnerSidebar() {
       <Menu
         mode="inline"
         selectedKeys={[pathname]}
-        onClick={({ key }) => router.push(key)}
+        // This handles the navigation to /owner/services automatically
+        onClick={({ key }) => router.push(key)} 
         style={{ borderRight: 0, padding: '0 12px' }}
         items={menuItems}
       />
@@ -65,7 +72,6 @@ export function OwnerSidebar() {
           <Typography.Text style={{ fontSize: '10px', color: '#7C4DFF' }}>84%</Typography.Text>
         </div>
         
-        {/* FIX: Corrected size property for TypeScript compatibility */}
         <Progress 
           percent={84} 
           showInfo={false} 
