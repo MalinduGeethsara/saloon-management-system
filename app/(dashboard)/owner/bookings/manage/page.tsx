@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { 
   Table, 
   Card, 
@@ -11,8 +11,10 @@ import {
   Row, 
   Col, 
   Tooltip,
-  Input
+  Input,
+  Space
 } from 'antd';
+import type { InputRef, TableColumnType } from 'antd';
 import { 
   CheckCircleOutlined, 
   CloseCircleOutlined, 
@@ -20,12 +22,16 @@ import {
   SearchOutlined,
   CalendarOutlined,
   UserOutlined,
-  PlusOutlined // Imported for the new button
+  PlusOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
-// 1. IMPORT THE MODAL
 import { NewBookingModal } from "@/components/modals/NewBookingModal";
+
+// --- IMPORT PAYMENT & INVOICE MODALS ---
+import { PaymentModal } from "@/components/modals/PaymentModal";
+import { InvoiceModal } from "@/components/modals/InvoiceModal";
+
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -38,7 +44,7 @@ const INITIAL_BOOKINGS = [
   { key: "4", id: "B-104", client: "Ruwan Fernando", barber: "Nuwan Pradeep", status: "Cancelled", total: 1500, date: "2023-10-25" },
 ];
 
-// --- Barber Data for the Modal ---
+// --- Barber Data for the Modal & Filters ---
 const BARBERS_LIST = [
   { id: 1, name: 'Nuwan Pradeep', color: '#18181b' },
   { id: 2, name: 'Kasun Perera', color: '#7C4DFF' },
@@ -47,15 +53,20 @@ const BARBERS_LIST = [
 
 function ManageBookingsContent() {
   const [bookings, setBookings] = useState(INITIAL_BOOKINGS);
-  const [searchTerm, setSearchTerm] = useState('');
   
-  // --- Modal States ---
-  const [isModalOpen, setIsModalOpen] = useState(false); // For Confirmation
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false); // For New Booking
-  
+  // --- Booking Modals ---
+  const [isModalOpen, setIsModalOpen] = useState(false); 
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
   const [modalType, setModalType] = useState<'accept' | 'decline' | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+
+  // --- Payment/Invoice Modals ---
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [paymentData, setPaymentData] = useState<any>(null);
+  const [invoiceData, setInvoiceData] = useState<any>(null);
   
+  const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
   // --- Handlers ---
@@ -75,7 +86,6 @@ function ManageBookingsContent() {
       );
       showAlert("success", `Booking ${selectedBookingId} confirmed successfully.`);
     } 
-    
     else if (modalType === 'decline') {
       setBookings((prev) => prev.filter((b) => b.id !== selectedBookingId));
       showAlert("error", `Booking ${selectedBookingId} was declined.`);
@@ -86,16 +96,14 @@ function ManageBookingsContent() {
     setModalType(null);
   };
 
-  // 2. HANDLE SAVING FROM THE NEW BOOKING MODAL
   const handleSaveNewBooking = (newBookingData: any) => {
-    // Transform the data from the modal to match the table structure
     const newEntry = {
       key: newBookingData.id,
-      id: `B-${Math.floor(1000 + Math.random() * 9000)}`, // Generate ID
+      id: `B-${Math.floor(1000 + Math.random() * 9000)}`,
       client: newBookingData.title,
       barber: newBookingData.extendedProps.barberName,
-      status: "Confirmed", // Manual bookings are usually confirmed immediately
-      total: 2000, // Placeholder price (since modal doesn't calculate it yet)
+      status: "Confirmed", 
+      total: 2000, 
       date: dayjs(newBookingData.start).format("YYYY-MM-DD")
     };
 
@@ -104,18 +112,76 @@ function ManageBookingsContent() {
     showAlert("success", "Manual booking created successfully.");
   };
 
-  const handlePrint = (id: string) => {
-    showAlert("success", `Generating invoice for ${id}...`);
-    setTimeout(() => {
-      window.print();
-    }, 1000);
+  // --- Payment Flow Handlers ---
+  const handleGenerateBill = (record: any) => {
+    setPaymentData({
+      bookingId: record.id,
+      client: record.client,
+      barber: record.barber,
+      date: record.date,
+      items: [{ type: 'Service', name: 'Salon Service Booking', price: record.total }] 
+    });
+    setIsPaymentModalOpen(true);
   };
 
-  // --- Filter ---
-  const filteredBookings = bookings.filter(b => 
-    b.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSavePayment = (finalData: any) => {
+    setIsPaymentModalOpen(false);
+    
+    setBookings(prev => prev.map(b => 
+      b.id === finalData.bookingId ? { ...b, status: "Paid" } : b
+    ));
+
+    setInvoiceData(finalData);
+    setTimeout(() => setIsInvoiceModalOpen(true), 300); 
+    showAlert("success", "Payment recorded successfully.");
+  };
+
+  // --- Column Search Setup ---
+  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${placeholder}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => confirm()}
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm()}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => { clearFilters && clearFilters(); confirm(); }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+  });
 
   // --- Columns ---
   const columns = [
@@ -123,18 +189,22 @@ function ManageBookingsContent() {
       title: 'Booking ID',
       dataIndex: 'id',
       key: 'id',
+      ...getColumnSearchProps('id', 'Booking ID'), // Added Search
       render: (text: string) => <span className="font-mono text-xs font-bold text-slate-500">{text}</span>,
     },
     {
       title: 'Client',
       dataIndex: 'client',
       key: 'client',
+      ...getColumnSearchProps('client', 'Client'), // Added Search
       render: (text: string) => <span className="font-bold text-slate-800">{text}</span>,
     },
     {
       title: 'Specialist',
       dataIndex: 'barber',
       key: 'barber',
+      filters: BARBERS_LIST.map(b => ({ text: b.name, value: b.name })), // Added Filter
+      onFilter: (value: any, record: any) => record.barber === value,
       render: (text: string) => (
         <div className="flex items-center gap-2 text-slate-600">
           <UserOutlined /> {text}
@@ -151,9 +221,17 @@ function ManageBookingsContent() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      filters: [
+        { text: 'Pending', value: 'Pending' },
+        { text: 'Confirmed', value: 'Confirmed' },
+        { text: 'Paid', value: 'Paid' },
+        { text: 'Cancelled', value: 'Cancelled' },
+      ],
+      onFilter: (value: any, record: any) => record.status === value, // Added Filter
       render: (status: string) => {
         let color = 'default';
-        if (status === 'Confirmed') color = 'green';
+        if (status === 'Confirmed') color = 'blue';
+        if (status === 'Paid') color = 'green';
         if (status === 'Pending') color = 'gold';
         if (status === 'Cancelled') color = 'red';
         
@@ -193,14 +271,18 @@ function ManageBookingsContent() {
             </>
           )}
           
-          <Tooltip title="Print Invoice">
-            <Button 
-              type="text" 
-              shape="circle" 
-              icon={<PrinterOutlined className="text-slate-500" />} 
-              onClick={() => handlePrint(record.id)}
-            />
-          </Tooltip>
+          {/* SHOW PRINT BILL BUTTON IF CONFIRMED */}
+          {record.status === "Confirmed" && (
+            <Tooltip title="Process Payment & Print Bill">
+              <Button 
+                type="text" 
+                shape="circle" 
+                icon={<PrinterOutlined className="text-[#7C4DFF]" />} 
+                onClick={() => handleGenerateBill(record)}
+                className="bg-[#F3E8FF] hover:bg-[#E9D5FF]"
+              />
+            </Tooltip>
+          )}
         </div>
       ),
     },
@@ -217,14 +299,7 @@ function ManageBookingsContent() {
         </div>
         
         <div className="flex gap-3 w-full md:w-auto">
-          <Input 
-            prefix={<SearchOutlined className="text-gray-400" />} 
-            placeholder="Search bookings..." 
-            size="large"
-            className="rounded-xl w-full md:w-48"
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-          {/* 3. NEW MANUAL BOOKING BUTTON */}
+          {/* Removed Global Search Bar */}
           <Button 
             type="primary" 
             size="large" 
@@ -262,8 +337,8 @@ function ManageBookingsContent() {
         <Col xs={24} sm={8}>
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Confirmed Today</span>}
-              value={bookings.filter(b => b.status === 'Confirmed').length} 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Confirmed / Paid Today</span>}
+              value={bookings.filter(b => b.status === 'Confirmed' || b.status === 'Paid').length} 
               prefix={<CheckCircleOutlined style={{ color: '#10B981', marginRight: 8 }} />}
               valueStyle={{ fontWeight: 800, color: '#10B981' }}
             />
@@ -275,17 +350,17 @@ function ManageBookingsContent() {
       <Card 
         bordered={false} 
         style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
       >
         <Table 
           columns={columns} 
-          dataSource={filteredBookings} 
+          dataSource={bookings} // Set to raw bookings array
           pagination={{ pageSize: 8 }}
           rowKey="key"
         />
       </Card>
 
-      {/* 4. LINKED NEW BOOKING MODAL */}
+      {/* Add Booking Modal */}
       <NewBookingModal 
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
@@ -293,7 +368,7 @@ function ManageBookingsContent() {
         barbers={BARBERS_LIST}
       />
 
-      {/* Confirmation Modal */}
+      {/* Accept/Decline Confirmation Modal */}
       <ConfirmationModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -307,11 +382,24 @@ function ManageBookingsContent() {
         confirmText={modalType === 'accept' ? "Yes, Confirm" : "Yes, Decline"}
         isDanger={modalType === 'decline'}
       />
+
+      {/* --- PAYMENT & INVOICE MODALS --- */}
+      <PaymentModal 
+        isOpen={isPaymentModalOpen} 
+        onClose={() => setIsPaymentModalOpen(false)} 
+        onSave={handleSavePayment} 
+        paymentToEdit={paymentData}  
+      />
+
+      <InvoiceModal 
+        isOpen={isInvoiceModalOpen} 
+        onClose={() => setIsInvoiceModalOpen(false)} 
+        data={invoiceData} 
+      />
     </div>
   );
 }
 
-// Export wrapper with Provider
 export default function ManageBookings() {
   return (
     <AlertProvider>

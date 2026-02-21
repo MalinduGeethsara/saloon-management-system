@@ -1,16 +1,15 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Button, Row, Col, Divider } from 'antd';
+import { Modal, Form, Input, InputNumber, Select, Button, Row, Col, Divider, Switch, Typography } from 'antd';
 import { 
   ScissorOutlined, 
-  DollarOutlined, 
-  ClockCircleOutlined, 
   TagOutlined 
 } from '@ant-design/icons';
 
 const { Option } = Select;
 const { TextArea } = Input;
+const { Text } = Typography;
 
 interface ServiceModalProps {
   isOpen: boolean;
@@ -31,10 +30,13 @@ export function ServiceModal({
   useEffect(() => {
     if (isOpen) {
       if (serviceToEdit) {
-        form.setFieldsValue(serviceToEdit);
+        form.setFieldsValue({
+          ...serviceToEdit,
+          isActive: serviceToEdit.status === 'Active'
+        });
       } else {
         form.resetFields();
-        form.setFieldsValue({ status: 'Active', duration: 30 }); // Defaults
+        form.setFieldsValue({ isActive: true, category: 'Service' }); // Default values
       }
     }
   }, [isOpen, serviceToEdit, form]);
@@ -42,8 +44,11 @@ export function ServiceModal({
   const handleFinish = (values: any) => {
     const serviceData = {
       ...values,
-      key: serviceToEdit?.key, // Preserve ID if editing
+      status: values.isActive ? 'Active' : 'Inactive',
+      key: serviceToEdit?.key, 
     };
+    delete serviceData.isActive;
+    
     onSave(serviceData);
     onClose();
   };
@@ -58,7 +63,7 @@ export function ServiceModal({
       title={
         <div className="flex items-center gap-2 text-lg font-bold text-slate-800">
           <ScissorOutlined className="text-[#7C4DFF]" />
-          {serviceToEdit ? "Edit Service Details" : "Add New Service"}
+          {serviceToEdit ? "Edit Item Details" : "Add New Item"}
         </div>
       }
     >
@@ -70,34 +75,22 @@ export function ServiceModal({
       >
         <Form.Item 
           name="name" 
-          label="Service Name" 
-          rules={[{ required: true, message: 'Please enter service name' }]}
+          label="Item Name" 
+          rules={[{ required: true, message: 'Please enter name' }]}
         >
-          <Input prefix={<TagOutlined className="text-gray-400" />} placeholder="e.g. Premium Haircut" size="large" />
+          <Input prefix={<TagOutlined className="text-gray-400" />} placeholder="e.g. Premium Haircut or Hair Gel" size="large" />
         </Form.Item>
 
         <Row gutter={16}>
           <Col span={12}>
+            {/* UPDATED CATEGORIES: Only Service and Product */}
             <Form.Item name="category" label="Category" rules={[{ required: true }]}>
               <Select placeholder="Select Category" size="large">
-                <Option value="Hair">Hair</Option>
-                <Option value="Beard">Beard</Option>
-                <Option value="Face">Face/Skin</Option>
-                <Option value="Package">Full Package</Option>
+                <Option value="Service">Service</Option>
+                <Option value="Product">Product</Option>
               </Select>
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item name="status" label="Status">
-              <Select size="large">
-                <Option value="Active">Active</Option>
-                <Option value="Inactive">Inactive</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
           <Col span={12}>
             <Form.Item 
               name="price" 
@@ -112,25 +105,20 @@ export function ServiceModal({
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item 
-              name="duration" 
-              label="Duration (Mins)" 
-              rules={[{ required: true, message: 'Enter duration' }]}
-            >
-              <InputNumber 
-                prefix={<ClockCircleOutlined className="text-gray-400" />}
-                style={{ width: '100%' }} 
-                size="large" 
-                min={5} 
-                step={5}
-              />
-            </Form.Item>
-          </Col>
         </Row>
 
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center mb-6 mt-2">
+          <div>
+            <Text strong className="block text-slate-800">Item Status</Text>
+            <Text type="secondary" className="text-xs">Turn off to hide from billing/booking menu.</Text>
+          </div>
+          <Form.Item name="isActive" valuePropName="checked" style={{ marginBottom: 0 }}>
+            <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
+          </Form.Item>
+        </div>
+
         <Form.Item name="description" label="Description (Optional)">
-          <TextArea rows={3} placeholder="Brief details about the service..." />
+          <TextArea rows={3} placeholder="Brief details about the item..." />
         </Form.Item>
 
         <Divider />
@@ -145,7 +133,7 @@ export function ServiceModal({
             size="large" 
             className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold border-none"
           >
-            {serviceToEdit ? "Update Service" : "Add Service"}
+            {serviceToEdit ? "Update Item" : "Add Item"}
           </Button>
         </div>
       </Form>

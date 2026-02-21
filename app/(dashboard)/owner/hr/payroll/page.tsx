@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Table, 
   Card, 
@@ -13,12 +13,13 @@ import {
   Col, 
   Avatar, 
   Dropdown,
-  MenuProps
+  MenuProps,
+  Space
 } from 'antd';
+import type { InputRef, TableColumnType } from 'antd';
 import { 
   SearchOutlined, 
   BankOutlined, 
-  DollarCircleOutlined, 
   MoreOutlined,
   PayCircleOutlined,
   PrinterOutlined
@@ -36,7 +37,8 @@ const INITIAL_PAYROLL = [
 
 function PayrollContent() {
   const [payroll, setPayroll] = useState(INITIAL_PAYROLL);
-  const [searchTerm, setSearchTerm] = useState('');
+  
+  const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
   const handleProcessPayment = (key: string) => {
@@ -44,10 +46,52 @@ function PayrollContent() {
     showAlert('success', 'Payment marked as Paid.');
   };
 
-  // --- Filter ---
-  const filteredData = payroll.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // --- Column Search Setup ---
+  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${placeholder}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => confirm()}
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm()}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => { clearFilters && clearFilters(); confirm(); }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+  });
 
   // --- Columns ---
   const columns = [
@@ -55,6 +99,7 @@ function PayrollContent() {
       title: 'Employee',
       dataIndex: 'name',
       key: 'name',
+      ...getColumnSearchProps('name', 'Employee'), // Added Search Here
       render: (text: string, record: any) => (
         <div className="flex items-center gap-3">
           <Avatar style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }}>{text[0]}</Avatar>
@@ -87,6 +132,12 @@ function PayrollContent() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      filters: [
+        { text: 'Paid', value: 'Paid' },
+        { text: 'Pending', value: 'Pending' },
+        { text: 'Processing', value: 'Processing' },
+      ],
+      onFilter: (value: any, record: any) => record.status === value, // Added Filter Here
       render: (status: string) => {
         let color = 'blue';
         if (status === 'Paid') color = 'green';
@@ -133,18 +184,12 @@ function PayrollContent() {
           <Text type="secondary">Manage employee salaries, bonuses, and payment status.</Text>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          <Input 
-            prefix={<SearchOutlined className="text-gray-400" />} 
-            placeholder="Search payroll..." 
-            size="large"
-            className="rounded-xl w-full md:w-64"
-            onChange={e => setSearchTerm(e.target.value)}
-          />
+          {/* Removed Global Search Bar */}
           <Button 
             type="primary" 
             size="large" 
             icon={<BankOutlined />} 
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200"
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
           >
             Run Payroll
           </Button>
@@ -179,11 +224,11 @@ function PayrollContent() {
       <Card 
         bordered={false} 
         style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }} // FIX: Updated bodyStyle API
       >
         <Table 
           columns={columns} 
-          dataSource={filteredData} 
+          dataSource={payroll} 
           pagination={{ pageSize: 8 }}
           rowKey="key"
         />

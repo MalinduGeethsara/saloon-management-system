@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Table, 
   Card, 
@@ -14,6 +14,7 @@ import {
   Input, 
   DatePicker 
 } from 'antd';
+import type { InputRef, TableColumnType } from 'antd';
 import { 
   PlusOutlined, 
   CheckCircleOutlined, 
@@ -54,7 +55,6 @@ const STAFF_NAMES = [
 
 function AttendanceContent() {
   const [attendanceData, setAttendanceData] = useState(INITIAL_DATA);
-  const [searchTerm, setSearchTerm] = useState('');
   
   // Modal States
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
@@ -62,7 +62,8 @@ function AttendanceContent() {
   
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
-  
+
+  const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
   // --- Handlers ---
@@ -108,11 +109,52 @@ function AttendanceContent() {
     }
   };
 
-  // --- Filter ---
-  const filteredData = attendanceData.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.shop.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // --- Column Search Setup ---
+  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${placeholder}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => confirm()}
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm()}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => { clearFilters && clearFilters(); confirm(); }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+  });
 
   // --- Table Columns ---
   const columns = [
@@ -120,6 +162,7 @@ function AttendanceContent() {
       title: 'Employee',
       dataIndex: 'name',
       key: 'name',
+      ...getColumnSearchProps('name', 'Employee'), // Applied Search Here
       render: (text: string) => (
         <div className="flex items-center gap-3">
           <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} />
@@ -131,6 +174,7 @@ function AttendanceContent() {
       title: 'Location',
       dataIndex: 'shop',
       key: 'shop',
+      ...getColumnSearchProps('shop', 'Location'), // Applied Search Here
       render: (text: string) => (
         <Space className="text-slate-500">
           <EnvironmentOutlined /> {text}
@@ -141,6 +185,12 @@ function AttendanceContent() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      filters: [
+        { text: 'Present', value: 'Present' },
+        { text: 'Late', value: 'Late' },
+        { text: 'On Leave', value: 'On Leave' },
+      ],
+      onFilter: (value: any, record: any) => record.status === value, // Applied Filter Here
       render: (status: string) => {
         let color = 'green';
         let icon = <CheckCircleOutlined />;
@@ -214,19 +264,11 @@ function AttendanceContent() {
              format="YYYY-MM-DD"
              className="hidden sm:block"
            />
-          <Input 
-            prefix={<SearchOutlined className="text-gray-400" />} 
-            placeholder="Search..." 
-            size="large"
-            className="rounded-xl w-full md:w-48"
-            onChange={e => setSearchTerm(e.target.value)}
-          />
           <Button 
             type="primary" 
             size="large" 
             icon={<PlusOutlined />} 
             onClick={handleAddNew}
-            // THEME: Applied your purple color
             className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
           >
             Manual Entry
@@ -238,11 +280,11 @@ function AttendanceContent() {
       <Card 
         bordered={false} 
         style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }} 
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }} 
       >
         <Table 
           columns={columns} 
-          dataSource={filteredData} 
+          dataSource={attendanceData} 
           pagination={{ pageSize: 8 }}
           rowKey="key"
         />

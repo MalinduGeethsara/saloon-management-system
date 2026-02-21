@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Table, 
   Card, 
@@ -14,8 +14,9 @@ import {
   Statistic,
   Row,
   Col,
-  Input 
+  Input
 } from 'antd';
+import type { InputRef, TableColumnType } from 'antd';
 import { 
   UserOutlined, 
   MoreOutlined, 
@@ -86,8 +87,8 @@ function StaffContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState('');
 
+  const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
   // --- Handlers ---
@@ -107,11 +108,52 @@ function StaffContent() {
     showAlert('success', 'Staff member deactivated.');
   };
 
-  // --- Filter ---
-  const filteredData = STAFF_DATA.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // --- Column Search Setup ---
+  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${placeholder}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => confirm()}
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm()}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => { clearFilters && clearFilters(); confirm(); }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+  });
 
   // --- Table Configuration ---
   const columns = [
@@ -119,6 +161,7 @@ function StaffContent() {
       title: 'Staff Member',
       dataIndex: 'name',
       key: 'name',
+      ...getColumnSearchProps('name', 'Name'), // Added Search
       render: (text: string, record: any) => (
         <Space>
           <Avatar 
@@ -136,6 +179,12 @@ function StaffContent() {
       title: 'Role',
       dataIndex: 'role',
       key: 'role',
+      filters: [
+        { text: 'Manager', value: 'Manager' },
+        { text: 'Senior Barber', value: 'Senior Barber' },
+        { text: 'Barber', value: 'Barber' },
+      ],
+      onFilter: (value: any, record: any) => record.role === value, // Added Filter
       render: (text: string) => (
         <Space>
           {text === 'Manager' ? <DollarOutlined className="text-gray-400" /> : <ScissorOutlined className="text-gray-400" />}
@@ -147,6 +196,7 @@ function StaffContent() {
       title: 'Branch',
       dataIndex: 'branch',
       key: 'branch',
+      ...getColumnSearchProps('branch', 'Branch'), // Added Search
     },
     {
       title: 'Contact',
@@ -168,6 +218,12 @@ function StaffContent() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      filters: [
+        { text: 'Active', value: 'Active' },
+        { text: 'On Leave', value: 'On Leave' },
+        { text: 'Inactive', value: 'Inactive' },
+      ],
+      onFilter: (value: any, record: any) => record.status === value, // Added Filter
       render: (status: string) => {
         let color = status === 'Active' ? 'green' : status === 'On Leave' ? 'orange' : 'red';
         return <Tag color={color} style={{ borderRadius: '12px', fontWeight: 600 }}>{status.toUpperCase()}</Tag>;
@@ -219,19 +275,12 @@ function StaffContent() {
         </div>
         
         <div className="flex gap-3 w-full md:w-auto">
-          <Input 
-            prefix={<SearchOutlined className="text-gray-400" />} 
-            placeholder="Search staff..." 
-            size="large"
-            className="rounded-xl w-full md:w-64"
-            onChange={e => setSearchTerm(e.target.value)}
-          />
+          {/* Removed Global Search Bar */}
           <Button 
             type="primary" 
             size="large" 
             icon={<PlusOutlined />} 
             onClick={handleAdd}
-            // THEME: Purple Background
             className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
           >
             Add New Staff
@@ -245,7 +294,7 @@ function StaffContent() {
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Total Staff</span>}
-              value={12} 
+              value={STAFF_DATA.length} 
               prefix={<TeamOutlined style={{ color: '#7C4DFF', marginRight: 8 }} />}
               valueStyle={{ fontWeight: 800 }}
             />
@@ -255,7 +304,7 @@ function StaffContent() {
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Active Today</span>}
-              value={9} 
+              value={STAFF_DATA.filter(s => s.status === 'Active').length} 
               prefix={<ScissorOutlined style={{ color: '#059669', marginRight: 8 }} />}
               valueStyle={{ fontWeight: 800 }}
             />
@@ -277,11 +326,11 @@ function StaffContent() {
       <Card 
         bordered={false} 
         style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }} // FIX: Updated bodyStyle
       >
         <Table 
           columns={columns} 
-          dataSource={filteredData} 
+          dataSource={STAFF_DATA} 
           pagination={{ pageSize: 8 }}
           rowKey="key"
         />

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
-  Table, Card, Typography, Tag, Button, Input, Statistic, Row, Col, Tooltip 
+  Table, Card, Typography, Tag, Button, Input, Statistic, Row, Col, Tooltip, Space
 } from 'antd';
+import type { InputRef, TableColumnType } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, WalletOutlined, CreditCardOutlined, EyeOutlined 
 } from '@ant-design/icons';
@@ -34,12 +35,13 @@ const INITIAL_PAYMENTS = [
 
 function PaymentsContent() {
   const [payments, setPayments] = useState(INITIAL_PAYMENTS);
-  const [searchTerm, setSearchTerm] = useState('');
   
+  // Modals state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false); 
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null); 
 
+  const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
   const handleAddNew = () => {
@@ -52,7 +54,6 @@ function PaymentsContent() {
   };
 
   const handleSavePayment = (paymentData: any) => {
-    // Save as a new record automatically since editing is disabled
     const finalRecord = { ...paymentData, key: Date.now().toString() };
     setPayments(prev => [finalRecord, ...prev]);
     showAlert('success', 'Payment recorded successfully.');
@@ -62,10 +63,52 @@ function PaymentsContent() {
     setTimeout(() => setIsInvoiceModalOpen(true), 300); // Wait for modal animation, then open Print View
   };
 
-  const filteredData = payments.filter(p => 
-    p.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // --- Column Search Setup ---
+  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${placeholder}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => confirm()}
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm()}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => { clearFilters && clearFilters(); confirm(); }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+  });
 
   const totalRevenue = payments.reduce((acc, curr) => acc + curr.amount, 0);
   const totalTransactions = payments.length;
@@ -75,12 +118,14 @@ function PaymentsContent() {
       title: 'Invoice ID',
       dataIndex: 'id',
       key: 'id',
+      ...getColumnSearchProps('id', 'ID'), // Added Search
       render: (text: string) => <span className="font-mono text-xs font-bold text-slate-500">{text}</span>,
     },
     {
       title: 'Client Details',
       dataIndex: 'client',
       key: 'client',
+      ...getColumnSearchProps('client', 'Client'), // Added Search
       render: (text: string, record: any) => (
         <div className="flex flex-col">
           <span className="font-bold text-slate-800">{text}</span>
@@ -100,6 +145,12 @@ function PaymentsContent() {
       title: 'Method',
       dataIndex: 'method',
       key: 'method',
+      filters: [
+        { text: 'Cash', value: 'Cash' },
+        { text: 'Card', value: 'Card' },
+        { text: 'Transfer', value: 'Transfer' },
+      ],
+      onFilter: (value: any, record: any) => record.method === value,
       render: (method: string) => (
         <Tag icon={method === 'Cash' ? <WalletOutlined /> : <CreditCardOutlined />}>{method}</Tag>
       ),
@@ -131,13 +182,6 @@ function PaymentsContent() {
           <Text type="secondary">Manage transactions, invoices, and revenue.</Text>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          <Input 
-            prefix={<SearchOutlined className="text-gray-400" />} 
-            placeholder="Search invoice..." 
-            size="large"
-            className="rounded-xl w-full md:w-64"
-            onChange={e => setSearchTerm(e.target.value)}
-          />
           <Button 
             type="primary" 
             size="large" 
@@ -164,7 +208,7 @@ function PaymentsContent() {
       </Row>
 
       <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }} styles={{ body: { padding: 0 } }}>
-        <Table columns={columns} dataSource={filteredData} pagination={{ pageSize: 8 }} rowKey="key" />
+        <Table columns={columns} dataSource={payments} pagination={{ pageSize: 8 }} rowKey="key" />
       </Card>
 
       <PaymentModal 

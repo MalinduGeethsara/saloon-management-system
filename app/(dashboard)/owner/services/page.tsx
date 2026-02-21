@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Table, 
   Card, 
@@ -12,8 +12,11 @@ import {
   Statistic,
   Row,
   Col,
-  Input
+  Input,
+  Space,
+  Switch
 } from 'antd';
+import type { InputRef, TableColumnType } from 'antd';
 import { 
   PlusOutlined, 
   MoreOutlined, 
@@ -21,9 +24,8 @@ import {
   DeleteOutlined, 
   SearchOutlined,
   ScissorOutlined,
-  ClockCircleOutlined,
   TagOutlined,
-  DollarOutlined
+  ShoppingOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ServiceModal } from "@/components/modals/ServiceModal";
@@ -31,17 +33,17 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-// --- Mock Initial Data ---
+// --- Mock Initial Data Updated for Service/Product ---
 const INITIAL_SERVICES = [
-  { key: '1', name: "Classic Haircut", category: "Hair", price: 2500, duration: 45, status: "Active", description: "Standard haircut with wash and styling." },
-  { key: '2', name: "Beard Trim & Shape", category: "Beard", price: 1500, duration: 30, status: "Active", description: "Professional beard grooming." },
-  { key: '3', name: "Hair Coloring", category: "Hair", price: 5000, duration: 90, status: "Active", description: "Full head coloring or highlights." },
-  { key: '4', name: "Royal Facial", category: "Face", price: 3500, duration: 60, status: "Inactive", description: "Deep cleansing facial treatment." },
+  { key: '1', name: "Classic Haircut", category: "Service", price: 2500, status: "Active", description: "Standard haircut with wash and styling." },
+  { key: '2', name: "Beard Trim & Shape", category: "Service", price: 1500, status: "Active", description: "Professional beard grooming." },
+  { key: '3', name: "Hair Coloring", category: "Service", price: 5000, status: "Active", description: "Full head coloring or highlights." },
+  { key: '4', name: "Matte Clay Wax", category: "Product", price: 1800, status: "Active", description: "Premium styling wax." },
+  { key: '5', name: "Beard Oil", category: "Product", price: 1200, status: "Inactive", description: "Nourishing oil for beard growth." },
 ];
 
 function ServicesContent() {
   const [services, setServices] = useState(INITIAL_SERVICES);
-  const [searchTerm, setSearchTerm] = useState('');
   
   // Modal States
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
@@ -49,9 +51,8 @@ function ServicesContent() {
   const [editingService, setEditingService] = useState<any>(null);
   const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
 
+  const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
-
-  // --- Handlers ---
 
   const handleAdd = () => {
     setEditingService(null);
@@ -71,7 +72,7 @@ function ServicesContent() {
   const confirmDelete = () => {
     if (serviceToDelete) {
       setServices(prev => prev.filter(s => s.key !== serviceToDelete));
-      showAlert('success', 'Service removed successfully.');
+      showAlert('success', 'Item removed successfully.');
       setIsDeleteModalOpen(false);
       setServiceToDelete(null);
     }
@@ -79,34 +80,82 @@ function ServicesContent() {
 
   const handleSaveService = (serviceData: any) => {
     if (serviceData.key) {
-      // UPDATE Existing
       setServices(prev => 
         prev.map(s => s.key === serviceData.key ? { ...s, ...serviceData } : s)
       );
       showAlert('success', `${serviceData.name} updated successfully.`);
     } else {
-      // CREATE New
       const newService = {
         ...serviceData,
-        key: String(Date.now()), // Generate simple ID
+        key: String(Date.now()), 
       };
       setServices(prev => [newService, ...prev]);
-      showAlert('success', 'New service added to catalog.');
+      showAlert('success', 'New item added to catalog.');
     }
   };
 
-  // --- Filtering Logic ---
-  const filteredServices = services.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const handleToggleStatus = (key: string, checked: boolean) => {
+    setServices(prev => 
+      prev.map(s => s.key === key ? { ...s, status: checked ? "Active" : "Inactive" } : s)
+    );
+    // FIX: Changed 'info' to 'success' to match your AlertType
+    showAlert('success', `Status updated successfully.`);
+  };
+
+  // --- Column Search Setup ---
+  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Search ${placeholder}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => confirm()}
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm()}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+          >
+            Search
+          </Button>
+          <Button
+            onClick={() => { clearFilters && clearFilters(); confirm(); }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Reset
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
+    ),
+    onFilter: (value, record) =>
+      record[dataIndex]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase()),
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+  });
 
   // --- Table Configuration ---
   const columns = [
     {
-      title: 'Service Name',
+      title: 'Item Name',
       dataIndex: 'name',
       key: 'name',
+      ...getColumnSearchProps('name', 'Name'), 
       render: (text: string, record: any) => (
         <div className="flex flex-col">
           <span className="font-bold text-slate-800">{text}</span>
@@ -118,11 +167,15 @@ function ServicesContent() {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
+      filters: [
+        { text: 'Service', value: 'Service' },
+        { text: 'Product', value: 'Product' },
+      ],
+      onFilter: (value: any, record: any) => record.category === value, 
       render: (category: string) => {
-        let color = 'blue';
-        if (category === 'Beard') color = 'orange';
-        if (category === 'Face') color = 'purple';
-        return <Tag color={color}>{category}</Tag>;
+        // Distinct colors for Service vs Product
+        const color = category === 'Product' ? 'purple' : 'blue';
+        return <Tag color={color} className="font-semibold">{category}</Tag>;
       },
     },
     {
@@ -132,23 +185,25 @@ function ServicesContent() {
       render: (price: number) => <span className="font-mono font-bold text-slate-700">Rs. {price.toLocaleString()}</span>,
     },
     {
-      title: 'Duration',
-      dataIndex: 'duration',
-      key: 'duration',
-      render: (duration: number) => (
-        <div className="flex items-center gap-1 text-slate-500">
-          <ClockCircleOutlined /> {duration} mins
-        </div>
-      ),
-    },
-    {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
-        <Tag color={status === 'Active' ? 'success' : 'default'} className="rounded-full px-3 font-semibold">
-          {status}
-        </Tag>
+      filters: [
+        { text: 'Active', value: 'Active' },
+        { text: 'Inactive', value: 'Inactive' },
+      ],
+      onFilter: (value: any, record: any) => record.status === value,
+      render: (status: string, record: any) => (
+        <div className="flex items-center gap-2">
+          <Switch 
+            size="small" 
+            checked={status === 'Active'} 
+            onChange={(checked) => handleToggleStatus(record.key, checked)} 
+          />
+          <Text type={status === 'Active' ? 'success' : 'secondary'} className="text-xs font-semibold">
+            {status.toUpperCase()}
+          </Text>
+        </div>
       ),
     },
     {
@@ -159,14 +214,14 @@ function ServicesContent() {
         const items: MenuProps['items'] = [
           { 
             key: '1', 
-            label: 'Edit Service', 
+            label: 'Edit Item', 
             icon: <EditOutlined />, 
             onClick: () => handleEdit(record) 
           },
           { type: 'divider' },
           { 
             key: '2', 
-            label: 'Remove', 
+            label: 'Remove Item', 
             icon: <DeleteOutlined />, 
             danger: true,
             onClick: () => handleDeleteClick(record.key)
@@ -181,24 +236,20 @@ function ServicesContent() {
     },
   ];
 
+  const totalServices = services.filter(s => s.category === 'Service').length;
+  const totalProducts = services.filter(s => s.category === 'Product').length;
+
   return (
     <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
       
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Service Menu</Title>
-          <Text type="secondary">Manage the services offered, pricing, and duration.</Text>
+          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Catalog Management</Title>
+          <Text type="secondary">Manage the services and products offered to customers.</Text>
         </div>
         
         <div className="flex gap-3 w-full md:w-auto">
-          <Input 
-            prefix={<SearchOutlined className="text-gray-400" />} 
-            placeholder="Search services..." 
-            size="large"
-            className="rounded-xl w-full md:w-64"
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
           <Button 
             type="primary" 
             size="large" 
@@ -206,7 +257,7 @@ function ServicesContent() {
             onClick={handleAdd}
             className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
           >
-            Add Service
+            Add Item
           </Button>
         </div>
       </div>
@@ -217,7 +268,7 @@ function ServicesContent() {
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Total Services</span>}
-              value={services.length} 
+              value={totalServices} 
               prefix={<ScissorOutlined style={{ color: '#7C4DFF' }} />}
               valueStyle={{ fontWeight: 800 }}
             />
@@ -226,9 +277,9 @@ function ServicesContent() {
         <Col xs={24} sm={8}>
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Active Services</span>}
-              value={services.filter(s => s.status === 'Active').length} 
-              prefix={<TagOutlined style={{ color: '#10B981' }} />}
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Products</span>}
+              value={totalProducts} 
+              prefix={<ShoppingOutlined style={{ color: '#F59E0B' }} />}
               valueStyle={{ fontWeight: 800 }}
             />
           </Card>
@@ -236,9 +287,9 @@ function ServicesContent() {
         <Col xs={24} sm={8}>
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Avg Price</span>}
-              value={services.length > 0 ? Math.round(services.reduce((acc, curr) => acc + curr.price, 0) / services.length) : 0} 
-              prefix={<span className="text-amber-500 text-2xl mr-1">Rs.</span>}
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Active Catalog</span>}
+              value={services.filter(s => s.status === 'Active').length} 
+              prefix={<TagOutlined style={{ color: '#10B981' }} />}
               valueStyle={{ fontWeight: 800 }}
             />
           </Card>
@@ -249,11 +300,11 @@ function ServicesContent() {
       <Card 
         bordered={false} 
         style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
       >
         <Table 
           columns={columns} 
-          dataSource={filteredServices} 
+          dataSource={services} 
           pagination={{ pageSize: 8 }}
           rowKey="key"
         />
@@ -271,8 +322,8 @@ function ServicesContent() {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
-        title="Delete Service?"
-        description="Are you sure you want to remove this service? It will no longer be available for booking."
+        title="Delete Item?"
+        description="Are you sure you want to remove this item? It will no longer be available for billing."
         confirmText="Yes, Delete"
         isDanger={true}
       />
