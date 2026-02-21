@@ -85,7 +85,7 @@ export default function BusinessIntelligence() {
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
+    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -112,53 +112,51 @@ export default function BusinessIntelligence() {
       </div>
 
       {/* KPI Cards */}
-      <Row gutter={[16, 16]} className="mb-6">
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-            <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Revenue</span>}
-              value={458000} 
-              precision={0}
-              valueStyle={{ fontWeight: 800, color: '#1A1A1B' }}
-              prefix={<span className="text-[#7C4DFF] mr-1">Rs.</span>}
-              suffix={<div className="text-xs font-bold text-emerald-500 flex items-center ml-2"><ArrowUpOutlined /> 12%</div>}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-            <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Bookings</span>}
-              value={142} 
-              valueStyle={{ fontWeight: 800, color: '#1A1A1B' }}
-              prefix={<CalendarOutlined className="text-blue-500 mr-2" />}
-              suffix={<div className="text-xs font-bold text-emerald-500 flex items-center ml-2"><ArrowUpOutlined /> 5%</div>}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-            <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">New Customers</span>}
-              value={28} 
-              valueStyle={{ fontWeight: 800, color: '#1A1A1B' }}
-              prefix={<UserOutlined className="text-orange-500 mr-2" />}
-              suffix={<div className="text-xs font-bold text-red-500 flex items-center ml-2"><ArrowDownOutlined /> 2%</div>}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-            <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Active Staff</span>}
-              value={8} 
-              valueStyle={{ fontWeight: 800, color: '#1A1A1B' }}
-              prefix={<ShopOutlined className="text-purple-500 mr-2" />}
-              suffix={<span className="text-xs text-gray-400 ml-2">/ 12 Total</span>}
-            />
-          </Card>
-        </Col>
-      </Row>
+<Row gutter={[16, 16]} className="mb-6">
+  {/* Total Revenue Card */}
+  <Col xs={24} sm={12} lg={6}>
+    <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+      <Statistic 
+        title={<span className="text-xs font-bold text-gray-400 uppercase">Total Revenue</span>}
+        value={458000}
+        styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
+      />
+    </Card>
+  </Col>
+
+  {/* Total Bookings Card */}
+  <Col xs={24} sm={12} lg={6}>
+    <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+      <Statistic 
+        title={<span className="text-xs font-bold text-gray-400 uppercase">Total Bookings</span>}
+        value={142}
+        styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
+      />
+    </Card>
+  </Col>
+
+  {/* New Customers Card */}
+  <Col xs={24} sm={12} lg={6}>
+    <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+      <Statistic 
+        title={<span className="text-xs font-bold text-gray-400 uppercase">New Customers</span>}
+        value={28}
+        styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
+      />
+    </Card>
+  </Col>
+
+  {/* Active Staff Card */}
+  <Col xs={24} sm={12} lg={6}>
+    <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+      <Statistic 
+        title={<span className="text-xs font-bold text-gray-400 uppercase">Active Staff</span>}
+        value={8}
+        styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
+      />
+    </Card>
+  </Col>
+</Row>
 
       {/* Middle Section: Services & Staff */}
       <Row gutter={[16, 16]} className="mb-6">

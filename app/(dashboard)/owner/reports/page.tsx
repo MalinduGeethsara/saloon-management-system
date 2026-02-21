@@ -100,7 +100,7 @@ function ReportsContent() {
   );
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
+    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
       
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">

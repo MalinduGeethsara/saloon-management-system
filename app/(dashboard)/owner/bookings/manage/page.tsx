@@ -207,7 +207,7 @@ function ManageBookingsContent() {
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: 40 }}>
+    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
