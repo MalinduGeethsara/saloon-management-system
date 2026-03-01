@@ -13,8 +13,8 @@ const timeSlots = ["09:00 AM", "10:30 AM", "01:00 PM", "02:30 PM", "04:00 PM", "
 
 export default function BookingPage() {
   const [step, setStep] = useState(1);
-  const [selectedBarber, setSelectedBarber] = useState(null);
-  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedBarber, setSelectedBarber] = useState<typeof barbers[0] | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
   return (
     <div className="max-w-4xl mx-auto py-20 px-6 min-h-screen">
