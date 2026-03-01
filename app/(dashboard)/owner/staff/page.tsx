@@ -290,9 +290,9 @@ function StaffContent() {
 
       {/* Stats Overview */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-            <Statistic 
+          <Col xs={24} sm={8}>
+            <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+              <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Total Staff</span>}
               value={STAFF_DATA.length} 
               prefix={<TeamOutlined style={{ color: '#7C4DFF', marginRight: 8 }} />}

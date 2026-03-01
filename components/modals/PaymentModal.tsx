@@ -123,7 +123,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
         okText="Confirm & Print Bill"
         okButtonProps={{ style: { backgroundColor: '#7C4DFF', height: '40px' } }}
         centered
-        destroyOnClose
+        destroyOnHidden // FIX: Changed from destroyOnClose to destroyOnHidden
       >
         <Form form={form} layout="vertical" className="mt-4">
           

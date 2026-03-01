@@ -12,7 +12,6 @@ import {
   Button, 
   ConfigProvider, 
   Typography, 
-  Divider,
   message 
 } from 'antd';
 import { 
@@ -114,7 +113,7 @@ export function NewBookingModal({
         open={isOpen}
         onCancel={onClose}
         footer={null}
-        destroyOnClose
+        destroyOnHidden // FIX: Replaced destroyOnClose with destroyOnHidden
         centered
         width={480}
       >

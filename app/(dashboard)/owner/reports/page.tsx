@@ -221,7 +221,7 @@ function ReportsContent() {
                 <Select 
                   defaultValue="monthly" 
                   style={{ width: 120 }} 
-                  bordered={false}
+                  variant="borderless"
                   className="bg-slate-50 rounded-lg"
                   onChange={setTimeRange}
                   options={[

@@ -169,14 +169,14 @@ function ShopsContent() {
       </div>
 
       {/* Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredShops.map((shop) => (
-          <Card 
-            key={shop.key}
-            hoverable
-            className="overflow-hidden border border-slate-200 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md group"
-            bodyStyle={{ padding: 0 }}
-            cover={
+     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredShops.map((shop) => (
+            <Card 
+              key={shop.key}
+              hoverable
+              className="overflow-hidden border border-slate-200 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md group"
+              styles={{ body: { padding: 0 } }} // <--- ADD THIS LINE INSTEAD
+              cover={
               <div className="relative h-40 w-full overflow-hidden">
                 <img 
                   src={shop.image} 

@@ -176,10 +176,13 @@ function ManageBookingsContent() {
         .toString()
         .toLowerCase()
         .includes((value as string).toLowerCase()),
-    onFilterDropdownOpenChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
-      }
+    // FIX: Using the new filterDropdownProps API
+    filterDropdownProps: {
+      onOpenChange: (visible) => {
+        if (visible) {
+          setTimeout(() => searchInput.current?.select(), 100);
+        }
+      },
     },
   });
 
@@ -189,21 +192,21 @@ function ManageBookingsContent() {
       title: 'Booking ID',
       dataIndex: 'id',
       key: 'id',
-      ...getColumnSearchProps('id', 'Booking ID'), // Added Search
+      ...getColumnSearchProps('id', 'Booking ID'),
       render: (text: string) => <span className="font-mono text-xs font-bold text-slate-500">{text}</span>,
     },
     {
       title: 'Client',
       dataIndex: 'client',
       key: 'client',
-      ...getColumnSearchProps('client', 'Client'), // Added Search
+      ...getColumnSearchProps('client', 'Client'),
       render: (text: string) => <span className="font-bold text-slate-800">{text}</span>,
     },
     {
       title: 'Specialist',
       dataIndex: 'barber',
       key: 'barber',
-      filters: BARBERS_LIST.map(b => ({ text: b.name, value: b.name })), // Added Filter
+      filters: BARBERS_LIST.map(b => ({ text: b.name, value: b.name })),
       onFilter: (value: any, record: any) => record.barber === value,
       render: (text: string) => (
         <div className="flex items-center gap-2 text-slate-600">
@@ -227,7 +230,7 @@ function ManageBookingsContent() {
         { text: 'Paid', value: 'Paid' },
         { text: 'Cancelled', value: 'Cancelled' },
       ],
-      onFilter: (value: any, record: any) => record.status === value, // Added Filter
+      onFilter: (value: any, record: any) => record.status === value,
       render: (status: string) => {
         let color = 'default';
         if (status === 'Confirmed') color = 'blue';
@@ -271,7 +274,6 @@ function ManageBookingsContent() {
             </>
           )}
           
-          {/* SHOW PRINT BILL BUTTON IF CONFIRMED */}
           {record.status === "Confirmed" && (
             <Tooltip title="Process Payment & Print Bill">
               <Button 
@@ -299,7 +301,6 @@ function ManageBookingsContent() {
         </div>
         
         <div className="flex gap-3 w-full md:w-auto">
-          {/* Removed Global Search Bar */}
           <Button 
             type="primary" 
             size="large" 
@@ -315,46 +316,49 @@ function ManageBookingsContent() {
       {/* KPI Stats */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+          {/* FIX: variant="borderless" instead of bordered={false} */}
+          <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+            {/* FIX: styles.content instead of valueStyle */}
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Total Requests</span>}
               value={bookings.length} 
               prefix={<CalendarOutlined style={{ color: '#7C4DFF', marginRight: 8 }} />}
-              valueStyle={{ fontWeight: 800 }}
+              styles={{ content: { fontWeight: 800 } }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+          <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Pending</span>}
               value={bookings.filter(b => b.status === 'Pending').length} 
               prefix={<CheckCircleOutlined style={{ color: '#F59E0B', marginRight: 8 }} />}
-              valueStyle={{ fontWeight: 800, color: '#F59E0B' }}
+              styles={{ content: { fontWeight: 800, color: '#F59E0B' } }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+          <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Confirmed / Paid Today</span>}
               value={bookings.filter(b => b.status === 'Confirmed' || b.status === 'Paid').length} 
               prefix={<CheckCircleOutlined style={{ color: '#10B981', marginRight: 8 }} />}
-              valueStyle={{ fontWeight: 800, color: '#10B981' }}
+              styles={{ content: { fontWeight: 800, color: '#10B981' } }}
             />
           </Card>
         </Col>
       </Row>
 
       {/* Main Table */}
+      {/* FIX: variant="borderless" instead of bordered={false} */}
       <Card 
-        bordered={false} 
+        variant="borderless" 
         style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
         styles={{ body: { padding: 0 } }}
       >
         <Table 
           columns={columns} 
-          dataSource={bookings} // Set to raw bookings array
+          dataSource={bookings} 
           pagination={{ pageSize: 8 }}
           rowKey="key"
         />

@@ -37,18 +37,19 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-// --- Mock Initial Data ---
+// --- Mock Initial Data with Matching High-Quality Images ---
 const INITIAL_PRODUCTS = [
   { 
     key: '1', 
     name: "Matte Pomade", 
-    brand: "Suavecito", 
+    brand: "Masons", 
     category: "Hair Care", 
     price: 3500, 
     stock: 45, 
     status: "In Stock", 
     sku: "POM-001",
-    image: "https://m.media-amazon.com/images/I/61+yVw-oQoL._SX522_.jpg" 
+    // Pomade / Hair Wax Jar Image
+    image: "https://m.media-amazon.com/images/I/51ShN8sMQ2L._SL400_.jpg" 
   },
   { 
     key: '2', 
@@ -59,7 +60,8 @@ const INITIAL_PRODUCTS = [
     stock: 8, 
     status: "Low Stock", 
     sku: "OIL-023",
-    image: "https://m.media-amazon.com/images/I/71w+7+3-cZL._SX522_.jpg"
+    // Amber Dropper Bottle for Beard Oil
+    image: "https://images-na.ssl-images-amazon.com/images/I/6141R3NxeXL._UL1200_.jpg"
   },
   { 
     key: '3', 
@@ -70,7 +72,8 @@ const INITIAL_PRODUCTS = [
     stock: 12, 
     status: "In Stock", 
     sku: "EQP-104",
-    image: "https://m.media-amazon.com/images/I/71K+P-1+XlL._SX522_.jpg"
+    // Wooden Barber Neck/Fade Brush
+    image: "https://www.hairandmore.co.nz/cdn/shop/files/wahl-zx9562.jpg?height=2048&v=1712882006&width=2048"
   },
   { 
     key: '4', 
@@ -81,7 +84,8 @@ const INITIAL_PRODUCTS = [
     stock: 0, 
     status: "Out of Stock", 
     sku: "SHV-009",
-    image: "https://m.media-amazon.com/images/I/61+9+8+1+L._SX522_.jpg"
+    // Glass Cologne/Aftershave Bottle
+    image: "https://static.beautytocare.com/cdn-cgi/image/width=1600,height=1600,f=auto/media/catalog/product//n/i/nivea-men-sensitive-after-shave-fluid-100ml_1.jpg"
   },
   { 
     key: '5', 
@@ -92,7 +96,8 @@ const INITIAL_PRODUCTS = [
     stock: 25, 
     status: "In Stock", 
     sku: "CMB-005",
-    image: "https://m.media-amazon.com/images/I/61vY1X4wFmL._SL1500_.jpg"
+    // Professional Barber Comb
+    image: "https://swaggerandjacks.com/cdn/shop/products/kent-moustache-styling-comb-261071_800x.jpg?v=1644762235"
   },
 ];
 
@@ -172,7 +177,7 @@ function ProductsContent() {
           key={product.key}
           hoverable
           className="overflow-hidden border border-slate-200 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md group"
-          bodyStyle={{ padding: 0 }}
+          styles={{ body: { padding: 0 } }}
           cover={
             <div className="relative h-48 w-full bg-white flex items-center justify-center overflow-hidden p-4 group">
               <div 
@@ -271,14 +276,14 @@ function ProductsContent() {
     ];
 
     return (
-      <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }} bodyStyle={{ padding: 0 }}>
+      <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }} styles={{ body: { padding: 0 } }}>
         <Table columns={columns} dataSource={filteredProducts} pagination={{ pageSize: 8 }} rowKey="key" />
       </Card>
     );
   };
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
+   <div style={{ maxWidth: 1585, margin: '0 auto', paddingBottom: 40 }}>
       
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -314,7 +319,6 @@ function ProductsContent() {
             size="large" 
             icon={<PlusOutlined />} 
             onClick={handleAdd}
-            // CHANGED: Background color updated to #7C4DFF
             style={{ backgroundColor: '#7C4DFF', borderRadius: '12px', fontWeight: 600 }}
             className="shrink-0"
           >
@@ -326,32 +330,32 @@ function ProductsContent() {
       {/* Stats Overview */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+          <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Total Products</span>}
               value={products.length} 
               prefix={<ShoppingOutlined style={{ color: '#7C4DFF' }} />}
-              valueStyle={{ fontWeight: 800 }}
+              styles={{ content: { fontWeight: 800 } }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+          <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Low Stock Items</span>}
               value={products.filter(p => p.stock > 0 && p.stock < 10).length} 
               prefix={<AlertOutlined style={{ color: '#F59E0B' }} />}
-              valueStyle={{ fontWeight: 800 }}
+              styles={{ content: { fontWeight: 800 } }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+          <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Out of Stock</span>}
               value={products.filter(p => p.stock === 0).length} 
               prefix={<InboxOutlined style={{ color: '#DC2626' }} />}
-              valueStyle={{ fontWeight: 800 }}
+              styles={{ content: { fontWeight: 800 } }}
             />
           </Card>
         </Col>

@@ -34,9 +34,7 @@ import dayjs from 'dayjs';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem"; 
 
 // --- Import your Modal ---
-// Ensure this path matches where you saved the code you provided earlier
 import { NewBookingModal } from "@/components/modals/NewBookingModal";
-// We'll create a simple inline Details modal for this demo to ensure it works
 import { Modal, Descriptions } from 'antd';
 
 const { Title, Text } = Typography;
@@ -100,6 +98,8 @@ function ScheduleContent() {
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+
+  const [editingBooking, setEditingBooking] = useState<any>(null);
   
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [activeBarberId, setActiveBarberId] = useState<number | undefined>(undefined);
@@ -189,26 +189,49 @@ function ScheduleContent() {
     showAlert('success', 'Appointment booked successfully!');
   };
 
+  // 6. Trigger Edit from Details Modal
+  const handleEditClick = () => {
+    setIsDetailsModalOpen(false); // 1. Close the details view
+    
+    // 2. Convert the FullCalendar event object back into a plain data object
+    const rawEventData = {
+      id: selectedEvent.id,
+      title: selectedEvent.title,
+      start: selectedEvent.start,
+      end: selectedEvent.end,
+      backgroundColor: selectedEvent.backgroundColor,
+      borderColor: selectedEvent.borderColor,
+      textColor: selectedEvent.textColor,
+      extendedProps: { ...selectedEvent.extendedProps }
+    };
+    
+    setEditingBooking(rawEventData); // 3. Pass data to the form state
+    setIsNewModalOpen(true);         // 4. Open the New/Edit Booking Modal
+  };
+
   return (
     <div className="h-[calc(100vh-100px)] flex flex-col lg:flex-row gap-6 p-4">
       
       {/* --- LEFT SIDEBAR (Control Panel) --- */}
       <div className="w-full lg:w-80 flex flex-col gap-4 h-full overflow-y-auto pr-1">
         
-        {/* Main Action */}
-        <Button 
-          type="primary" 
-          size="large" 
-          icon={<PlusOutlined />} 
-          className="h-12 text-md font-bold shadow-lg shadow-purple-200"
-          onClick={() => { setSelectedDate(new Date()); setIsNewModalOpen(true); }}
-          block
-        >
-          New Appointment
-        </Button>
+        {/* Main Action - Sized to match the rest of the application */}
+     <Button 
+       type="primary"
+       icon={<PlusOutlined />}
+       onClick={() => { setSelectedDate(new Date()); setIsNewModalOpen(true); }}  
+       style={{ 
+       height: '70px',       // Custom Height
+       fontSize: '20px',     // Custom Text Size
+       borderRadius: '12px'  // Rounded corners
+       }}
+       >
+       New Appointment
+      </Button>
+
 
         {/* Mini Calendar Card */}
-        <Card bordered={false} className="shadow-sm rounded-2xl" bodyStyle={{ padding: '10px' }}>
+        <Card variant="borderless" className="shadow-sm rounded-2xl" styles={{ body: { padding: '10px' } }}>
           <div className="mini-cal-wrapper">
             <MiniCalendar 
               fullscreen={false} 
@@ -230,7 +253,7 @@ function ScheduleContent() {
         </Card>
 
         {/* Staff Filter */}
-        <Card title={<span className="text-sm font-bold">Specialists</span>} bordered={false} className="shadow-sm rounded-2xl" size="small">
+        <Card title={<span className="text-sm font-bold">Specialists</span>} variant="borderless" className="shadow-sm rounded-2xl" size="small">
           <div className="flex flex-col gap-2">
             <div 
               className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${!activeBarberId ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
@@ -262,7 +285,7 @@ function ScheduleContent() {
         </Card>
 
         {/* Upcoming Feed */}
-        <Card title={<span className="text-sm font-bold">Up Next</span>} bordered={false} className="shadow-sm rounded-2xl flex-1" size="small">
+        <Card title={<span className="text-sm font-bold">Up Next</span>} variant="borderless" className="shadow-sm rounded-2xl flex-1" size="small">
           {upcomingEvents.length === 0 ? (
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No upcoming appointments" />
           ) : (
@@ -400,7 +423,8 @@ function ScheduleContent() {
         onCancel={() => setIsDetailsModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setIsDetailsModalOpen(false)}>Close</Button>,
-          <Button key="edit" type="primary" ghost>Edit</Button>
+          // ADDED the onClick handler here
+          <Button key="edit" type="primary" ghost onClick={handleEditClick}>Edit</Button>
         ]}
       >
         {selectedEvent && (

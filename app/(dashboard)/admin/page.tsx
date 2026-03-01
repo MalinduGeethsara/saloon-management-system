@@ -19,7 +19,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
       <header style={{ marginBottom: '32px' }}>
         <Title level={1} style={{ fontWeight: 800, margin: 0 }}>System Overview</Title>
         <Text type="secondary">Real-time status of your Salon network.</Text>

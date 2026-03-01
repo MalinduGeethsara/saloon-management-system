@@ -37,7 +37,7 @@ export default function SecurityLogs() {
   ];
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
       <header style={{ marginBottom: '32px' }}>
         <Title level={2} style={{ fontWeight: 800, margin: 0, color: '#2D3748' }}>
           Security Logs

@@ -12,18 +12,11 @@ import {
   Tag, 
   Avatar, 
   Button, 
-  Select, 
-  List 
+  Select
 } from 'antd';
 import { 
-  ArrowUpOutlined, 
-  ArrowDownOutlined, 
-  DollarOutlined, 
-  UserOutlined, 
   CalendarOutlined, 
-  ShopOutlined, 
-  RightOutlined,
-  ClockCircleOutlined
+  RightOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -112,51 +105,47 @@ export default function BusinessIntelligence() {
       </div>
 
       {/* KPI Cards */}
-<Row gutter={[16, 16]} className="mb-6">
-  {/* Total Revenue Card */}
-  <Col xs={24} sm={12} lg={6}>
-    <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-      <Statistic 
-        title={<span className="text-xs font-bold text-gray-400 uppercase">Total Revenue</span>}
-        value={458000}
-        styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
-      />
-    </Card>
-  </Col>
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={12} lg={6}>
+          <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+            <Statistic 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Revenue</span>}
+              value={458000}
+              styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
+            />
+          </Card>
+        </Col>
 
-  {/* Total Bookings Card */}
-  <Col xs={24} sm={12} lg={6}>
-    <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-      <Statistic 
-        title={<span className="text-xs font-bold text-gray-400 uppercase">Total Bookings</span>}
-        value={142}
-        styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
-      />
-    </Card>
-  </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+            <Statistic 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Bookings</span>}
+              value={142}
+              styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
+            />
+          </Card>
+        </Col>
 
-  {/* New Customers Card */}
-  <Col xs={24} sm={12} lg={6}>
-    <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-      <Statistic 
-        title={<span className="text-xs font-bold text-gray-400 uppercase">New Customers</span>}
-        value={28}
-        styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
-      />
-    </Card>
-  </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+            <Statistic 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">New Customers</span>}
+              value={28}
+              styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
+            />
+          </Card>
+        </Col>
 
-  {/* Active Staff Card */}
-  <Col xs={24} sm={12} lg={6}>
-    <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-      <Statistic 
-        title={<span className="text-xs font-bold text-gray-400 uppercase">Active Staff</span>}
-        value={8}
-        styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
-      />
-    </Card>
-  </Col>
-</Row>
+        <Col xs={24} sm={12} lg={6}>
+          <Card variant="borderless" className="shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+            <Statistic 
+              title={<span className="text-xs font-bold text-gray-400 uppercase">Active Staff</span>}
+              value={8}
+              styles={{ content: { fontWeight: 800, color: '#1A1A1B' } }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
       {/* Middle Section: Services & Staff */}
       <Row gutter={[16, 16]} className="mb-6">
@@ -165,7 +154,7 @@ export default function BusinessIntelligence() {
         <Col xs={24} lg={14}>
           <Card 
             title={<span className="font-bold">Popular Services</span>} 
-            bordered={false} 
+            variant="borderless" 
             className="shadow-sm rounded-2xl h-full"
           >
             <div className="flex flex-col gap-6 pt-2">
@@ -175,11 +164,12 @@ export default function BusinessIntelligence() {
                     <span className="text-sm font-semibold text-slate-700">{service.name}</span>
                     <span className="text-sm font-bold text-slate-500">{service.percent}%</span>
                   </div>
+                  {/* FIX: trailColor changed to railColor */}
                   <Progress 
                     percent={service.percent} 
                     showInfo={false} 
                     strokeColor={service.color} 
-                    trailColor="#F3F4F6"
+                    railColor="#F3F4F6"
                     size="small"
                   />
                 </div>
@@ -192,32 +182,34 @@ export default function BusinessIntelligence() {
         <Col xs={24} lg={10}>
           <Card 
             title={<span className="font-bold">Top Specialists</span>} 
-            bordered={false} 
+            variant="borderless" 
             className="shadow-sm rounded-2xl h-full"
             extra={<Button type="text" size="small" style={{ color: '#7C4DFF' }}>View All</Button>}
           >
-            <List
-              itemLayout="horizontal"
-              dataSource={TOP_STAFF}
-              renderItem={(item, index) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar 
-                        style={{ backgroundColor: index === 0 ? '#7C4DFF' : '#F3E8FF', color: index === 0 ? 'white' : '#7C4DFF' }}
-                      >
-                        {index + 1}
-                      </Avatar>
-                    }
-                    title={<span className="font-bold text-slate-800">{item.name}</span>}
-                    description={<span className="text-xs text-slate-500">{item.role} • {item.bookings} Bookings</span>}
-                  />
+            {/* FIX: Replaced deprecated List component with custom flex layout */}
+            <div className="flex flex-col gap-4">
+              {TOP_STAFF.map((item, index) => (
+                <div key={item.name} className="flex items-center justify-between pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                  <div className="flex items-center gap-3">
+                    <Avatar 
+                      style={{ 
+                        backgroundColor: index === 0 ? '#7C4DFF' : '#F3E8FF', 
+                        color: index === 0 ? 'white' : '#7C4DFF' 
+                      }}
+                    >
+                      {index + 1}
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800">{item.name}</span>
+                      <span className="text-xs text-slate-500">{item.role} • {item.bookings} Bookings</span>
+                    </div>
+                  </div>
                   <div className="font-mono font-bold text-emerald-600">
                     Rs. {(item.sales / 1000).toFixed(1)}k
                   </div>
-                </List.Item>
-              )}
-            />
+                </div>
+              ))}
+            </div>
           </Card>
         </Col>
       </Row>
@@ -225,10 +217,10 @@ export default function BusinessIntelligence() {
       {/* Bottom Section: Recent Transactions */}
       <Card 
         title={<span className="font-bold">Recent Transactions (Today)</span>} 
-        bordered={false} 
+        variant="borderless" 
         className="shadow-sm rounded-2xl overflow-hidden"
         extra={<Button type="text" icon={<RightOutlined />} href="/owner/payments">View All</Button>}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }} // FIX: bodyStyle changed to styles.body
       >
         <Table 
           columns={columns} 

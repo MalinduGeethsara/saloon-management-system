@@ -76,7 +76,7 @@ export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
                 </Form.Item>
               </div>
 
-              <Divider orientation="left" style={{ fontSize: '12px', color: '#9ca3af' }}>JOB DETAILS</Divider>
+             <Divider titlePlacement="left" style={{ fontSize: '12px', color: '#9ca3af' }}>JOB DETAILS</Divider>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Form.Item name="role" label="Job Role" rules={[{ required: true }]}>
@@ -88,7 +88,7 @@ export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
                   </Select>
                 </Form.Item>
                 <Form.Item name="status" label="Employment Status">
-                  <Select placeholder="Status" size="large" defaultValue="Active">
+                  <Select placeholder="Status" size="large"> {/* <-- FIXED */}
                     <Option value="Active"><Tag color="green">Active</Tag></Option>
                     <Option value="Leave"><Tag color="orange">On Leave</Tag></Option>
                     <Option value="Inactive"><Tag color="red">Inactive</Tag></Option>
