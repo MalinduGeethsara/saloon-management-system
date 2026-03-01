@@ -1,56 +1,62 @@
 "use client";
-
+import React from 'react';
+import { Layout, Menu, Button } from 'antd';
 import { 
-  LayoutDashboard, 
-  Database, 
-  ShieldAlert, 
-  LogOut, 
-  Settings 
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+  HomeOutlined, 
+  DatabaseOutlined, 
+  ShopOutlined, 
+  SafetyCertificateOutlined,
+  CloudUploadOutlined
+} from '@ant-design/icons';
+import { usePathname, useRouter } from 'next/navigation';
 
-const adminLinks = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'System Backups', href: '/admin/backups', icon: Database },
-  { name: 'Shop Data', href: '/admin/shops', icon: Settings },
-  { name: 'Security Logs', href: '/admin/logs', icon: ShieldAlert },
-];
+const { Sider } = Layout;
 
+// FIX: Export function must match the file name import
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const menuItems = [
+    { key: '/admin', icon: <HomeOutlined />, label: 'Dashboard' },
+    { key: '/admin/backups', icon: <DatabaseOutlined />, label: 'System Backups' },
+    { key: '/admin/shops', icon: <ShopOutlined />, label: 'Shop Data' },
+    { key: '/admin/logs', icon: <SafetyCertificateOutlined />, label: 'Security Logs' },
+  ];
 
   return (
-    <div className="w-64 h-screen bg-[#1A1A1B] text-white flex flex-col p-4">
-      <div className="text-[#C5A059] font-bold text-2xl mb-10 px-2 tracking-tight">
-        SALON <span className="text-white">PRO</span>
+    <Sider 
+      width={260} 
+      theme="light" 
+      style={{ height: '100vh', borderRight: '1px solid #E2E8F0', position: 'sticky', top: 0 }}
+    >
+      {/* Admin Logo */}
+      <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ width: 32, height: 32, background: '#7C4DFF', borderRadius: 8, display: 'grid', placeItems: 'center', color: 'white', fontWeight: 'bold' }}>C</div>
+        <span style={{ fontSize: '22px', fontWeight: 800, color: '#2D3748', letterSpacing: '-1px' }}>cascal</span>
       </div>
-      
-      <nav className="flex-1 space-y-2">
-        {adminLinks.map((link) => {
-          // Double check: If icon is undefined, don't render it to prevent crash
-          const Icon = link.icon;
-          const isActive = pathname === link.href;
 
-          return (
-            <Link 
-              key={link.name} 
-              href={link.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${
-                isActive ? 'bg-white/10 text-[#C5A059]' : 'hover:bg-white/5 text-gray-400'
-              }`}
-            >
-              {Icon && <Icon size={20} className="group-hover:text-[#C5A059]" />}
-              <span className="text-sm font-medium">{link.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      <Menu
+        mode="inline"
+        selectedKeys={[pathname]}
+        onClick={({ key }) => router.push(key)}
+        style={{ borderRight: 0, padding: '0 12px' }}
+        items={menuItems}
+      />
 
-      <button className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg mt-auto transition-colors">
-        <LogOut size={20} />
-        <span className="text-sm font-medium">Logout</span>
-      </button>
-    </div>
+      {/* Admin Specific Widget */}
+      <div style={{ margin: 'auto 20px 20px', padding: '20px', background: '#F8F9FF', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <CloudUploadOutlined style={{ fontSize: '20px', color: '#7C4DFF' }} />
+            <div>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 'bold' }}>System Status</p>
+              <p style={{ margin: 0, fontSize: '10px', color: '#48BB78' }}>Operational</p>
+            </div>
+         </div>
+         <Button type="primary" block style={{ borderRadius: '12px', background: '#2D3748' }}>
+            Run Diagnostics
+         </Button>
+      </div>
+    </Sider>
   );
 }

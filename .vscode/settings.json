@@ -1,0 +1,16 @@
+{
+    "folder-color.pathColors": [
+        {
+            "folderPath": "saloon-management-system\\app\\(dashboard)\\admin\\page.tsx\\",
+            "color": "foldercolorizer.color_00ccff"
+        },
+        {
+            "folderPath": "saloon-management-system\\app\\(dashboard)\\admin\\layout.tsx\\",
+            "color": "foldercolorizer.color_00ccff"
+        },
+        {
+            "folderPath": "saloon-management-system\\app\\(dashboard)\\admin\\backups\\page.tsx\\",
+            "color": "foldercolorizer.color_00ccff"
+        }
+    ]
+}

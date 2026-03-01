@@ -1,20 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Configure the Inter font
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "600", "800"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "SaloonPro | Management System",
-  description: "Advanced Salon Management, Bookings, and Payroll",
+  title: "My App",
+  description: "Created with Next.js",
 };
 
 export default function RootLayout({
@@ -23,9 +20,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // This HTML and BODY tag MUST be here and only here
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      {/* Apply the font class to the body */}
+      <body className={inter.className}>
         {children}
       </body>
     </html>

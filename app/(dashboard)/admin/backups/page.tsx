@@ -1,55 +1,106 @@
 "use client";
-import { Database, Download, RefreshCw } from "lucide-react";
 
-export default function BackupPage() {
-  const backups = [
-    { id: "BK-770", date: "Feb 01, 2026", size: "45.2 MB", type: "Weekly Auto" },
-    { id: "BK-769", date: "Jan 25, 2026", size: "44.8 MB", type: "Weekly Auto" },
+import React from 'react';
+import { Card, Table, Button, Space, Typography, Tag, Avatar } from 'antd';
+import { 
+  DownloadOutlined, 
+  DeleteOutlined, 
+  RollbackOutlined, 
+  CloudUploadOutlined,
+  DatabaseOutlined 
+} from '@ant-design/icons';
+
+// Using Typography.Title directly in the JSX is safer for Turbopack hydration
+const { Title, Text } = Typography;
+
+export default function BackupsPage() {
+  const dataSource = [
+    { key: '1', name: 'backup_2026_02_01.sql', size: '156MB', status: 'completed', date: '2026-02-01' },
+    { key: '2', name: 'backup_2026_02_07.sql', size: '158MB', status: 'completed', date: '2026-02-07' },
+  ];
+
+  const columns = [
+    { 
+      title: 'File Name', 
+      dataIndex: 'name', 
+      key: 'name',
+      render: (text: string) => (
+        <Space>
+          <Avatar 
+            shape="square" 
+            size="small" 
+            icon={<DatabaseOutlined />} 
+            style={{ backgroundColor: '#F0EBFF', color: '#7C4DFF' }} 
+          />
+          <Text strong>{text}</Text>
+        </Space>
+      )
+    },
+    { title: 'Size', dataIndex: 'size', key: 'size' },
+    { 
+      title: 'Status', 
+      dataIndex: 'status', 
+      key: 'status', 
+      render: (status: string) => (
+        <Tag color="purple" style={{ borderRadius: '6px', border: 'none', fontWeight: 'bold' }}>
+          {status.toUpperCase()}
+        </Tag>
+      ) 
+    },
+    { title: 'Created At', dataIndex: 'date', key: 'date' },
+    {
+      title: 'Action',
+      key: 'action',
+      align: 'right' as const,
+      render: () => (
+        <Space size="middle">
+          <Button icon={<DownloadOutlined />} type="text" style={{ color: '#7C4DFF' }}>Download</Button>
+          <Button icon={<RollbackOutlined />} type="text" style={{ color: '#7C4DFF' }}>Restore</Button>
+          <Button icon={<DeleteOutlined />} type="text" danger>Delete</Button>
+        </Space>
+      ),
+    },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">System Backups</h1>
-        <button className="bg-[#1A1A1B] text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-black transition">
-          <RefreshCw size={18} /> Run Manual Backup
-        </button>
+    <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+      {/* Header Section */}
+      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <Typography.Title level={2} style={{ fontWeight: 800, margin: 0, color: '#2D3748' }}>
+            System Backups
+          </Typography.Title>
+          <Typography.Text type="secondary">Manage and download your database snapshots.</Typography.Text>
+        </div>
+        <Button 
+          type="primary" 
+          icon={<CloudUploadOutlined />} 
+          size="large"
+          style={{ 
+            height: '48px', 
+            borderRadius: '14px', 
+            background: '#7C4DFF',
+            boxShadow: '0 4px 14px rgba(124, 77, 255, 0.3)' 
+          }}
+        >
+          Create New Backup
+        </Button>
       </div>
 
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-4 text-sm font-semibold">Backup ID</th>
-              <th className="px-6 py-4 text-sm font-semibold">Date</th>
-              <th className="px-6 py-4 text-sm font-semibold">Size</th>
-              <th className="px-6 py-4 text-sm font-semibold">Type</th>
-              <th className="px-6 py-4 text-sm font-semibold text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {backups.map((bk) => (
-              <tr key={bk.id} className="hover:bg-gray-50 transition">
-                <td className="px-6 py-4 font-medium flex items-center gap-2">
-                  <Database size={16} className="text-gray-400" /> {bk.id}
-                </td>
-                <td className="px-6 py-4 text-gray-600">{bk.date}</td>
-                <td className="px-6 py-4 text-gray-600">{bk.size}</td>
-                <td className="px-6 py-4">
-                  <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
-                    {bk.type}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-[#C5A059] hover:underline flex items-center gap-1 ml-auto">
-                    <Download size={16} /> Download
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Card 
+        variant="borderless"
+        style={{ 
+          borderRadius: '24px', 
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)',
+          overflow: 'hidden'
+        }}
+      >
+        <Table 
+          dataSource={dataSource} 
+          columns={columns} 
+          pagination={false} 
+        />
+      </Card>
     </div>
   );
 }
