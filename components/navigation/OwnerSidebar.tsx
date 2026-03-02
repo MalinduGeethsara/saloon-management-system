@@ -11,13 +11,18 @@ import {
   CarryOutOutlined,
   SolutionOutlined,
   UsergroupAddOutlined,
-  ScissorOutlined // <--- 1. NEW IMPORT ADDED HERE
+  ScissorOutlined
 } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 
 const { Sider } = Layout;
 
-export function OwnerSidebar() {
+// 1. Added onClose prop interface
+interface OwnerSidebarProps {
+  onClose?: () => void;
+}
+
+export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -36,11 +41,7 @@ export function OwnerSidebar() {
       ]
     },
     { key: '/owner/shops', icon: <ShopOutlined />, label: 'My Shops' },
-    
-    // --- 2. NEW ITEM ADDED HERE ---
     { key: '/owner/services', icon: <ScissorOutlined />, label: 'Services' },
-    // -----------------------------
-
     { key: '/owner/products', icon: <TeamOutlined />, label: 'Products' },
     { key: '/owner/payments', icon: <DollarCircleOutlined />, label: 'Payments' },
     { key: '/owner/reports', icon: <BarChartOutlined />, label: 'Reports' },
@@ -60,8 +61,11 @@ export function OwnerSidebar() {
       <Menu
         mode="inline"
         selectedKeys={[pathname]}
-        // This handles the navigation to /owner/services automatically
-        onClick={({ key }) => router.push(key)} 
+        onClick={({ key }) => {
+          router.push(key);
+          // 2. Call onClose when a link is clicked
+          if (onClose) onClose();
+        }} 
         style={{ borderRight: 0, padding: '0 12px' }}
         items={menuItems}
       />

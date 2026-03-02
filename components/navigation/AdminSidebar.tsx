@@ -12,8 +12,12 @@ import { usePathname, useRouter } from 'next/navigation';
 
 const { Sider } = Layout;
 
-// FIX: Export function must match the file name import
-export function AdminSidebar() {
+// 1. Added onClose prop interface
+interface AdminSidebarProps {
+  onClose?: () => void;
+}
+
+export function AdminSidebar({ onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -39,7 +43,11 @@ export function AdminSidebar() {
       <Menu
         mode="inline"
         selectedKeys={[pathname]}
-        onClick={({ key }) => router.push(key)}
+        onClick={({ key }) => {
+          router.push(key);
+          // 2. Call onClose when a link is clicked
+          if (onClose) onClose();
+        }}
         style={{ borderRight: 0, padding: '0 12px' }}
         items={menuItems}
       />
