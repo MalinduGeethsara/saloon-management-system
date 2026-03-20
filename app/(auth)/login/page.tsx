@@ -1,30 +1,17 @@
 "use client";
 
-import React from 'react';
-import { ConfigProvider } from 'antd';
+import React, { Suspense } from 'react'; // Added Suspense
+import { ConfigProvider, Spin } from 'antd';
 import { LoginForm } from '@/components/auth/LoginForm';
 
 export default function LoginPage() {
   return (
-    // ConfigProvider forces your custom purple theme for this specific page
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: '#7C4DFF', // Your requested custom purple
-          colorInfo: '#7C4DFF',
-          borderRadius: 8, // Smooth rounded corners
-          colorBgContainer: '#ffffff', // White card background
+          colorPrimary: '#7C4DFF',
+          borderRadius: 8,
         },
-        components: {
-          Button: {
-            controlHeight: 48, // Taller buttons for a modern feel
-            fontSize: 16,
-            fontWeight: 500,
-          },
-          Input: {
-            controlHeight: 48,
-          }
-        }
       }}
     >
       <div 
@@ -33,11 +20,14 @@ export default function LoginPage() {
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          backgroundColor: '#F4F0FF', // A very soft matching purple background
+          backgroundColor: '#F4F0FF',
           padding: '20px'
         }}
       >
-        <LoginForm />
+        {/* FIX: Wrap the form in Suspense to prevent the Prerender Error */}
+        <Suspense fallback={<Spin size="large" />}>
+          <LoginForm />
+        </Suspense>
       </div>
     </ConfigProvider>
   );
