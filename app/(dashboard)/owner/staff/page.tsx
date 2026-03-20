@@ -26,9 +26,7 @@ import {
   ScissorOutlined,
   EditOutlined,
   DeleteOutlined,
-  SearchOutlined,
-  MailOutlined,
-  PhoneOutlined
+  SearchOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { StaffModal } from "@/components/modals/StaffModal";
@@ -37,50 +35,10 @@ const { Title, Text } = Typography;
 
 // --- Mock Data ---
 const STAFF_DATA = [
-  { 
-    key: '1', 
-    name: "Nuwan Pradeep", 
-    role: "Senior Barber", 
-    branch: "Downtown", 
-    comm: "40%", 
-    earnings: "Rs. 185,000", 
-    status: "Active",
-    email: "nuwan@salon.com",
-    phone: "0771234567"
-  },
-  { 
-    key: '2', 
-    name: "Kasun Perera", 
-    role: "Barber", 
-    branch: "Downtown", 
-    comm: "35%", 
-    earnings: "Rs. 120,000", 
-    status: "Active",
-    email: "kasun@salon.com",
-    phone: "0719876543"
-  },
-  { 
-    key: '3', 
-    name: "Lahiru Thirimanne", 
-    role: "Manager", 
-    branch: "Westside", 
-    comm: "N/A", 
-    earnings: "Rs. 250,000", 
-    status: "On Leave",
-    email: "lahiru@salon.com",
-    phone: "0765551234"
-  },
-  { 
-    key: '4', 
-    name: "Chamara Silva", 
-    role: "Barber", 
-    branch: "Westside", 
-    comm: "35%", 
-    earnings: "Rs. 98,500", 
-    status: "Active",
-    email: "chamara@salon.com",
-    phone: "0702223333"
-  },
+  { key: '1', name: "Nuwan Pradeep", role: "Senior Barber", branch: "Downtown", earnings: "Rs. 185,000", status: "Active", email: "nuwan@salon.com", phone: "0771234567" },
+  { key: '2', name: "Kasun Perera", role: "Barber", branch: "Downtown", earnings: "Rs. 120,000", status: "Active", email: "kasun@salon.com", phone: "0719876543" },
+  { key: '3', name: "Lahiru Thirimanne", role: "Manager", branch: "Westside", earnings: "Rs. 250,000", status: "On Leave", email: "lahiru@salon.com", phone: "0765551234" },
+  { key: '4', name: "Chamara Silva", role: "Barber", branch: "Westside", earnings: "Rs. 98,500", status: "Active", email: "chamara@salon.com", phone: "0702223333" },
 ];
 
 function StaffContent() {
@@ -121,37 +79,17 @@ function StaffContent() {
           style={{ marginBottom: 8, display: 'block' }}
         />
         <Space>
-          <Button
-            type="primary"
-            onClick={() => confirm()}
-            icon={<SearchOutlined />}
-            size="small"
-            style={{ width: 90, backgroundColor: '#7C4DFF' }}
-          >
-            Search
-          </Button>
-          <Button
-            onClick={() => { clearFilters && clearFilters(); confirm(); }}
-            size="small"
-            style={{ width: 90 }}
-          >
-            Reset
-          </Button>
+          <Button type="primary" onClick={() => confirm()} icon={<SearchOutlined />} size="small" style={{ backgroundColor: '#7C4DFF' }}>Search</Button>
+          <Button onClick={() => { clearFilters && clearFilters(); confirm(); }} size="small">Reset</Button>
         </Space>
       </div>
     ),
-    filterIcon: (filtered: boolean) => (
-      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
-    ),
-    onFilter: (value, record) =>
-      record[dataIndex]
-        .toString()
-        .toLowerCase()
-        .includes((value as string).toLowerCase()),
-    onFilterDropdownOpenChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
-      }
+    filterIcon: (filtered: boolean) => <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined }} />,
+    onFilter: (value, record) => record[dataIndex].toString().toLowerCase().includes((value as string).toLowerCase()),
+    filterDropdownProps: {
+      onOpenChange: (visible) => {
+        if (visible) setTimeout(() => searchInput.current?.select(), 100);
+      },
     },
   });
 
@@ -161,16 +99,15 @@ function StaffContent() {
       title: 'Staff Member',
       dataIndex: 'name',
       key: 'name',
-      ...getColumnSearchProps('name', 'Name'), // Added Search
+      width: 250,
+      align: 'left' as const,
+      ...getColumnSearchProps('name', 'Name'),
       render: (text: string, record: any) => (
-        <Space>
-          <Avatar 
-            style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} 
-            icon={<UserOutlined />} 
-          />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontWeight: 600, fontSize: '14px', color: '#1f2937' }}>{text}</span>
-            <span style={{ fontSize: '11px', color: '#9ca3af' }}>{record.email}</span>
+        <Space size="middle">
+          <Avatar style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} icon={<UserOutlined />} />
+          <div className="flex flex-col">
+            <Text strong className="text-slate-800">{text}</Text>
+            <Text type="secondary" className="text-[11px]">{record.email}</Text>
           </div>
         </Space>
       ),
@@ -179,85 +116,55 @@ function StaffContent() {
       title: 'Role',
       dataIndex: 'role',
       key: 'role',
-      filters: [
-        { text: 'Manager', value: 'Manager' },
-        { text: 'Senior Barber', value: 'Senior Barber' },
-        { text: 'Barber', value: 'Barber' },
-      ],
-      onFilter: (value: any, record: any) => record.role === value, // Added Filter
+      width: 180,
+      align: 'center' as const,
       render: (text: string) => (
-        <Space>
-          {text === 'Manager' ? <DollarOutlined className="text-gray-400" /> : <ScissorOutlined className="text-gray-400" />}
-          <span>{text}</span>
-        </Space>
+        <Tag icon={text === 'Manager' ? <DollarOutlined /> : <ScissorOutlined />} color="default" className="border-slate-200 text-slate-600 px-3 py-0.5 rounded-md">
+          {text}
+        </Tag>
       ),
     },
     {
       title: 'Branch',
       dataIndex: 'branch',
       key: 'branch',
-      ...getColumnSearchProps('branch', 'Branch'), // Added Search
+      width: 150,
+      align: 'center' as const,
     },
     {
-      title: 'Contact',
-      key: 'contact',
-      render: (_: any, record: any) => (
-        <Space>
-           <Button type="text" size="small" icon={<PhoneOutlined className="text-slate-400" />} href={`tel:${record.phone}`} />
-           <Button type="text" size="small" icon={<MailOutlined className="text-slate-400" />} href={`mailto:${record.email}`} />
-        </Space>
-      ),
-    },
-    {
-      title: 'Earnings',
+      title: 'Monthly Earnings',
       dataIndex: 'earnings',
       key: 'earnings',
-      render: (text: string) => <span style={{ fontWeight: 700, color: '#059669', fontFamily: 'monospace' }}>{text}</span>,
+      width: 160,
+      align: 'right' as const,
+      render: (text: string) => <Text strong className="text-emerald-600 font-mono">{text}</Text>,
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      filters: [
-        { text: 'Active', value: 'Active' },
-        { text: 'On Leave', value: 'On Leave' },
-        { text: 'Inactive', value: 'Inactive' },
-      ],
-      onFilter: (value: any, record: any) => record.status === value, // Added Filter
+      width: 140,
+      align: 'center' as const,
       render: (status: string) => {
         let color = status === 'Active' ? 'green' : status === 'On Leave' ? 'orange' : 'red';
-        return <Tag color={color} style={{ borderRadius: '12px', fontWeight: 600 }}>{status.toUpperCase()}</Tag>;
+        return <Tag color={color} className="rounded-full px-4 font-bold border-0">{status.toUpperCase()}</Tag>;
       },
     },
     {
       title: 'Action',
       key: 'action',
+      width: 100,
       align: 'right' as const,
       render: (_: any, record: any) => {
         const items: MenuProps['items'] = [
-          { 
-            key: '1', 
-            label: 'Edit Details', 
-            icon: <EditOutlined />, 
-            onClick: () => handleEdit(record) 
-          },
-          { 
-            key: '2', 
-            label: 'View Performance', 
-            icon: <DollarOutlined /> 
-          },
+          { key: '1', label: 'Edit', icon: <EditOutlined />, onClick: () => handleEdit(record) },
+          { key: '2', label: 'Stats', icon: <DollarOutlined /> },
           { type: 'divider' },
-          { 
-            key: '3', 
-            label: 'Deactivate', 
-            icon: <DeleteOutlined />, 
-            danger: true,
-            onClick: () => handleDelete(record.key)
-          },
+          { key: '3', label: 'Remove', icon: <DeleteOutlined />, danger: true },
         ];
         return (
-          <Dropdown menu={{ items }} trigger={['click']}>
-            <Button type="text" shape="circle" icon={<MoreOutlined style={{ fontSize: '18px' }} />} />
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="text" shape="circle" icon={<MoreOutlined className="text-lg" />} />
           </Dropdown>
         );
       },
@@ -265,84 +172,67 @@ function StaffContent() {
   ];
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
-      
-      {/* Header Section */}
+    <div className="max-w-[1600px] mx-auto pb-10 px-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Staff Directory</Title>
-          <Text type="secondary">Manage your team profiles, roles, and payroll.</Text>
+          <Title level={2} className="m-0 font-black">Staff Directory</Title>
+          <Text type="secondary">Team management and performance tracking.</Text>
         </div>
-        
-        <div className="flex gap-3 w-full md:w-auto">
-          {/* Removed Global Search Bar */}
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<PlusOutlined />} 
-            onClick={handleAdd}
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
-          >
-            Add New Staff
-          </Button>
-        </div>
+        <Button 
+          type="primary" size="large" icon={<PlusOutlined />} 
+          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold h-12 w-full md:w-auto border-none shadow-md shadow-purple-100"
+          onClick={() => { setModalMode('add'); setSelectedStaff(null); setIsModalOpen(true); }}
+        >
+          Add New Staff
+        </Button>
       </div>
 
-      {/* Stats Overview */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={8}>
-            <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-              <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Staff</span>}
+      {/* KPI Cards - Improved Alignment */}
+      <Row gutter={[16, 16]} className="mb-8">
+        <Col xs={24} sm={8}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
+            <Statistic 
+              title={<Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Team</Text>} 
               value={STAFF_DATA.length} 
-              prefix={<TeamOutlined style={{ color: '#7C4DFF', marginRight: 8 }} />}
-              valueStyle={{ fontWeight: 800 }}
+              prefix={<TeamOutlined style={{ color: '#7C4DFF', fontSize: '20px' }} />} 
+              styles={{ content: { fontWeight: 800, fontSize: '24px' } }} 
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <Col xs={12} sm={8}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Active Today</span>}
+              title={<Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active</Text>} 
               value={STAFF_DATA.filter(s => s.status === 'Active').length} 
-              prefix={<ScissorOutlined style={{ color: '#059669', marginRight: 8 }} />}
-              valueStyle={{ fontWeight: 800 }}
+              prefix={<ScissorOutlined style={{ color: '#059669', fontSize: '20px' }} />} 
+              styles={{ content: { fontWeight: 800, fontSize: '24px' } }} 
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <Col xs={12} sm={8}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Payroll (MDT)</span>}
-              value="Rs. 653,500" 
-              prefix={<DollarOutlined style={{ color: '#F59E0B', marginRight: 8 }} />}
-              valueStyle={{ fontWeight: 800, color: '#1A1A1B' }}
+              title={<Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payroll</Text>} 
+              value="653k" 
+              prefix={<span style={{ color: '#F59E0B', fontSize: '14px', fontWeight: 700, marginRight: 4 }}>Rs.</span>} 
+              styles={{ content: { fontWeight: 800, fontSize: '24px' } }} 
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Main Data Table */}
-      <Card 
-        bordered={false} 
-        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
-        styles={{ body: { padding: 0 } }} // FIX: Updated bodyStyle
-      >
+      {/* Table - FULL SWIPE */}
+      <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden" styles={{ body: { padding: 0 } }}>
         <Table 
           columns={columns} 
           dataSource={STAFF_DATA} 
           pagination={{ pageSize: 8 }}
           rowKey="key"
+          scroll={{ x: 1000 }} 
         />
       </Card>
 
-      {/* Reusable Modal */}
-      <StaffModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        staff={selectedStaff}
-        mode={modalMode}
-      />
+      <StaffModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} staff={selectedStaff} mode={modalMode} />
     </div>
   );
 }

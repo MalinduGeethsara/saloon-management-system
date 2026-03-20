@@ -74,13 +74,10 @@ function ShopsContent() {
   const [shops, setShops] = useState(INITIAL_SHOPS);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingShop, setEditingShop] = useState<any>(null);
   const [shopToDelete, setShopToDelete] = useState<string | null>(null);
-
-  // --- Handlers ---
 
   const handleAdd = () => {
     setEditingShop(null);
@@ -88,10 +85,7 @@ function ShopsContent() {
   };
 
   const handleManage = (shopKey: string) => {
-    // FIX: Navigation is now enabled
     showAlert('success', `Navigating to ${shopKey} dashboard...`);
-    
-    // This assumes your file structure is /app/owner/shops/[id]/dashboard/page.tsx
     router.push(`/owner/shops/${shopKey}/dashboard`); 
   };
 
@@ -116,11 +110,9 @@ function ShopsContent() {
 
   const handleSaveShop = (shopData: any) => {
     if (shopData.key) {
-      // Update
       setShops(prev => prev.map(s => s.key === shopData.key ? { ...s, ...shopData } : s));
       showAlert('success', 'Location details updated.');
     } else {
-      // Create
       const newShop = {
         ...shopData,
         key: `S-${Date.now()}`, 
@@ -132,23 +124,22 @@ function ShopsContent() {
     }
   };
 
-  // --- Search Logic ---
   const filteredShops = shops.filter(shop => 
     shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     shop.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
+    <div className="max-w-[1600px] mx-auto pb-10 px-4">
       
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Location Management</Title>
+          <Title level={2} style={{ margin: 0, fontWeight: 800, fontSize: 'clamp(20px, 5vw, 30px)' }}>Location Management</Title>
           <Text type="secondary">Manage your shop branches, managers, and performance.</Text>
         </div>
         
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Input 
             prefix={<SearchOutlined className="text-gray-400" />} 
             placeholder="Search locations..." 
@@ -161,112 +152,110 @@ function ShopsContent() {
             size="large" 
             icon={<PlusOutlined />} 
             onClick={handleAdd}
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none h-12"
           >
             Add Location
           </Button>
         </div>
       </div>
 
-      {/* Grid Layout */}
-     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Grid Layout - Optimized for Mobile Swiping/Stacking */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredShops.map((shop) => (
             <Card 
               key={shop.key}
               hoverable
-              className="overflow-hidden border border-slate-200 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md group"
-              styles={{ body: { padding: 0 } }} // <--- ADD THIS LINE INSTEAD
+              className="overflow-hidden border border-slate-200 rounded-3xl shadow-sm transition-all duration-300 hover:shadow-md group"
+              styles={{ body: { padding: 0 } }} 
               cover={
-              <div className="relative h-40 w-full overflow-hidden">
-                <img 
-                  src={shop.image} 
-                  alt={shop.name} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                />
-                <div className="absolute top-3 right-3">
-                  <Tag color={shop.status === 'Open' ? 'green' : 'red'} className="m-0 border-0 font-bold px-3 py-1 rounded-full shadow-sm">
-                    {shop.status.toUpperCase()}
-                  </Tag>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-3 left-4 text-white">
-                  <div className="font-bold text-lg">{shop.name}</div>
-                  <div className="text-xs opacity-90 flex items-center gap-1">
-                    <EnvironmentOutlined /> {shop.address}
+                <div className="relative h-44 w-full overflow-hidden">
+                  <img 
+                    src={shop.image} 
+                    alt={shop.name} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                  />
+                  <div className="absolute top-3 right-3">
+                    <Tag color={shop.status === 'Open' ? 'green' : 'red'} className="m-0 border-0 font-bold px-3 py-1 rounded-full shadow-md">
+                      {shop.status.toUpperCase()}
+                    </Tag>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  <div className="absolute bottom-3 left-4 right-4 text-white">
+                    <div className="font-bold text-lg leading-tight mb-1">{shop.name}</div>
+                    <div className="text-[11px] opacity-90 flex items-center gap-1">
+                      <EnvironmentOutlined /> {shop.address}
+                    </div>
                   </div>
                 </div>
-              </div>
-            }
-          >
-            <div className="p-5">
-              
-              {/* Manager Info */}
-              <div className="flex items-center gap-3 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#7C4DFF' }} />
-                <div>
-                  <div className="text-xs text-slate-400 font-bold uppercase">Manager</div>
-                  <div className="text-sm font-semibold text-slate-800">{shop.manager}</div>
+              }
+            >
+              <div className="p-5">
+                {/* Manager Info Row */}
+                <div className="flex items-center gap-3 mb-5 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#7C4DFF', flexShrink: 0 }} />
+                  <div className="overflow-hidden">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Manager</div>
+                    <div className="text-sm font-semibold text-slate-800 truncate">{shop.manager}</div>
+                  </div>
+                  <Button 
+                    type="text" 
+                    icon={<PhoneOutlined className="text-[#7C4DFF]" />} 
+                    className="ml-auto bg-white shadow-sm rounded-lg" 
+                    href={`tel:${shop.phone}`}
+                  />
                 </div>
-                <Button 
-                  type="text" 
-                  icon={<PhoneOutlined className="text-slate-400" />} 
-                  className="ml-auto" 
-                  href={`tel:${shop.phone}`}
-                />
-              </div>
 
-              {/* Mini Stats */}
-              <Row gutter={8} className="mb-6">
-                <Col span={12}>
-                  <Statistic 
-                    title={<span className="text-[10px] uppercase font-bold text-slate-400">Monthly Rev</span>}
-                    value={shop.revenue} 
-                    prefix={<span className="text-[#7C4DFF] text-xs">Rs.</span>}
-                    valueStyle={{ fontSize: '16px', fontWeight: 700 }}
-                  />
-                </Col>
-                <Col span={12}>
-                  <Statistic 
-                    title={<span className="text-[10px] uppercase font-bold text-slate-400">Staff Count</span>}
-                    value={shop.staff} 
-                    suffix={<span className="text-xs text-slate-400">members</span>}
-                    valueStyle={{ fontSize: '16px', fontWeight: 700 }}
-                  />
-                </Col>
-              </Row>
+                {/* KPI Section - Horizontal scrollable on tiny devices */}
+                <Row gutter={12} className="mb-6">
+                  <Col span={12}>
+                    <Statistic 
+                      title={<span className="text-[10px] uppercase font-bold text-slate-400">Monthly Revenue</span>}
+                      value={shop.revenue} 
+                      prefix={<span className="text-[#7C4DFF] text-xs font-bold">Rs.</span>}
+                      styles={{ content: { fontSize: '16px', fontWeight: 800 } }}
+                    />
+                  </Col>
+                  <Col span={12}>
+                    <Statistic 
+                      title={<span className="text-[10px] uppercase font-bold text-slate-400">Total Staff</span>}
+                      value={shop.staff} 
+                      suffix={<span className="text-[10px] text-slate-400 ml-1 font-normal">Team</span>}
+                      styles={{ content: { fontSize: '16px', fontWeight: 800 } }}
+                    />
+                  </Col>
+                </Row>
 
-              {/* Actions */}
-              <div className="flex gap-2 pt-2 border-t border-slate-100">
-                <Button 
-                  type="primary" 
-                  block 
-                  className="bg-[#1A1A1B] hover:bg-black rounded-lg font-semibold h-10 border-none"
-                  icon={<ShopOutlined />}
-                  onClick={() => handleManage(shop.key)}
-                >
-                  Manage
-                </Button>
-                
-                <Dropdown 
-                  menu={{ items: [
-                    { key: '1', label: 'Edit Details', icon: <SettingOutlined />, onClick: () => handleSettings(shop) },
-                    { type: 'divider' },
-                    { key: '3', label: 'Close Location', danger: true, onClick: () => handleDeleteClick(shop.key) },
-                  ] }} 
-                  trigger={['click']}
-                >
-                  <Button className="h-10 w-10 flex items-center justify-center rounded-lg border-slate-200">
-                    <EllipsisOutlined style={{ fontSize: 18 }} />
+                {/* Full-width Actions for Mobile Accessibility */}
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    type="primary" 
+                    block 
+                    className="bg-[#1A1A1B] hover:bg-black rounded-xl font-bold h-11 border-none shadow-md"
+                    icon={<ShopOutlined />}
+                    onClick={() => handleManage(shop.key)}
+                  >
+                    Manage
                   </Button>
-                </Dropdown>
+                  
+                  <Dropdown 
+                    menu={{ items: [
+                      { key: '1', label: 'Edit Details', icon: <SettingOutlined />, onClick: () => handleSettings(shop) },
+                      { type: 'divider' },
+                      { key: '3', label: 'Close Location', danger: true, onClick: () => handleDeleteClick(shop.key) },
+                    ] }} 
+                    trigger={['click']}
+                    placement="bottomRight"
+                  >
+                    <Button className="h-11 w-12 flex items-center justify-center rounded-xl border-slate-200 bg-white">
+                      <EllipsisOutlined style={{ fontSize: 20 }} />
+                    </Button>
+                  </Dropdown>
+                </div>
               </div>
-
-            </div>
-          </Card>
-        ))}
+            </Card>
+          ))}
       </div>
 
-      {/* Modals */}
       <LocationModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

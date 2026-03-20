@@ -12,7 +12,10 @@ import {
   Col, 
   Tooltip,
   Input,
-  Space
+  Space,
+  Avatar,
+  Dropdown,
+  MenuProps
 } from 'antd';
 import type { InputRef, TableColumnType } from 'antd';
 import { 
@@ -22,13 +25,13 @@ import {
   SearchOutlined,
   CalendarOutlined,
   UserOutlined,
-  PlusOutlined
+  PlusOutlined,
+  SyncOutlined,
+  DownOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { NewBookingModal } from "@/components/modals/NewBookingModal";
-
-// --- IMPORT PAYMENT & INVOICE MODALS ---
 import { PaymentModal } from "@/components/modals/PaymentModal";
 import { InvoiceModal } from "@/components/modals/InvoiceModal";
 
@@ -44,7 +47,6 @@ const INITIAL_BOOKINGS = [
   { key: "4", id: "B-104", client: "Ruwan Fernando", barber: "Nuwan Pradeep", status: "Cancelled", total: 1500, date: "2023-10-25" },
 ];
 
-// --- Barber Data for the Modal & Filters ---
 const BARBERS_LIST = [
   { id: 1, name: 'Nuwan Pradeep', color: '#18181b' },
   { id: 2, name: 'Kasun Perera', color: '#7C4DFF' },
@@ -53,14 +55,11 @@ const BARBERS_LIST = [
 
 function ManageBookingsContent() {
   const [bookings, setBookings] = useState(INITIAL_BOOKINGS);
-  
-  // --- Booking Modals ---
   const [isModalOpen, setIsModalOpen] = useState(false); 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
   const [modalType, setModalType] = useState<'accept' | 'decline' | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
-  // --- Payment/Invoice Modals ---
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [paymentData, setPaymentData] = useState<any>(null);
@@ -69,80 +68,13 @@ function ManageBookingsContent() {
   const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
-  // --- Handlers ---
-
-  const handleActionClick = (id: string, type: 'accept' | 'decline') => {
-    setSelectedBookingId(id);
-    setModalType(type);
-    setIsModalOpen(true);
-  };
-
-  const handleConfirmAction = () => {
-    if (!selectedBookingId || !modalType) return;
-
-    if (modalType === 'accept') {
-      setBookings((prev) =>
-        prev.map((b) => (b.id === selectedBookingId ? { ...b, status: "Confirmed" } : b))
-      );
-      showAlert("success", `Booking ${selectedBookingId} confirmed successfully.`);
-    } 
-    else if (modalType === 'decline') {
-      setBookings((prev) => prev.filter((b) => b.id !== selectedBookingId));
-      showAlert("error", `Booking ${selectedBookingId} was declined.`);
-    }
-
-    setIsModalOpen(false);
-    setSelectedBookingId(null);
-    setModalType(null);
-  };
-
-  const handleSaveNewBooking = (newBookingData: any) => {
-    const newEntry = {
-      key: newBookingData.id,
-      id: `B-${Math.floor(1000 + Math.random() * 9000)}`,
-      client: newBookingData.title,
-      barber: newBookingData.extendedProps.barberName,
-      status: "Confirmed", 
-      total: 2000, 
-      date: dayjs(newBookingData.start).format("YYYY-MM-DD")
-    };
-
-    setBookings(prev => [newEntry, ...prev]);
-    setIsAddModalOpen(false);
-    showAlert("success", "Manual booking created successfully.");
-  };
-
-  // --- Payment Flow Handlers ---
-  const handleGenerateBill = (record: any) => {
-    setPaymentData({
-      bookingId: record.id,
-      client: record.client,
-      barber: record.barber,
-      date: record.date,
-      items: [{ type: 'Service', name: 'Salon Service Booking', price: record.total }] 
-    });
-    setIsPaymentModalOpen(true);
-  };
-
-  const handleSavePayment = (finalData: any) => {
-    setIsPaymentModalOpen(false);
-    
-    setBookings(prev => prev.map(b => 
-      b.id === finalData.bookingId ? { ...b, status: "Paid" } : b
-    ));
-
-    setInvoiceData(finalData);
-    setTimeout(() => setIsInvoiceModalOpen(true), 300); 
-    showAlert("success", "Payment recorded successfully.");
-  };
-
-  // --- Column Search Setup ---
-  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
+  // --- Column Search Logic ---
+  const getColumnSearchProps = (dataIndex: string, title: string): TableColumnType<any> => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
         <Input
           ref={searchInput}
-          placeholder={`Search ${placeholder}`}
+          placeholder={`Search ${title}`}
           value={selectedKeys[0]}
           onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
           onPressEnter={() => confirm()}
@@ -154,29 +86,22 @@ function ManageBookingsContent() {
             onClick={() => confirm()}
             icon={<SearchOutlined />}
             size="small"
-            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+            style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}
           >
             Search
           </Button>
-          <Button
-            onClick={() => { clearFilters && clearFilters(); confirm(); }}
-            size="small"
-            style={{ width: 90 }}
-          >
+          <Button onClick={() => { clearFilters && clearFilters(); confirm(); }} size="small" style={{ width: 90 }}>
             Reset
           </Button>
         </Space>
       </div>
     ),
     filterIcon: (filtered: boolean) => (
-      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
+      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '14px' }} />
     ),
     onFilter: (value, record) =>
-      record[dataIndex]
-        .toString()
-        .toLowerCase()
-        .includes((value as string).toLowerCase()),
-    // FIX: Using the new filterDropdownProps API
+      record[dataIndex].toString().toLowerCase().includes((value as string).toLowerCase()),
+    // ✅ FIXED: Modern API for filter dropdown open changes
     filterDropdownProps: {
       onOpenChange: (visible) => {
         if (visible) {
@@ -186,12 +111,65 @@ function ManageBookingsContent() {
     },
   });
 
-  // --- Columns ---
+  const handleActionClick = (id: string, type: 'accept' | 'decline') => {
+    setSelectedBookingId(id);
+    setModalType(type);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmAction = () => {
+    if (!selectedBookingId || !modalType) return;
+    if (modalType === 'accept') {
+      setBookings((prev) =>
+        prev.map((b) => (b.id === selectedBookingId ? { ...b, status: "Confirmed" } : b))
+      );
+      showAlert("success", `Booking ${selectedBookingId} confirmed successfully.`);
+    } else if (modalType === 'decline') {
+      setBookings((prev) => prev.filter((b) => b.id !== selectedBookingId));
+      showAlert("error", `Booking ${selectedBookingId} was declined.`);
+    }
+    setIsModalOpen(false);
+    setSelectedBookingId(null);
+    setModalType(null);
+  };
+
+  const handleSaveNewBooking = (newBookingData: any) => {
+    const newEntry = {
+      key: String(Date.now()),
+      id: `B-${Math.floor(1000 + Math.random() * 9000)}`,
+      client: newBookingData.title,
+      barber: newBookingData.extendedProps.barberName,
+      status: "Confirmed", 
+      total: 2000, 
+      date: dayjs(newBookingData.start).format("YYYY-MM-DD")
+    };
+    setBookings(prev => [newEntry, ...prev]);
+    setIsAddModalOpen(false);
+    showAlert("success", "Manual booking created.");
+  };
+
+  const handleGenerateBill = (record: any) => {
+    setPaymentData({
+      bookingId: record.id, client: record.client, barber: record.barber, date: record.date,
+      items: [{ type: 'Service', name: 'Salon Service Booking', price: record.total }] 
+    });
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleSavePayment = (finalData: any) => {
+    setIsPaymentModalOpen(false);
+    setBookings(prev => prev.map(b => b.id === finalData.bookingId ? { ...b, status: "Paid" } : b));
+    setInvoiceData(finalData);
+    setTimeout(() => setIsInvoiceModalOpen(true), 300); 
+    showAlert("success", "Payment recorded successfully.");
+  };
+
   const columns = [
     {
       title: 'Booking ID',
       dataIndex: 'id',
       key: 'id',
+      width: 120,
       ...getColumnSearchProps('id', 'Booking ID'),
       render: (text: string) => <span className="font-mono text-xs font-bold text-slate-500">{text}</span>,
     },
@@ -199,6 +177,7 @@ function ManageBookingsContent() {
       title: 'Client',
       dataIndex: 'client',
       key: 'client',
+      width: 200,
       ...getColumnSearchProps('client', 'Client'),
       render: (text: string) => <span className="font-bold text-slate-800">{text}</span>,
     },
@@ -206,11 +185,12 @@ function ManageBookingsContent() {
       title: 'Specialist',
       dataIndex: 'barber',
       key: 'barber',
+      width: 200,
       filters: BARBERS_LIST.map(b => ({ text: b.name, value: b.name })),
       onFilter: (value: any, record: any) => record.barber === value,
       render: (text: string) => (
         <div className="flex items-center gap-2 text-slate-600">
-          <UserOutlined /> {text}
+          <Avatar size="small" icon={<UserOutlined />} className="bg-slate-100" /> {text}
         </div>
       ),
     },
@@ -218,54 +198,50 @@ function ManageBookingsContent() {
       title: 'Total',
       dataIndex: 'total',
       key: 'total',
+      width: 150,
       render: (amount: number) => <span className="font-bold text-slate-800">Rs. {amount.toLocaleString()}</span>,
+    },
+    {
+      title: 'Date',
+      dataIndex: 'date',
+      key: 'date',
+      width: 150,
+      render: (date: string) => <span className="text-slate-500">{dayjs(date).format('MMM DD, YYYY')}</span>,
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      filters: [
-        { text: 'Pending', value: 'Pending' },
-        { text: 'Confirmed', value: 'Confirmed' },
-        { text: 'Paid', value: 'Paid' },
-        { text: 'Cancelled', value: 'Cancelled' },
-      ],
-      onFilter: (value: any, record: any) => record.status === value,
+      width: 150,
       render: (status: string) => {
         let color = 'default';
         if (status === 'Confirmed') color = 'blue';
         if (status === 'Paid') color = 'green';
         if (status === 'Pending') color = 'gold';
         if (status === 'Cancelled') color = 'red';
-        
-        return (
-          <Tag color={color} className="rounded-full px-3 font-semibold border-0">
-            {status.toUpperCase()}
-          </Tag>
-        );
+        return <Tag color={color} className="rounded-full px-3 font-semibold border-0">{status.toUpperCase()}</Tag>;
       },
     },
     {
       title: 'Actions',
       key: 'actions',
       align: 'right' as const,
+      width: 180,
       render: (_: any, record: any) => (
         <div className="flex justify-end gap-2">
           {record.status === "Pending" && (
             <>
-              <Tooltip title="Accept Booking">
+              <Tooltip title="Accept">
                 <Button 
-                  type="text" 
-                  shape="circle" 
+                  type="text" shape="circle" 
                   icon={<CheckCircleOutlined className="text-emerald-500" />} 
                   onClick={() => handleActionClick(record.id, 'accept')}
                   className="bg-emerald-50 hover:bg-emerald-100"
                 />
               </Tooltip>
-              <Tooltip title="Decline Booking">
+              <Tooltip title="Decline">
                 <Button 
-                  type="text" 
-                  shape="circle" 
+                  type="text" shape="circle" 
                   icon={<CloseCircleOutlined className="text-red-500" />} 
                   onClick={() => handleActionClick(record.id, 'decline')}
                   className="bg-red-50 hover:bg-red-100"
@@ -273,12 +249,10 @@ function ManageBookingsContent() {
               </Tooltip>
             </>
           )}
-          
           {record.status === "Confirmed" && (
-            <Tooltip title="Process Payment & Print Bill">
+            <Tooltip title="Process Payment & Invoice">
               <Button 
-                type="text" 
-                shape="circle" 
+                type="text" shape="circle" 
                 icon={<PrinterOutlined className="text-[#7C4DFF]" />} 
                 onClick={() => handleGenerateBill(record)}
                 className="bg-[#F3E8FF] hover:bg-[#E9D5FF]"
@@ -291,69 +265,51 @@ function ManageBookingsContent() {
   ];
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
+    <div className="max-w-[1600px] mx-auto pb-10 px-4">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Booking Requests</Title>
-          <Text type="secondary">Manage incoming appointments and invoices.</Text>
+          <Text type="secondary">Swipe table horizontally to see all columns on mobile.</Text>
         </div>
         
-        <div className="flex gap-3 w-full md:w-auto">
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<PlusOutlined />} 
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
-          >
-            Manual Booking
-          </Button>
-        </div>
+        <Button 
+          type="primary" size="large" icon={<PlusOutlined />} 
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none h-12 w-full md:w-auto"
+        >
+          Manual Booking
+        </Button>
       </div>
 
       {/* KPI Stats */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Row gutter={[16, 16]} className="mb-6">
         <Col xs={24} sm={8}>
-          {/* FIX: variant="borderless" instead of bordered={false} */}
-          <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-            {/* FIX: styles.content instead of valueStyle */}
-            <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Requests</span>}
-              value={bookings.length} 
-              prefix={<CalendarOutlined style={{ color: '#7C4DFF', marginRight: 8 }} />}
-              styles={{ content: { fontWeight: 800 } }}
-            />
+          <Card variant="borderless" className="shadow-sm rounded-2xl">
+            <Statistic title={<span className="text-xs font-bold text-gray-400 uppercase">Requests</span>} value={bookings.length} prefix={<CalendarOutlined style={{ color: '#7C4DFF' }} />} />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <Col xs={12} sm={8}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Pending</span>}
-              value={bookings.filter(b => b.status === 'Pending').length} 
-              prefix={<CheckCircleOutlined style={{ color: '#F59E0B', marginRight: 8 }} />}
-              styles={{ content: { fontWeight: 800, color: '#F59E0B' } }}
-            />
+  title={<span className="text-xs font-bold text-gray-400 uppercase">Pending</span>} 
+  value={bookings.filter(b => b.status === 'Pending').length} 
+  styles={{ content: { color: '#F59E0B', fontWeight: 800 } }}
+/>
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-            <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Confirmed / Paid Today</span>}
-              value={bookings.filter(b => b.status === 'Confirmed' || b.status === 'Paid').length} 
-              prefix={<CheckCircleOutlined style={{ color: '#10B981', marginRight: 8 }} />}
-              styles={{ content: { fontWeight: 800, color: '#10B981' } }}
-            />
+        <Col xs={12} sm={8}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl">
+            <Statistic title={<span className="text-xs font-bold text-gray-400 uppercase">Confirmed</span>} value={bookings.filter(b => b.status === 'Confirmed' || b.status === 'Paid').length} valueStyle={{ color: '#10B981', fontWeight: 800 }} />
           </Card>
         </Col>
       </Row>
 
-      {/* Main Table */}
-      {/* FIX: variant="borderless" instead of bordered={false} */}
+      {/* Full Swipeable Table */}
       <Card 
         variant="borderless" 
-        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
+        className="shadow-sm rounded-3xl overflow-hidden"
         styles={{ body: { padding: 0 } }}
       >
         <Table 
@@ -361,45 +317,26 @@ function ManageBookingsContent() {
           dataSource={bookings} 
           pagination={{ pageSize: 8 }}
           rowKey="key"
+          // x: 1200 ensures it is wider than mobile screens to force swiping
+          scroll={{ x: 1200 }} 
+          className="booking-swipe-table"
         />
       </Card>
 
-      {/* Add Booking Modal */}
-      <NewBookingModal 
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleSaveNewBooking}
-        barbers={BARBERS_LIST}
-      />
-
-      {/* Accept/Decline Confirmation Modal */}
+      <NewBookingModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSave={handleSaveNewBooking} barbers={BARBERS_LIST} />
+      
       <ConfirmationModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={handleConfirmAction}
-        title={modalType === 'accept' ? "Confirm Booking?" : "Decline Booking?"}
-        description={
-          modalType === 'accept' 
-            ? "Are you sure you want to confirm this booking? The client will be notified immediately."
-            : "Are you sure you want to decline this request? This action cannot be undone."
-        }
-        confirmText={modalType === 'accept' ? "Yes, Confirm" : "Yes, Decline"}
-        isDanger={modalType === 'decline'}
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onConfirm={handleConfirmAction} 
+        title={modalType === 'accept' ? "Confirm Booking?" : "Decline Booking?"} 
+        description={modalType === 'accept' ? "Confirm and notify client?" : "Decline and remove this request?"}
+        confirmText={modalType === 'accept' ? "Confirm" : "Decline"} 
+        isDanger={modalType === 'decline'} 
       />
 
-      {/* --- PAYMENT & INVOICE MODALS --- */}
-      <PaymentModal 
-        isOpen={isPaymentModalOpen} 
-        onClose={() => setIsPaymentModalOpen(false)} 
-        onSave={handleSavePayment} 
-        paymentToEdit={paymentData}  
-      />
-
-      <InvoiceModal 
-        isOpen={isInvoiceModalOpen} 
-        onClose={() => setIsInvoiceModalOpen(false)} 
-        data={invoiceData} 
-      />
+      <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={handleSavePayment} paymentToEdit={paymentData} />
+      <InvoiceModal isOpen={isInvoiceModalOpen} onClose={() => setIsInvoiceModalOpen(false)} data={invoiceData} />
     </div>
   );
 }

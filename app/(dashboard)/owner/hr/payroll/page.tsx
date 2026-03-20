@@ -1,243 +1,276 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
-  Table, 
-  Card, 
-  Typography, 
-  Tag, 
-  Button, 
-  Input, 
-  Statistic, 
-  Row, 
-  Col, 
-  Avatar, 
-  Dropdown,
-  MenuProps,
-  Space
+  Card, Typography, Row, Col, Statistic, Tag, Button, Select, Modal, Progress 
 } from 'antd';
-import type { InputRef, TableColumnType } from 'antd';
 import { 
-  SearchOutlined, 
-  BankOutlined, 
-  MoreOutlined,
-  PayCircleOutlined,
-  PrinterOutlined
+  DollarOutlined, RightOutlined, SyncOutlined 
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
+import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
+// --- Sri Lankan Payroll Constants ---
+const EPF_EMPLOYEE_RATE = 0.08; 
+const EPF_EMPLOYER_RATE = 0.12; 
+const ETF_EMPLOYER_RATE = 0.03; 
+const LEAVE_ALLOWANCE = 4;
+const NO_PAY_RATE = 1000; 
+
 // --- Mock Data ---
-const INITIAL_PAYROLL = [
-  { key: '1', name: "Kasun Perera", role: "Senior Barber", basic: 75000, bonus: 10000, total: 85000, status: "Paid" },
-  { key: '2', name: "Amila Silva", role: "Junior Barber", basic: 40000, bonus: 5000, total: 45000, status: "Pending" },
-  { key: '3', name: "Nimali Dias", role: "Receptionist", basic: 35000, bonus: 5000, total: 40000, status: "Processing" },
+const PAYROLL_DATA = [
+  { 
+    key: '1', id: 'EMP-001', name: 'Kasun Perera', role: 'Senior Barber', 
+    basicSalary: 75000, allowances: 5000, commissions: 15000, 
+    leavesTaken: 2, status: 'Paid', method: 'Bank Transfer' 
+  },
+  { 
+    key: '2', id: 'EMP-002', name: 'Amila Silva', role: 'Barber', 
+    basicSalary: 55000, allowances: 2000, commissions: 8000, 
+    leavesTaken: 5, status: 'Pending', method: 'Cash' 
+  },
+  { 
+    key: '3', id: 'EMP-003', name: 'Nimali Dias', role: 'Stylist', 
+    basicSalary: 65000, allowances: 3000, commissions: 12000, 
+    leavesTaken: 1, status: 'Paid', method: 'Bank Transfer' 
+  },
+  { 
+    key: '4', id: 'EMP-004', name: 'Ruwan Fernando', role: 'Junior Barber', 
+    basicSalary: 40000, allowances: 1000, commissions: 4000, 
+    leavesTaken: 6, status: 'Pending', method: 'Cash' 
+  },
 ];
 
-function PayrollContent() {
-  const [payroll, setPayroll] = useState(INITIAL_PAYROLL);
-  
-  const searchInput = useRef<InputRef>(null);
-  const { showAlert } = useAlert();
+// --- Payroll Calculation Engine ---
+const calculatePayroll = (record: any) => {
+  const grossEarnings = record.basicSalary + record.allowances + record.commissions;
+  const epfDeduction = record.basicSalary * EPF_EMPLOYEE_RATE;
+  const excessLeaves = Math.max(0, record.leavesTaken - LEAVE_ALLOWANCE);
+  const noPayDeduction = excessLeaves * NO_PAY_RATE;
+  const totalDeductions = epfDeduction + noPayDeduction;
+  const netSalary = grossEarnings - totalDeductions;
+  const epfEmployer = record.basicSalary * EPF_EMPLOYER_RATE;
+  const etfEmployer = record.basicSalary * ETF_EMPLOYER_RATE;
 
-  const handleProcessPayment = (key: string) => {
-    setPayroll(prev => prev.map(p => p.key === key ? { ...p, status: 'Paid' } : p));
-    showAlert('success', 'Payment marked as Paid.');
+  return {
+    ...record,
+    grossEarnings,
+    epfDeduction,
+    excessLeaves,
+    noPayDeduction,
+    totalDeductions,
+    netSalary,
+    epfEmployer,
+    etfEmployer
+  };
+};
+
+function PayrollContent() {
+  const router = useRouter(); 
+  const { showAlert } = useAlert();
+  
+  const [selectedMonth, setSelectedMonth] = useState('March 2026');
+  const processedData = PAYROLL_DATA.map(calculatePayroll);
+  const [payrollList] = useState(processedData);
+
+  // --- Processing States ---
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  // --- KPI Calculations ---
+  const totalPayout = payrollList.reduce((sum, item) => sum + item.netSalary, 0);
+  const totalPending = payrollList.filter(i => i.status === 'Pending').reduce((sum, item) => sum + item.netSalary, 0);
+  const totalEPFETF = payrollList.reduce((sum, item) => sum + item.epfEmployer + item.etfEmployer, 0);
+
+  // --- Handlers ---
+  const handleViewPayslip = (record: any) => {
+    router.push(`/owner/hr/payroll/${record.id}`); 
   };
 
-  // --- Column Search Setup ---
-  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
-      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-        <Input
-          ref={searchInput}
-          placeholder={`Search ${placeholder}`}
-          value={selectedKeys[0]}
-          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-          onPressEnter={() => confirm()}
-          style={{ marginBottom: 8, display: 'block' }}
-        />
-        <Space>
-          <Button
-            type="primary"
-            onClick={() => confirm()}
-            icon={<SearchOutlined />}
-            size="small"
-            style={{ width: 90, backgroundColor: '#7C4DFF' }}
-          >
-            Search
-          </Button>
-          <Button
-            onClick={() => { clearFilters && clearFilters(); confirm(); }}
-            size="small"
-            style={{ width: 90 }}
-          >
-            Reset
-          </Button>
-        </Space>
-      </div>
-    ),
-    filterIcon: (filtered: boolean) => (
-      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
-    ),
-    onFilter: (value, record) =>
-      record[dataIndex]
-        .toString()
-        .toLowerCase()
-        .includes((value as string).toLowerCase()),
-    onFilterDropdownOpenChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
+  const startPayrollProcessing = () => {
+    setIsConfirmModalOpen(false); // Close the confirmation modal
+    setIsProcessing(true); // Open the loading modal
+    setProgress(0);
+
+    // Simulate a complex background calculation (takes ~3.5 seconds)
+    const totalTime = 3500; 
+    const intervalTime = 50; 
+    let currentProgress = 0;
+
+    const timer = setInterval(() => {
+      currentProgress += (100 / (totalTime / intervalTime));
+      
+      if (currentProgress >= 100) {
+        clearInterval(timer);
+        setProgress(100);
+        
+        // Small delay at 100% so it feels complete before closing
+        setTimeout(() => {
+          setIsProcessing(false);
+          showAlert('success', `Payroll for ${selectedMonth} has been successfully processed!`);
+        }, 400);
+      } else {
+        setProgress(Math.floor(currentProgress));
       }
-    },
-  });
-
-  // --- Columns ---
-  const columns = [
-    {
-      title: 'Employee',
-      dataIndex: 'name',
-      key: 'name',
-      ...getColumnSearchProps('name', 'Employee'), // Added Search Here
-      render: (text: string, record: any) => (
-        <div className="flex items-center gap-3">
-          <Avatar style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }}>{text[0]}</Avatar>
-          <div className="flex flex-col">
-            <span className="font-bold text-slate-800">{text}</span>
-            <span className="text-xs text-slate-500">{record.role}</span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Basic Salary',
-      dataIndex: 'basic',
-      key: 'basic',
-      render: (val: number) => <span>Rs. {val.toLocaleString()}</span>,
-    },
-    {
-      title: 'Bonus/Comms',
-      dataIndex: 'bonus',
-      key: 'bonus',
-      render: (val: number) => <span className="text-emerald-600">+ Rs. {val.toLocaleString()}</span>,
-    },
-    {
-      title: 'Total Payable',
-      dataIndex: 'total',
-      key: 'total',
-      render: (val: number) => <span className="font-bold text-slate-800">Rs. {val.toLocaleString()}</span>,
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      filters: [
-        { text: 'Paid', value: 'Paid' },
-        { text: 'Pending', value: 'Pending' },
-        { text: 'Processing', value: 'Processing' },
-      ],
-      onFilter: (value: any, record: any) => record.status === value, // Added Filter Here
-      render: (status: string) => {
-        let color = 'blue';
-        if (status === 'Paid') color = 'green';
-        if (status === 'Pending') color = 'gold';
-        return <Tag color={color} className="rounded-full px-3 font-semibold">{status.toUpperCase()}</Tag>;
-      },
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      align: 'right' as const,
-      render: (_: any, record: any) => {
-        const menuItems: MenuProps['items'] = [
-          {
-            key: 'pay',
-            label: 'Mark as Paid',
-            icon: <PayCircleOutlined />,
-            disabled: record.status === 'Paid',
-            onClick: () => handleProcessPayment(record.key),
-          },
-          {
-            key: 'print',
-            label: 'Print Slip',
-            icon: <PrinterOutlined />,
-          },
-        ];
-
-        return (
-          <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-            <Button type="text" shape="circle" icon={<MoreOutlined />} />
-          </Dropdown>
-        );
-      },
-    },
-  ];
+    }, intervalTime);
+  };
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
+    <div className="max-w-[1600px] mx-auto pb-10 px-4">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Payroll Management</Title>
-          <Text type="secondary">Manage employee salaries, bonuses, and payment status.</Text>
+          <Text type="secondary">Process salaries, EPF/ETF contributions. Click an employee card to view their payslip.</Text>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          {/* Removed Global Search Bar */}
+          <Select 
+            value={selectedMonth} 
+            onChange={setSelectedMonth}
+            size="large"
+            className="w-full sm:w-40"
+            options={[
+              { value: 'January 2026', label: 'January 2026' },
+              { value: 'February 2026', label: 'February 2026' },
+              { value: 'March 2026', label: 'March 2026' },
+            ]}
+          />
+          {/* Re-Added the Run Payroll Button */}
           <Button 
             type="primary" 
             size="large" 
-            icon={<BankOutlined />} 
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
+            icon={<DollarOutlined />} 
+            onClick={() => setIsConfirmModalOpen(true)}
+            className="bg-[#1A1A1B] hover:bg-black rounded-xl font-bold border-none shadow-md w-full sm:w-auto"
           >
             Run Payroll
           </Button>
         </div>
       </div>
 
-      {/* KPI Stats */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+      {/* KPI Cards */}
+      <Row gutter={[16, 16]} className="mb-8">
+        <Col xs={24} sm={12} lg={8}>
+          <Card variant="borderless" className="shadow-sm rounded-3xl h-full flex flex-col justify-center text-center sm:text-left">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Disbursed</span>}
-              value={payroll.filter(p => p.status === 'Paid').reduce((acc, curr) => acc + curr.total, 0)} 
-              prefix={<span className="text-emerald-500 text-2xl mr-2">Rs.</span>}
-              valueStyle={{ fontWeight: 800, color: '#10B981' }}
+              title={<span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Net Payout</span>}
+              value={totalPayout} 
+              prefix={<span className="text-[#7C4DFF] text-xl font-bold mr-1">Rs.</span>}
+              styles={{ content: { fontWeight: 800, color: '#1A1A1B', fontSize: '32px' } }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <Col xs={12} sm={12} lg={8}>
+          <Card variant="borderless" className="shadow-sm rounded-3xl h-full flex flex-col justify-center text-center sm:text-left">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Pending Payments</span>}
-              value={payroll.filter(p => p.status !== 'Paid').reduce((acc, curr) => acc + curr.total, 0)} 
-              prefix={<span className="text-amber-500 text-2xl mr-2">Rs.</span>}
-              valueStyle={{ fontWeight: 800, color: '#F59E0B' }}
+              title={<span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pending Payments</span>}
+              value={totalPending} 
+              prefix={<span className="text-orange-500 text-xl font-bold mr-1">Rs.</span>}
+              styles={{ content: { fontWeight: 800, color: '#F97316', fontSize: '32px' } }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={24} lg={8}>
+          <Card variant="borderless" className="shadow-sm rounded-3xl h-full flex flex-col justify-center text-center sm:text-left bg-slate-50 border border-slate-100">
+            <Statistic 
+              title={<span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total EPF & ETF (Company Liability)</span>}
+              value={totalEPFETF} 
+              prefix="Rs."
+              styles={{ content: { fontWeight: 800, color: '#475569', fontSize: '32px' } }}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Table */}
-      <Card 
-        bordered={false} 
-        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
-        styles={{ body: { padding: 0 } }} // FIX: Updated bodyStyle API
+      {/* Employee Cards Grid */}
+      <h3 className="text-lg font-bold text-slate-800 mb-4 mt-10">Employee Payroll List</h3>
+      <Row gutter={[24, 24]}>
+        {payrollList.map((employee) => (
+          <Col xs={24} sm={12} md={8} lg={6} xl={6} key={employee.key}>
+            <Card 
+              variant="borderless" 
+              className="shadow-sm rounded-3xl cursor-pointer hover:shadow-lg hover:shadow-purple-100 hover:-translate-y-1 transition-all duration-300 border-2 border-[#7C4DFF] group h-full flex flex-col bg-white"
+              onClick={() => handleViewPayslip(employee)}
+              styles={{ body: { display: 'flex', flexDirection: 'column', height: '100%', padding: '24px' } }}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">ID: {employee.id}</div>
+                <Tag color={employee.status === 'Paid' ? 'green' : 'orange'} className="rounded-full px-3 py-1 m-0 font-bold border-0 text-[10px]">
+                  {employee.status.toUpperCase()}
+                </Tag>
+              </div>
+
+              <div className="mb-6 flex-grow">
+                <h3 className="text-xl font-black text-slate-800 m-0 truncate group-hover:text-[#7C4DFF] transition-colors">{employee.name}</h3>
+                <span className="text-xs text-[#7C4DFF] font-bold uppercase tracking-wider">{employee.role}</span>
+              </div>
+
+              <div className="flex justify-end items-end mt-auto">
+                <div className="w-8 h-8 rounded-full bg-[#F3E8FF] flex items-center justify-center text-[#7C4DFF] group-hover:bg-[#7C4DFF] group-hover:text-white transition-colors duration-300">
+                  <RightOutlined className="text-xs" />
+                </div>
+              </div>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      {/* 1. Confirmation Modal */}
+      <ConfirmationModal 
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={startPayrollProcessing}
+        title={`Run ${selectedMonth} Payroll?`}
+        description="This action will calculate EPF, ETF, No-Pay leaves, and generate official payslips for all active employees."
+        confirmText="Yes, Run Payroll"
+        isDanger={false}
+      />
+
+      {/* 2. Processing Modal (Loading Bar & Countdown) */}
+      <Modal 
+        open={isProcessing} 
+        footer={null} 
+        closable={false} 
+        centered 
+        width={400}
+        zIndex={1100}
+        styles={{ body: { padding: '40px 20px' } }}
       >
-        <Table 
-          columns={columns} 
-          dataSource={payroll} 
-          pagination={{ pageSize: 8 }}
-          rowKey="key"
-        />
-      </Card>
+        <div className="flex flex-col items-center text-center">
+          <SyncOutlined spin className="text-5xl text-[#7C4DFF] mb-6" />
+          <h3 className="text-xl font-black text-slate-800 mb-2">Processing Payroll...</h3>
+          <p className="text-sm text-slate-500 mb-8 px-4">
+            Calculating earnings, statutory deductions, and preparing payslips for {selectedMonth}.
+          </p>
+          
+          <div className="w-full px-4 mb-2">
+            <Progress 
+              percent={progress} 
+              strokeColor="#7C4DFF" 
+              trailColor="#F3E8FF"
+              status="active" 
+              strokeWidth={12}
+              showInfo={false}
+            />
+          </div>
+          
+          <div className="flex justify-between w-full px-4 text-xs font-bold font-mono text-slate-400 mt-2 tracking-wider">
+            <span>{progress}% COMPLETE</span>
+            <span>EST. TIME: {Math.ceil((100 - progress) * 0.035)}s</span>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }
 
-export default function PayrollPage() {
+export default function OwnerPayroll() {
   return (
     <AlertProvider>
       <PayrollContent />

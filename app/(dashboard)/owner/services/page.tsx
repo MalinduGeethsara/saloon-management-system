@@ -92,9 +92,10 @@ function ServicesContent() {
       setServices(prev => [newService, ...prev]);
       showAlert('success', 'New item added to catalog.');
     }
+    setIsServiceModalOpen(false);
   };
 
-const handleToggleStatus = (key: string, checked: boolean) => {
+  const handleToggleStatus = (key: string, checked: boolean) => {
     setServices(prev => 
       prev.map(s => s.key === key ? { ...s, status: checked ? "Active" : "Inactive" } : s)
     );
@@ -120,7 +121,7 @@ const handleToggleStatus = (key: string, checked: boolean) => {
             onClick={() => confirm()}
             icon={<SearchOutlined />}
             size="small"
-            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+            style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}
           >
             Search
           </Button>
@@ -138,28 +139,29 @@ const handleToggleStatus = (key: string, checked: boolean) => {
       <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
     ),
     onFilter: (value, record) =>
-      record[dataIndex]
-        .toString()
-        .toLowerCase()
-        .includes((value as string).toLowerCase()),
-    onFilterDropdownOpenChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
-      }
+      record[dataIndex].toString().toLowerCase().includes((value as string).toLowerCase()),
+    filterDropdownProps: {
+      onOpenChange: (visible) => {
+        if (visible) {
+          setTimeout(() => searchInput.current?.select(), 100);
+        }
+      },
     },
   });
 
   // --- Table Configuration ---
   const columns = [
     {
-      title: 'Item Name',
+      title: 'Item Name & Description',
       dataIndex: 'name',
       key: 'name',
+      width: 280,
+      align: 'left' as const, // Anchor to left
       ...getColumnSearchProps('name', 'Name'), 
       render: (text: string, record: any) => (
         <div className="flex flex-col">
-          <span className="font-bold text-slate-800">{text}</span>
-          <span className="text-xs text-slate-500 truncate max-w-[200px]">{record.description}</span>
+          <span className="font-bold text-slate-800 text-[14px]">{text}</span>
+          <span className="text-[11px] text-slate-500 truncate max-w-[240px]">{record.description}</span>
         </div>
       ),
     },
@@ -167,6 +169,8 @@ const handleToggleStatus = (key: string, checked: boolean) => {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
+      width: 140,
+      align: 'center' as const, // Center align tag
       filters: [
         { text: 'Service', value: 'Service' },
         { text: 'Product', value: 'Product' },
@@ -175,33 +179,39 @@ const handleToggleStatus = (key: string, checked: boolean) => {
       render: (category: string) => {
         // Distinct colors for Service vs Product
         const color = category === 'Product' ? 'purple' : 'blue';
-        return <Tag color={color} className="font-semibold">{category}</Tag>;
+        return <Tag color={color} className="font-bold border-0 px-3 py-0.5 rounded-md">{category.toUpperCase()}</Tag>;
       },
     },
     {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
-      render: (price: number) => <span className="font-mono font-bold text-slate-700">Rs. {price.toLocaleString()}</span>,
+      width: 140,
+      align: 'right' as const, // Right align money
+      render: (price: number) => <span className="font-mono font-bold text-slate-700 text-[15px]">Rs. {price.toLocaleString()}</span>,
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      width: 160, // Widened slightly to give the toggle enough room
+      align: 'center' as const, // Center align switch
       filters: [
         { text: 'Active', value: 'Active' },
         { text: 'Inactive', value: 'Inactive' },
       ],
       onFilter: (value: any, record: any) => record.status === value,
       render: (status: string, record: any) => (
-        <div className="flex items-center gap-2">
+        // FIX: Added whitespace-nowrap to prevent text dropping to next line
+        <div className="flex items-center justify-center gap-2 whitespace-nowrap">
           <Switch 
             size="small" 
             checked={status === 'Active'} 
             onChange={(checked) => handleToggleStatus(record.key, checked)} 
           />
-          <Text type={status === 'Active' ? 'success' : 'secondary'} className="text-xs font-semibold">
-            {status.toUpperCase()}
+          {/* FIX: Replaced w-12 with min-w-[65px] to fit "INACTIVE" perfectly */}
+          <Text type={status === 'Active' ? 'success' : 'secondary'} className="text-[10px] font-bold uppercase inline-block min-w-[65px] text-left">
+            {status}
           </Text>
         </div>
       ),
@@ -209,27 +219,17 @@ const handleToggleStatus = (key: string, checked: boolean) => {
     {
       title: 'Action',
       key: 'action',
-      align: 'right' as const,
+      align: 'right' as const, // Push actions to the far right edge
+      width: 80,
       render: (_: any, record: any) => {
         const items: MenuProps['items'] = [
-          { 
-            key: '1', 
-            label: 'Edit Item', 
-            icon: <EditOutlined />, 
-            onClick: () => handleEdit(record) 
-          },
+          { key: '1', label: 'Edit Item', icon: <EditOutlined />, onClick: () => handleEdit(record) },
           { type: 'divider' },
-          { 
-            key: '2', 
-            label: 'Remove Item', 
-            icon: <DeleteOutlined />, 
-            danger: true,
-            onClick: () => handleDeleteClick(record.key)
-          },
+          { key: '2', label: 'Remove Item', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) },
         ];
         return (
-          <Dropdown menu={{ items }} trigger={['click']}>
-            <Button type="text" shape="circle" icon={<MoreOutlined />} />
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="text" shape="circle" icon={<MoreOutlined className="text-lg" />} />
           </Dropdown>
         );
       },
@@ -240,77 +240,77 @@ const handleToggleStatus = (key: string, checked: boolean) => {
   const totalProducts = services.filter(s => s.category === 'Product').length;
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
+    <div className="max-w-[1600px] mx-auto pb-10 px-4">
       
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Catalog Management</Title>
-          <Text type="secondary">Manage the services and products offered to customers.</Text>
+          <Title level={2} className="m-0 font-black">Catalog Management</Title>
+          <Text type="secondary">Manage services and products. Swipe table to see all details.</Text>
         </div>
         
-        <div className="flex gap-3 w-full md:w-auto">
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<PlusOutlined />} 
-            onClick={handleAdd}
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
-          >
-            Add Item
-          </Button>
-        </div>
+        <Button 
+          type="primary" 
+          size="large" 
+          icon={<PlusOutlined />} 
+          onClick={handleAdd}
+          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold shadow-md shadow-purple-100 border-none w-full md:w-auto h-12"
+        >
+          Add Item
+        </Button>
       </div>
 
-      {/* KPI Stats */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+      {/* KPI Stats - Centered layout for mobile */}
+      <Row gutter={[16, 16]} className="mb-8">
+        <Col xs={12} sm={8}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Services</span>}
+              title={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Services</span>}
               value={totalServices} 
-              prefix={<ScissorOutlined style={{ color: '#7C4DFF' }} />}
-              valueStyle={{ fontWeight: 800 }}
+              prefix={<ScissorOutlined style={{ color: '#7C4DFF', fontSize: '20px', marginRight: '4px' }} />}
+              styles={{ content: { fontWeight: 800, fontSize: '24px' } }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <Col xs={12} sm={8}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Products</span>}
+              title={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Products</span>}
               value={totalProducts} 
-              prefix={<ShoppingOutlined style={{ color: '#F59E0B' }} />}
-              valueStyle={{ fontWeight: 800 }}
+              prefix={<ShoppingOutlined style={{ color: '#F59E0B', fontSize: '20px', marginRight: '4px' }} />}
+              styles={{ content: { fontWeight: 800, fontSize: '24px' } }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Active Catalog</span>}
+              title={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Catalog</span>}
               value={services.filter(s => s.status === 'Active').length} 
-              prefix={<TagOutlined style={{ color: '#10B981' }} />}
-              valueStyle={{ fontWeight: 800 }}
+              prefix={<TagOutlined style={{ color: '#10B981', fontSize: '20px', marginRight: '4px' }} />}
+              styles={{ content: { fontWeight: 800, fontSize: '24px' } }}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Main Table */}
+      {/* Main Table - FULL SWIPE */}
       <Card 
-        bordered={false} 
-        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
+        variant="borderless" 
+        className="shadow-sm rounded-3xl overflow-hidden"
         styles={{ body: { padding: 0 } }}
       >
         <Table 
           columns={columns} 
           dataSource={services} 
-          pagination={{ pageSize: 8 }}
+          pagination={{ pageSize: 8, size: 'small' }}
           rowKey="key"
+          // Force horizontal scroll for full table swipe
+          scroll={{ x: 1000 }} 
         />
       </Card>
 
-      {/* Modals */}
+      {/* Reusable Modals */}
       <ServiceModal 
         isOpen={isServiceModalOpen}
         onClose={() => setIsServiceModalOpen(false)}
@@ -324,7 +324,7 @@ const handleToggleStatus = (key: string, checked: boolean) => {
         onConfirm={confirmDelete}
         title="Delete Item?"
         description="Are you sure you want to remove this item? It will no longer be available for billing."
-        confirmText="Yes, Delete"
+        confirmText="Delete Item"
         isDanger={true}
       />
     </div>
