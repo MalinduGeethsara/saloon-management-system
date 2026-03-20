@@ -34,7 +34,7 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-// --- Mock Initial Data (Sri Lankan Names) ---
+// --- Mock Initial Data ---
 const INITIAL_DATA = [
   { key: '1', name: "Kasun Perera", shop: "Colombo 07", status: "Present", clockIn: "08:50 AM", clockOut: "05:30 PM" },
   { key: '2', name: "Amila Silva", shop: "Colombo 07", status: "On Leave", clockIn: "-", clockOut: "-" },
@@ -44,13 +44,7 @@ const INITIAL_DATA = [
 ];
 
 const STAFF_NAMES = [
-  "Kasun Perera", 
-  "Amila Silva", 
-  "Nimali Dias", 
-  "Ruwan Fernando", 
-  "Chamara Kumara", 
-  "Dilshan Bandara", 
-  "Samanthi Perera"
+  "Kasun Perera", "Amila Silva", "Nimali Dias", "Ruwan Fernando", "Chamara Kumara", "Dilshan Bandara", "Samanthi Perera"
 ];
 
 function AttendanceContent() {
@@ -94,19 +88,13 @@ function AttendanceContent() {
 
   const handleSaveRecord = (newRecord: any) => {
     if (newRecord.key) {
-      // UPDATE
-      setAttendanceData(prev => 
-        prev.map(item => item.key === newRecord.key ? { ...item, ...newRecord } : item)
-      );
+      setAttendanceData(prev => prev.map(item => item.key === newRecord.key ? { ...item, ...newRecord } : item));
       showAlert('success', 'Attendance record updated successfully.');
     } else {
-      // ADD
-      setAttendanceData(prev => [
-        { key: String(Date.now()), ...newRecord },
-        ...prev
-      ]);
+      setAttendanceData(prev => [{ key: String(Date.now()), ...newRecord }, ...prev]);
       showAlert('success', 'New attendance record added.');
     }
+    setIsEntryModalOpen(false);
   };
 
   // --- Column Search Setup ---
@@ -122,47 +110,30 @@ function AttendanceContent() {
           style={{ marginBottom: 8, display: 'block' }}
         />
         <Space>
-          <Button
-            type="primary"
-            onClick={() => confirm()}
-            icon={<SearchOutlined />}
-            size="small"
-            style={{ width: 90, backgroundColor: '#7C4DFF' }}
-          >
-            Search
-          </Button>
-          <Button
-            onClick={() => { clearFilters && clearFilters(); confirm(); }}
-            size="small"
-            style={{ width: 90 }}
-          >
-            Reset
-          </Button>
+          <Button type="primary" onClick={() => confirm()} icon={<SearchOutlined />} size="small" style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}>Search</Button>
+          <Button onClick={() => { clearFilters && clearFilters(); confirm(); }} size="small" style={{ width: 90 }}>Reset</Button>
         </Space>
       </div>
     ),
-    filterIcon: (filtered: boolean) => (
-      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
-    ),
-    onFilter: (value, record) =>
-      record[dataIndex]
-        .toString()
-        .toLowerCase()
-        .includes((value as string).toLowerCase()),
-    onFilterDropdownOpenChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
-      }
+    filterIcon: (filtered: boolean) => <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined }} />,
+    onFilter: (value, record) => record[dataIndex].toString().toLowerCase().includes((value as string).toLowerCase()),
+    filterDropdownProps: {
+      onOpenChange: (visible) => {
+        if (visible) setTimeout(() => searchInput.current?.select(), 100);
+      },
     },
   });
 
   // --- Table Columns ---
   const columns = [
     {
-      title: 'Employee',
+      title: 'Employee Name',
       dataIndex: 'name',
       key: 'name',
-      ...getColumnSearchProps('name', 'Employee'), // Applied Search Here
+      // REMOVED: fixed: 'left' so it swipes with the rest of the table
+      width: 250,
+      align: 'left' as const,
+      ...getColumnSearchProps('name', 'Employee'),
       render: (text: string) => (
         <div className="flex items-center gap-3">
           <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} />
@@ -171,26 +142,42 @@ function AttendanceContent() {
       ),
     },
     {
-      title: 'Location',
+      title: 'Location / Shop',
       dataIndex: 'shop',
       key: 'shop',
-      ...getColumnSearchProps('shop', 'Location'), // Applied Search Here
+      width: 180,
+      align: 'center' as const,
+      ...getColumnSearchProps('shop', 'Location'),
       render: (text: string) => (
-        <Space className="text-slate-500">
+        <Space className="text-slate-500 whitespace-nowrap">
           <EnvironmentOutlined /> {text}
         </Space>
       ),
     },
     {
+      title: 'Clock In',
+      dataIndex: 'clockIn',
+      key: 'clockIn',
+      width: 130,
+      align: 'center' as const,
+      render: (text: string) => <span className="font-mono font-medium text-slate-600">{text}</span>,
+    },
+    {
+      title: 'Clock Out',
+      dataIndex: 'clockOut',
+      key: 'clockOut',
+      width: 130,
+      align: 'center' as const,
+      render: (text: string) => <span className="font-mono font-medium text-slate-600">{text}</span>,
+    },
+    {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      filters: [
-        { text: 'Present', value: 'Present' },
-        { text: 'Late', value: 'Late' },
-        { text: 'On Leave', value: 'On Leave' },
-      ],
-      onFilter: (value: any, record: any) => record.status === value, // Applied Filter Here
+      width: 160,
+      align: 'center' as const,
+      filters: [{ text: 'Present', value: 'Present' }, { text: 'Late', value: 'Late' }, { text: 'On Leave', value: 'On Leave' }],
+      onFilter: (value: any, record: any) => record.status === value,
       render: (status: string) => {
         let color = 'green';
         let icon = <CheckCircleOutlined />;
@@ -199,8 +186,8 @@ function AttendanceContent() {
         if (status === 'Late') { color = 'orange'; icon = <ClockCircleOutlined />; }
 
         return (
-          <Tag color={color} className="rounded-full px-3 font-semibold border-0 flex items-center gap-1 w-fit">
-            {icon} {status}
+          <Tag color={color} className="rounded-full px-4 py-0.5 font-bold border-0 flex items-center gap-1 w-fit mx-auto">
+            {icon} {status.toUpperCase()}
           </Tag>
         );
       },
@@ -220,26 +207,18 @@ function AttendanceContent() {
     {
       title: 'Action',
       key: 'action',
-      width: 80,
+      // REMOVED: fixed: 'right' so it sits at the end of the swipe
+      width: 100,
+      align: 'right' as const,
       render: (_: any, record: any) => {
         const items: MenuProps['items'] = [
-          {
-            key: 'edit',
-            label: 'Edit Record',
-            icon: <EditOutlined />,
-            onClick: () => handleEdit(record),
-          },
-          {
-            key: 'delete',
-            label: 'Delete',
-            icon: <DeleteOutlined />,
-            danger: true,
-            onClick: () => handleDeleteClick(record.key),
-          },
+          { key: 'edit', label: 'Edit Record', icon: <EditOutlined />, onClick: () => handleEdit(record) },
+          { type: 'divider' },
+          { key: 'delete', label: 'Delete', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) },
         ];
 
         return (
-          <Dropdown menu={{ items }} trigger={['click']}>
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
             <Button type="text" shape="circle" icon={<MoreOutlined style={{ fontSize: '18px' }} />} />
           </Dropdown>
         );
@@ -248,18 +227,18 @@ function AttendanceContent() {
   ];
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
+    <div className="max-w-[1600px] mx-auto pb-10 px-4">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Attendance Tracking</Title>
-          <Text type="secondary">Monitor staff check-ins, manage leaves, and track locations.</Text>
+          <Text type="secondary">Monitor staff check-ins and leaves. Swipe horizontally to view table data.</Text>
         </div>
         
         <div className="flex gap-3 w-full md:w-auto">
           <DatePicker 
-             style={{ borderRadius: '12px', height: '40px' }} 
+             style={{ borderRadius: '12px', height: '48px' }} 
              defaultValue={dayjs()} 
              format="YYYY-MM-DD"
              className="hidden sm:block"
@@ -269,24 +248,26 @@ function AttendanceContent() {
             size="large" 
             icon={<PlusOutlined />} 
             onClick={handleAddNew}
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold h-12 shadow-md shadow-purple-100 border-none w-full md:w-auto"
           >
             Manual Entry
           </Button>
         </div>
       </div>
 
-      {/* Main Table */}
+      {/* Main Table Container - Full Swipe */}
       <Card 
-        bordered={false} 
-        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }} 
+        variant="borderless" 
+        className="shadow-sm rounded-3xl overflow-hidden" 
         styles={{ body: { padding: 0 } }} 
       >
         <Table 
           columns={columns} 
           dataSource={attendanceData} 
-          pagination={{ pageSize: 8 }}
+          pagination={{ pageSize: 8, size: 'small' }} 
           rowKey="key"
+          // FIX: Changed from max-content to a fixed width to force swipe on all screens
+          scroll={{ x: 1000 }} 
         />
       </Card>
 

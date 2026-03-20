@@ -64,7 +64,7 @@ function PayrollContent() {
             onClick={() => confirm()}
             icon={<SearchOutlined />}
             size="small"
-            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+            style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}
           >
             Search
           </Button>
@@ -82,14 +82,13 @@ function PayrollContent() {
       <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
     ),
     onFilter: (value, record) =>
-      record[dataIndex]
-        .toString()
-        .toLowerCase()
-        .includes((value as string).toLowerCase()),
-    onFilterDropdownOpenChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
-      }
+      record[dataIndex].toString().toLowerCase().includes((value as string).toLowerCase()),
+    filterDropdownProps: {
+      onOpenChange: (visible) => {
+        if (visible) {
+          setTimeout(() => searchInput.current?.select(), 100);
+        }
+      },
     },
   });
 
@@ -99,56 +98,69 @@ function PayrollContent() {
       title: 'Employee',
       dataIndex: 'name',
       key: 'name',
-      ...getColumnSearchProps('name', 'Employee'), // Added Search Here
+      // REMOVED fixed: 'left' for full row swipe
+      width: 250,
+      align: 'left' as const,
+      ...getColumnSearchProps('name', 'Employee'),
       render: (text: string, record: any) => (
-        <div className="flex items-center gap-3">
+        <Space size="middle">
           <Avatar style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }}>{text[0]}</Avatar>
           <div className="flex flex-col">
-            <span className="font-bold text-slate-800">{text}</span>
-            <span className="text-xs text-slate-500">{record.role}</span>
+            <Text strong className="text-slate-800">{text}</Text>
+            <Text type="secondary" className="text-[11px]">{record.role}</Text>
           </div>
-        </div>
+        </Space>
       ),
     },
     {
       title: 'Basic Salary',
       dataIndex: 'basic',
       key: 'basic',
-      render: (val: number) => <span>Rs. {val.toLocaleString()}</span>,
+      width: 140,
+      align: 'right' as const, // Numbers align right
+      render: (val: number) => <Text className="font-mono">Rs. {val.toLocaleString()}</Text>,
     },
     {
       title: 'Bonus/Comms',
       dataIndex: 'bonus',
       key: 'bonus',
-      render: (val: number) => <span className="text-emerald-600">+ Rs. {val.toLocaleString()}</span>,
+      width: 140,
+      align: 'right' as const, // Numbers align right
+      render: (val: number) => <Text className="text-emerald-600 font-mono">+ Rs. {val.toLocaleString()}</Text>,
     },
     {
       title: 'Total Payable',
       dataIndex: 'total',
       key: 'total',
-      render: (val: number) => <span className="font-bold text-slate-800">Rs. {val.toLocaleString()}</span>,
+      width: 150,
+      align: 'right' as const, // Numbers align right
+      render: (val: number) => <Text strong className="text-slate-800 font-mono text-[15px]">Rs. {val.toLocaleString()}</Text>,
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      width: 130,
+      align: 'center' as const, // Tags align center
       filters: [
         { text: 'Paid', value: 'Paid' },
         { text: 'Pending', value: 'Pending' },
         { text: 'Processing', value: 'Processing' },
       ],
-      onFilter: (value: any, record: any) => record.status === value, // Added Filter Here
+      onFilter: (value: any, record: any) => record.status === value,
       render: (status: string) => {
         let color = 'blue';
         if (status === 'Paid') color = 'green';
         if (status === 'Pending') color = 'gold';
-        return <Tag color={color} className="rounded-full px-3 font-semibold">{status.toUpperCase()}</Tag>;
+        return <Tag color={color} className="rounded-full px-4 font-bold border-0">{status.toUpperCase()}</Tag>;
       },
     },
     {
       title: 'Action',
       key: 'action',
       align: 'right' as const,
+      // REMOVED fixed: 'right' so it sits at the end of the swipe
+      width: 100,
       render: (_: any, record: any) => {
         const menuItems: MenuProps['items'] = [
           {
@@ -166,8 +178,8 @@ function PayrollContent() {
         ];
 
         return (
-          <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-            <Button type="text" shape="circle" icon={<MoreOutlined />} />
+          <Dropdown menu={{ items: menuItems }} trigger={['click']} placement="bottomRight">
+            <Button type="text" shape="circle" icon={<MoreOutlined className="text-lg" />} />
           </Dropdown>
         );
       },
@@ -175,62 +187,61 @@ function PayrollContent() {
   ];
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
+    <div className="max-w-[1600px] mx-auto pb-10 px-4">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Payroll Management</Title>
+          <Title level={2} className="m-0 font-black">Payroll Management</Title>
           <Text type="secondary">Manage employee salaries, bonuses, and payment status.</Text>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          {/* Removed Global Search Bar */}
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<BankOutlined />} 
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none"
-          >
-            Run Payroll
-          </Button>
-        </div>
+        <Button 
+          type="primary" 
+          size="large" 
+          icon={<BankOutlined />} 
+          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold border-none w-full md:w-auto h-12 shadow-md shadow-purple-100"
+        >
+          Run Payroll
+        </Button>
       </div>
 
-      {/* KPI Stats */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      {/* KPI Stats - Centered on Mobile */}
+      <Row gutter={[16, 16]} className="mb-8">
         <Col xs={24} sm={12}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Total Disbursed</span>}
+              title={<Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Disbursed</Text>}
               value={payroll.filter(p => p.status === 'Paid').reduce((acc, curr) => acc + curr.total, 0)} 
-              prefix={<span className="text-emerald-500 text-2xl mr-2">Rs.</span>}
-              valueStyle={{ fontWeight: 800, color: '#10B981' }}
+              prefix={<span className="text-emerald-500 text-lg md:text-xl font-bold mr-1">Rs.</span>}
+              styles={{ content: { fontWeight: 800, color: '#10B981', fontSize: '24px' } }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
-              title={<span className="text-xs font-bold text-gray-400 uppercase">Pending Payments</span>}
+              title={<Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pending Payments</Text>}
               value={payroll.filter(p => p.status !== 'Paid').reduce((acc, curr) => acc + curr.total, 0)} 
-              prefix={<span className="text-amber-500 text-2xl mr-2">Rs.</span>}
-              valueStyle={{ fontWeight: 800, color: '#F59E0B' }}
+              prefix={<span className="text-amber-500 text-lg md:text-xl font-bold mr-1">Rs.</span>}
+              styles={{ content: { fontWeight: 800, color: '#F59E0B', fontSize: '24px' } }}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Table */}
+      {/* Table Container - FULL SWIPE */}
       <Card 
-        bordered={false} 
-        style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}
-        styles={{ body: { padding: 0 } }} // FIX: Updated bodyStyle API
+        variant="borderless" 
+        className="shadow-sm rounded-3xl overflow-hidden"
+        styles={{ body: { padding: 0 } }} 
       >
         <Table 
           columns={columns} 
           dataSource={payroll} 
-          pagination={{ pageSize: 8 }}
+          pagination={{ pageSize: 8, size: 'small' }}
           rowKey="key"
+          // Force horizontal scroll for the entire table
+          scroll={{ x: 1000 }} 
         />
       </Card>
     </div>
