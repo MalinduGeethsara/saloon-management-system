@@ -19,9 +19,11 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 4px' }}>
       <header style={{ marginBottom: '32px' }}>
-        <Title level={1} style={{ fontWeight: 800, margin: 0 }}>System Overview</Title>
+        <Title level={1} style={{ fontWeight: 800, margin: 0, fontSize: 'clamp(24px, 5vw, 38px)' }}>
+          System Overview
+        </Title>
         <Text type="secondary">Real-time status of your Salon network.</Text>
       </header>
 
@@ -40,30 +42,38 @@ export default function AdminDashboard() {
         </Col>
       </Row>
 
-      {/* FIX: Replaced List component with a manual map inside a Card */}
       <Card 
         variant="borderless" 
         title={<span style={{ fontWeight: 800 }}>Recent Activity</span>} 
-        style={{ borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
+        style={{ 
+          borderRadius: '24px', 
+          boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+          overflow: 'hidden' 
+        }}
+        // Enable horizontal scroll on mobile for the list
+        styles={{ body: { padding: '20px', overflowX: 'auto' } }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {activities.map((item, index) => (
-            <React.Fragment key={item.id}>
-              <div style={{ padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Space size="middle">
-                  <CheckCircleFilled style={{ color: '#48BB78', fontSize: '20px' }} />
-                  <div>
-                    <Text strong style={{ display: 'block' }}>{item.title}</Text>
-                    <Text type="secondary" style={{ fontSize: '12px' }}>Snapshot completed successfully.</Text>
-                  </div>
-                </Space>
-                <Text type="secondary" style={{ fontSize: '12px', fontFamily: 'monospace' }}>
-                  {item.time}
-                </Text>
-              </div>
-              {index !== activities.length - 1 && <Divider style={{ margin: 0 }} />}
-            </React.Fragment>
-          ))}
+        {/* Forces a minimum width so it becomes swipeable rather than squashed */}
+        <div style={{ minWidth: '450px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {activities.map((item, index) => (
+              <React.Fragment key={item.id}>
+                <div style={{ padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Space size="middle">
+                    <CheckCircleFilled style={{ color: '#48BB78', fontSize: '20px' }} />
+                    <div>
+                      <Text strong style={{ display: 'block' }}>{item.title}</Text>
+                      <Text type="secondary" style={{ fontSize: '12px' }}>Snapshot completed successfully.</Text>
+                    </div>
+                  </Space>
+                  <Text type="secondary" style={{ fontSize: '12px', fontFamily: 'monospace', marginLeft: '20px' }}>
+                    {item.time}
+                  </Text>
+                </div>
+                {index !== activities.length - 1 && <Divider style={{ margin: 0 }} />}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       </Card>
     </div>
@@ -74,11 +84,11 @@ function StatCard({ title, value, icon, color }: any) {
   return (
     <Card variant="borderless" style={{ borderRadius: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-        <div>
-          <Text type="secondary" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>{title}</Text>
-          <Title level={2} style={{ margin: '4px 0 0 0', fontWeight: 800 }}>{value}</Title>
+        <div style={{ flex: 1, marginRight: '8px' }}>
+          <Text type="secondary" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>{title}</Text>
+          <Title level={2} style={{ margin: '4px 0 0 0', fontWeight: 800, fontSize: '24px' }}>{value}</Title>
         </div>
-        <Avatar size={40} icon={icon} style={{ backgroundColor: `${color}15`, color: color, borderRadius: '12px' }} />
+        <Avatar size={40} icon={icon} style={{ backgroundColor: `${color}15`, color: color, borderRadius: '12px', flexShrink: 0 }} />
       </div>
     </Card>
   );

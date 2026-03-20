@@ -112,7 +112,7 @@ export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
             <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Form.Item name="salaryType" label="Salary Structure">
-                  <Select defaultValue="Commission" size="large">
+  <               Select size="large">
                     <Option value="Commission">Commission Based</Option>
                     <Option value="Fixed">Fixed Salary</Option>
                     <Option value="Hybrid">Fixed + Commission</Option>

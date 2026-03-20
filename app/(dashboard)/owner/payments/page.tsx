@@ -81,7 +81,7 @@ function PaymentsContent() {
             onClick={() => confirm()}
             icon={<SearchOutlined />}
             size="small"
-            style={{ width: 90, backgroundColor: '#7C4DFF' }}
+            style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}
           >
             Search
           </Button>
@@ -103,10 +103,12 @@ function PaymentsContent() {
         .toString()
         .toLowerCase()
         .includes((value as string).toLowerCase()),
-    onFilterDropdownOpenChange: (visible) => {
-      if (visible) {
-        setTimeout(() => searchInput.current?.select(), 100);
-      }
+    filterDropdownProps: {
+      onOpenChange: (visible) => {
+        if (visible) {
+          setTimeout(() => searchInput.current?.select(), 100);
+        }
+      },
     },
   });
 
@@ -118,18 +120,22 @@ function PaymentsContent() {
       title: 'Invoice ID',
       dataIndex: 'id',
       key: 'id',
-      ...getColumnSearchProps('id', 'ID'), // Added Search
+      width: 140,
+      align: 'left' as const,
+      ...getColumnSearchProps('id', 'ID'), 
       render: (text: string) => <span className="font-mono text-xs font-bold text-slate-500">{text}</span>,
     },
     {
       title: 'Client Details',
       dataIndex: 'client',
       key: 'client',
-      ...getColumnSearchProps('client', 'Client'), // Added Search
+      width: 250,
+      align: 'left' as const,
+      ...getColumnSearchProps('client', 'Client'), 
       render: (text: string, record: any) => (
         <div className="flex flex-col">
-          <span className="font-bold text-slate-800">{text}</span>
-          <span className="text-xs text-slate-500">
+          <span className="font-bold text-slate-800 text-[14px]">{text}</span>
+          <span className="text-[11px] text-slate-500">
             {record.items?.length > 1 ? `${record.items[0].name} +${record.items.length - 1} more` : record.items?.[0]?.name}
           </span>
         </div>
@@ -139,12 +145,16 @@ function PaymentsContent() {
       title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
-      render: (amount: number) => <span className="font-mono font-bold text-slate-800">Rs. {amount.toLocaleString()}</span>,
+      width: 150,
+      align: 'right' as const, // Right-align financial figures
+      render: (amount: number) => <span className="font-mono font-bold text-slate-800 text-[15px]">Rs. {amount.toLocaleString()}</span>,
     },
     {
       title: 'Method',
       dataIndex: 'method',
       key: 'method',
+      width: 140,
+      align: 'center' as const, // Center align tags
       filters: [
         { text: 'Cash', value: 'Cash' },
         { text: 'Card', value: 'Card' },
@@ -152,21 +162,31 @@ function PaymentsContent() {
       ],
       onFilter: (value: any, record: any) => record.method === value,
       render: (method: string) => (
-        <Tag icon={method === 'Cash' ? <WalletOutlined /> : <CreditCardOutlined />}>{method}</Tag>
+        <Tag className="font-semibold px-3 py-0.5 rounded-md" icon={method === 'Cash' ? <WalletOutlined /> : <CreditCardOutlined />}>{method}</Tag>
       ),
+    },
+    {
+      title: 'Date',
+      dataIndex: 'date',
+      key: 'date',
+      width: 140,
+      align: 'center' as const,
+      render: (text: string) => <span className="text-slate-500">{text}</span>,
     },
     {
       title: 'Action',
       key: 'action',
-      align: 'right' as const,
+      width: 80,
+      align: 'right' as const, // Push action icon to the right
       render: (_: any, record: any) => (
         <div className="flex items-center justify-end">
           <Tooltip title="View/Print Invoice">
             <Button 
               type="text" 
               shape="circle" 
-              icon={<EyeOutlined className="text-blue-500" />} 
+              icon={<EyeOutlined className="text-[#7C4DFF] text-lg" />} 
               onClick={() => handleViewInvoice(record)} 
+              className="bg-[#F3E8FF] hover:bg-[#E9D5FF]"
             />
           </Tooltip>
         </div>
@@ -175,40 +195,62 @@ function PaymentsContent() {
   ];
 
   return (
-    <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: 40 }}>
+    <div className="max-w-[1600px] mx-auto pb-10 px-4">
+      
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Payments & Billing</Title>
-          <Text type="secondary">Manage transactions, invoices, and revenue.</Text>
+          <Title level={2} className="m-0 font-black">Payments & Billing</Title>
+          <Text type="secondary">Manage transactions, invoices, and revenue. Swipe table to see all data.</Text>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<PlusOutlined />} 
-            onClick={handleAddNew}
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200"
-          >
-            Create Bill
-          </Button>
-        </div>
+        <Button 
+          type="primary" 
+          size="large" 
+          icon={<PlusOutlined />} 
+          onClick={handleAddNew}
+          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold border-none w-full md:w-auto h-12 shadow-md shadow-purple-100"
+        >
+          Create Bill
+        </Button>
       </div>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      {/* KPI Stats - Centered on Mobile */}
+      <Row gutter={[16, 16]} className="mb-8">
         <Col xs={24} sm={12}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-            <Statistic title={<span className="text-xs font-bold text-gray-400 uppercase">Total Revenue</span>} value={totalRevenue} prefix={<span className="text-emerald-500 text-2xl mr-2">Rs.</span>} valueStyle={{ fontWeight: 800, color: '#10B981' }} />
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
+            <Statistic 
+              title={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</span>} 
+              value={totalRevenue} 
+              prefix={<span className="text-emerald-500 text-lg md:text-xl font-bold mr-1">Rs.</span>} 
+              styles={{ content: { fontWeight: 800, color: '#10B981', fontSize: '24px' } }} 
+            />
           </Card>
         </Col>
         <Col xs={24} sm={12}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-            <Statistic title={<span className="text-xs font-bold text-gray-400 uppercase">Total Transactions</span>} value={totalTransactions} valueStyle={{ fontWeight: 800, color: '#7C4DFF' }} />
+          <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
+            <Statistic 
+              title={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Transactions</span>} 
+              value={totalTransactions} 
+              styles={{ content: { fontWeight: 800, color: '#7C4DFF', fontSize: '24px' } }} 
+            />
           </Card>
         </Col>
       </Row>
 
-      <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }} styles={{ body: { padding: 0 } }}>
-        <Table columns={columns} dataSource={payments} pagination={{ pageSize: 8 }} rowKey="key" />
+      {/* Table Container - FULL SWIPE */}
+      <Card 
+        variant="borderless" 
+        className="shadow-sm rounded-3xl overflow-hidden" 
+        styles={{ body: { padding: 0 } }}
+      >
+        <Table 
+          columns={columns} 
+          dataSource={payments} 
+          pagination={{ pageSize: 8, size: 'small' }} 
+          rowKey="key" 
+          // Force horizontal scroll for the entire table
+          scroll={{ x: 900 }}
+        />
       </Card>
 
       <PaymentModal 

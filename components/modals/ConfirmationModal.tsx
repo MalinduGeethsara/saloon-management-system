@@ -34,6 +34,7 @@ export function ConfirmationModal({
       footer={null}
       centered
       width={400}
+      zIndex={1050} // FIX: Added a higher zIndex so it ALWAYS sits on top of other modals
       styles={{ body: { padding: '20px 0 0 0' } }}
     >
       <div className="flex flex-col items-center text-center space-y-4">
