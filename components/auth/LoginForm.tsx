@@ -3,31 +3,44 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, theme } from 'antd';
 import { UserOutlined, LockOutlined, TeamOutlined } from '@ant-design/icons';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
 
 export const LoginForm = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   
-  // Automatically grabs the #7C4DFF color from the ConfigProvider
   const { token } = useToken();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   const onFinish = async (values: any) => {
     setLoading(true);
     
-    console.log('Login attempt:', values);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
 
-    // Simulating an API login call
-    setTimeout(() => {
+      const data = await response.json();
+
+      if (response.ok) {
+        message.success(`Welcome back, ${data.name}!`);
+        // If they just logged in normally, send them to the main portal selection page
+        router.push(callbackUrl === '/login' ? '/' : callbackUrl); 
+        router.refresh(); 
+      } else {
+        message.error(data.message || 'Invalid email or password');
+      }
+    } catch (error) {
+      message.error('Something went wrong. Please try again.');
+    } finally {
       setLoading(false);
-      message.success('Welcome back!');
-      
-      // Redirecting to the dashboard
-      router.push('/owner'); // Update this path based on where they should go
-    }, 1200);
+    }
   };
 
   return (
@@ -35,20 +48,18 @@ export const LoginForm = () => {
       style={{ 
         width: '100%', 
         maxWidth: 400, 
-        // Generates a soft shadow matching your exact purple color
         boxShadow: `0 20px 40px ${token.colorPrimary}15`, 
         borderRadius: 16,
         padding: '12px 8px'
       }}
-      variant="borderless" // <-- FIX: Changed from bordered={false} to variant="borderless"
+      variant="borderless" 
     >
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        {/* Friendly Icon Box using the #7C4DFF theme color */}
         <div style={{ 
           width: 64, 
           height: 64, 
-          backgroundColor: `${token.colorPrimary}15`, // Purple with 15% opacity
-          borderRadius: '50%', // Circle shape
+          backgroundColor: `${token.colorPrimary}15`, 
+          borderRadius: '50%', 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -82,7 +93,7 @@ export const LoginForm = () => {
         >
           <Input 
             prefix={<UserOutlined style={{ color: '#bfbfbf', marginRight: 8 }} />} 
-            placeholder="user@salon.com" 
+            placeholder="owner@salon.com" 
             style={{ padding: '10px 14px' }}
           />
         </Form.Item>
@@ -98,6 +109,23 @@ export const LoginForm = () => {
             style={{ padding: '10px 14px' }}
           />
         </Form.Item>
+
+        {/* --- Added Demo Credentials Box matching your theme --- */}
+        <div style={{ 
+          backgroundColor: '#F8F9FF', 
+          padding: '12px 16px', 
+          borderRadius: '8px', 
+          marginBottom: '24px', 
+          fontSize: '12px', 
+          color: '#64748B', 
+          border: '1px solid #E2E8F0',
+          lineHeight: '1.6'
+        }}>
+          <strong style={{ color: token.colorPrimary }}>Demo Logins (Pass: password123)</strong><br />
+          <span style={{ display: 'inline-block', width: '50px', fontWeight: 600 }}>Owner:</span> owner@salon.com<br />
+          <span style={{ display: 'inline-block', width: '50px', fontWeight: 600 }}>Admin:</span> admin@salon.com<br />
+          <span style={{ display: 'inline-block', width: '50px', fontWeight: 600 }}>Barber:</span> barber@salon.com
+        </div>
 
         <Form.Item style={{ marginBottom: 0 }}>
           <Button 
