@@ -175,7 +175,7 @@ function StaffContent() {
     <div className="max-w-[1600px] mx-auto pb-10 px-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} className="m-0 font-black">Staff Directory</Title>
+          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Staff Directory</Title>
           <Text type="secondary">Team management and performance tracking.</Text>
         </div>
         <Button 

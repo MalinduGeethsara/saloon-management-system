@@ -215,19 +215,6 @@ function ScheduleContent() {
       {/* --- LEFT SIDEBAR (Control Panel) --- */}
       <div className="w-full lg:w-80 flex flex-col gap-4 h-full overflow-y-auto pr-1">
         
-        {/* Main Action - Sized to match the rest of the application */}
-     <Button 
-       type="primary"
-       icon={<PlusOutlined />}
-       onClick={() => { setSelectedDate(new Date()); setIsNewModalOpen(true); }}  
-       style={{ 
-       height: '70px',       // Custom Height
-       fontSize: '20px',     // Custom Text Size
-       borderRadius: '12px'  // Rounded corners
-       }}
-       >
-       New Appointment
-      </Button>
 
 
         {/* Mini Calendar Card */}

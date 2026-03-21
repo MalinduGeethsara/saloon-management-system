@@ -200,7 +200,7 @@ function PaymentsContent() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} className="m-0 font-black">Payments & Billing</Title>
+          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Payments & Billing</Title>
           <Text type="secondary">Manage transactions, invoices, and revenue. Swipe table to see all data.</Text>
         </div>
         <Button 

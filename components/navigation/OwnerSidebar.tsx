@@ -70,23 +70,7 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
         items={menuItems}
       />
 
-      <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20, padding: '16px', background: '#F8F9FF', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Typography.Text strong style={{ fontSize: '12px' }}>Business Health</Typography.Text>
-          <Typography.Text style={{ fontSize: '10px', color: '#7C4DFF' }}>84%</Typography.Text>
-        </div>
-        
-        <Progress 
-          percent={84} 
-          showInfo={false} 
-          strokeColor="#7C4DFF" 
-          size={{ height: 8 }} 
-        />
-        
-        <Button type="primary" block size="small" style={{ marginTop: 12, borderRadius: 8, fontSize: '12px', height: '32px' }}>
-          View Full Audit
-        </Button>
-      </div>
+ 
     </Sider>
   );
 }

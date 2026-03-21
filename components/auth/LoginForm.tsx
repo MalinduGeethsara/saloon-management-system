@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, theme } from 'antd';
-import { UserOutlined, LockOutlined, TeamOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined } from '@ant-design/icons'; 
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image'; // ✅ CORRECT: Only import the Next.js component
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
@@ -30,7 +31,6 @@ export const LoginForm = () => {
 
       if (response.ok) {
         message.success(`Welcome back, ${data.name}!`);
-        // If they just logged in normally, send them to the main portal selection page
         router.push(callbackUrl === '/login' ? '/' : callbackUrl); 
         router.refresh(); 
       } else {
@@ -55,25 +55,29 @@ export const LoginForm = () => {
       variant="borderless" 
     >
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        
+        {/* ✅ Image Container */}
         <div style={{ 
-          width: 64, 
-          height: 64, 
+          width: 80, 
+          height: 80, 
           backgroundColor: `${token.colorPrimary}15`, 
           borderRadius: '50%', 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto 16px'
+          margin: '0 auto 16px',
+          overflow: 'hidden', 
+          position: 'relative' 
         }}>
-          <TeamOutlined style={{ color: token.colorPrimary, fontSize: '32px' }} />
+          <Image 
+            src="/images/dashboard/logo.png"  
+            alt="Salon Logo" 
+            fill 
+            style={{ objectFit: 'contain' }} 
+          />
         </div>
         
-        <Title level={3} style={{ marginBottom: 4, fontWeight: 600, color: token.colorTextHeading }}>
-          Welcome Back
-        </Title>
-        <Text type="secondary" style={{ fontSize: '15px' }}>
-          Please enter your credentials to login
-        </Text>
+ 
       </div>
 
       <Form
@@ -110,7 +114,7 @@ export const LoginForm = () => {
           />
         </Form.Item>
 
-        {/* --- Added Demo Credentials Box matching your theme --- */}
+        {/* Demo Credentials Box */}
         <div style={{ 
           backgroundColor: '#F8F9FF', 
           padding: '12px 16px', 

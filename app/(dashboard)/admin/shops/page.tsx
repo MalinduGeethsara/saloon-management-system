@@ -167,15 +167,15 @@ export default function ShopDataPage() {
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: Shop) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '200px' }}>
+        <div className="flex items-center gap-3 min-w-[200px]">
           <Avatar 
             shape="square" size={50} src={record.image}
             icon={!record.image && <ShopOutlined />} 
             style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF', borderRadius: '12px', flexShrink: 0 }} 
           />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <Text strong style={{ fontSize: '15px' }}>{text}</Text>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
+          <div className="flex flex-col">
+            <Text strong className="text-[15px]">{text}</Text>
+            <Text type="secondary" className="text-[12px]">
               <EnvironmentOutlined /> {record.location}, {record.region}
             </Text>
           </div>
@@ -187,9 +187,11 @@ export default function ShopDataPage() {
       dataIndex: 'owner',
       key: 'owner',
       render: (text: string, record: Shop) => (
-        <div style={{ minWidth: '150px' }}>
-          <div style={{ fontWeight: 500 }}>{text}</div>
-          <div style={{ fontSize: '12px', color: '#94a3b8' }}><PhoneOutlined style={{ marginRight: '4px' }} />{record.contact}</div>
+        <div className="min-w-[150px]">
+          <div className="font-medium">{text}</div>
+          <div className="text-[12px] text-slate-400 font-medium">
+            <PhoneOutlined className="mr-1" />{record.contact}
+          </div>
         </div>
       ),
     },
@@ -198,8 +200,8 @@ export default function ShopDataPage() {
       dataIndex: 'status',
       key: 'status',
       render: (status: string, record: Shop) => (
-        <Space size="middle" style={{ minWidth: '120px' }}>
-          <Tag color={status === 'Active' ? 'success' : 'default'} style={{ borderRadius: '10px', fontWeight: 600 }}>
+        <Space size="middle" className="min-w-[120px]">
+          <Tag color={status === 'Active' ? 'success' : 'default'} className="rounded-full px-3 py-0.5 m-0 font-bold border-0">
             {status.toUpperCase()}
           </Tag>
           <Switch 
@@ -215,7 +217,7 @@ export default function ShopDataPage() {
       key: 'action',
       align: 'right' as const,
       render: (_: any, record: Shop) => (
-        <Space style={{ minWidth: '120px' }}>
+        <Space className="min-w-[120px]">
           <Tooltip title="QR Profile">
             <Button type="text" shape="circle" icon={<QrcodeOutlined style={{ color: '#7C4DFF' }} />} onClick={() => { setActiveQRShop(record); setIsQRModalOpen(true); }} />
           </Tooltip>
@@ -234,35 +236,41 @@ export default function ShopDataPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto pb-10" style={{ padding: '0 10px' }}>
+    <div className="max-w-[1600px] mx-auto pb-10 px-4">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} className="m-0 font-extrabold" style={{ fontSize: 'clamp(20px, 5vw, 30px)' }}>Registered Shops</Title>
+          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Registered Shops</Title>
           <Text type="secondary">Digital identity management for Sri Lankan salon branches.</Text>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Input 
-            prefix={<SearchOutlined className="text-gray-400" />} 
+            prefix={<SearchOutlined className="text-slate-400" />} 
             placeholder="Search shops..." 
             size="large"
-            className="rounded-xl w-full md:w-72"
+            className="rounded-xl w-full md:w-72 shadow-sm border-slate-200"
             onChange={e => setSearchText(e.target.value)}
           />
-          <Button type="primary" size="large" icon={<PlusOutlined />} onClick={handleAddNew} className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold border-none shadow-lg shadow-purple-100 h-12">
+          <Button 
+            type="primary" 
+            size="large" 
+            icon={<PlusOutlined />} 
+            onClick={handleAddNew} 
+            className="bg-[#1A1A1B] hover:bg-black rounded-xl font-bold border-none shadow-md h-12"
+          >
             Register Shop
           </Button>
         </div>
       </div>
 
-      {/* Main Table - Mobile Swipe Enabled */}
-      <Card variant="borderless" className="shadow-xl shadow-slate-200/50 rounded-3xl overflow-hidden" styles={{ body: { padding: 0 } }}>
+      {/* Main Table Card */}
+      <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden" styles={{ body: { padding: 0 } }}>
         <Table 
           columns={columns} 
           dataSource={filteredData} 
-          pagination={{ pageSize: 6 }} 
+          pagination={{ pageSize: 8, size: 'small' }} 
           rowKey="key" 
-          scroll={{ x: 'max-content' }} // FIX: Enable horizontal scroll on mobile
+          scroll={{ x: 1000 }} 
           className="custom-table" 
         />
       </Card>
@@ -273,35 +281,37 @@ export default function ShopDataPage() {
         open={isModalOpen} 
         onCancel={() => setIsModalOpen(false)} 
         footer={null} 
+        forceRender 
         destroyOnHidden 
         centered 
         width={650}
+        styles={{ body: { padding: '20px 24px' } }}
       >
-        <Form form={form} layout="vertical" onFinish={handleSave} className="mt-4">
-          <Form.Item label="Identity Photo">
+        <Form form={form} layout="vertical" onFinish={handleSave} className="mt-2">
+          <Form.Item label={<span className="font-bold text-slate-700 uppercase text-[11px] tracking-wider">Identity Photo</span>}>
             <Upload listType="picture-card" fileList={fileList} onChange={({ fileList }) => setFileList(fileList)} beforeUpload={() => false} maxCount={1}>
-              {fileList.length < 1 && <div><PlusOutlined /><div className="mt-2 text-xs">Upload</div></div>}
+              {fileList.length < 1 && <div><PlusOutlined /><div className="mt-1 text-[11px] font-bold">UPLOAD</div></div>}
             </Upload>
           </Form.Item>
           <Row gutter={16}>
-            <Col xs={24} sm={12}><Form.Item name="name" label="Shop Name" rules={[{ required: true }]}><Input size="large" placeholder="Salon Ruchira" /></Form.Item></Col>
-            <Col xs={24} sm={12}><Form.Item name="owner" label="Owner Name" rules={[{ required: true }]}><Input size="large" placeholder="Ruchira Perera" /></Form.Item></Col>
+            <Col xs={24} sm={12}><Form.Item name="name" label={<span className="font-bold text-slate-700 text-[11px] uppercase">Shop Name</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="Salon Ruchira" /></Form.Item></Col>
+            <Col xs={24} sm={12}><Form.Item name="owner" label={<span className="font-bold text-slate-700 text-[11px] uppercase">Owner Name</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="Ruchira Perera" /></Form.Item></Col>
           </Row>
           <Row gutter={16}>
             <Col xs={24} sm={12}>
-              <Form.Item name="region" label="District" rules={[{ required: true }]}>
-                <Select size="large" showSearch options={SL_REGIONS.map(r => ({ label: r, value: r }))} />
+              <Form.Item name="region" label={<span className="font-bold text-slate-700 text-[11px] uppercase">District</span>} rules={[{ required: true }]}>
+                <Select size="large" className="rounded-xl" showSearch options={SL_REGIONS.map(r => ({ label: r, value: r }))} />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}><Form.Item name="location" label="City" rules={[{ required: true }]}><Input size="large" placeholder="Colombo 07" /></Form.Item></Col>
+            <Col xs={24} sm={12}><Form.Item name="location" label={<span className="font-bold text-slate-700 text-[11px] uppercase">City</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="Colombo 07" /></Form.Item></Col>
           </Row>
           <Row gutter={16}>
-            <Col xs={24} sm={12}><Form.Item name="contact" label="Contact" rules={[{ required: true }]}><Input size="large" placeholder="077xxxxxxx" /></Form.Item></Col>
-            <Col xs={24} sm={12}><Form.Item name="br" label="BR Number" rules={[{ required: true }]}><Input size="large" placeholder="BR-WP-xxxx" /></Form.Item></Col>
+            <Col xs={24} sm={12}><Form.Item name="contact" label={<span className="font-bold text-slate-700 text-[11px] uppercase">Contact</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="077xxxxxxx" /></Form.Item></Col>
+            <Col xs={24} sm={12}><Form.Item name="br" label={<span className="font-bold text-slate-700 text-[11px] uppercase">BR Number</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="BR-WP-xxxx" /></Form.Item></Col>
           </Row>
-          <div className="flex justify-end gap-2 mt-6">
-            <Button size="large" className="rounded-xl" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" size="large" className="bg-[#7C4DFF] border-none font-bold min-w-[120px] rounded-xl h-12">Save Shop</Button>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button size="large" className="rounded-xl border-slate-200 font-bold" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button type="primary" htmlType="submit" size="large" className="bg-[#7C4DFF] hover:bg-[#6c42e0] border-none font-bold min-w-[140px] rounded-xl h-12 shadow-md shadow-purple-100">Save Shop</Button>
           </div>
         </Form>
       </Modal>
