@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from "next/navigation";
 import { Layout, ConfigProvider, Drawer, Button } from 'antd';
-import { MenuOutlined } from '@ant-design/icons';
+import { MenuOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { AdminSidebar } from "@/components/navigation/AdminSidebar";
 import { OwnerSidebar } from "@/components/navigation/OwnerSidebar";
 import { NotificationBell } from "@/components/layout/NotificationBell"; 
@@ -15,7 +15,10 @@ const SINHALA_MONTHS = ["ජනවාරි", "පෙබරවාරි", "ම�
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  
+  // 1. States for both Mobile and Desktop sidebars
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true); // Defaults to open on desktop
   
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState(new Date());
@@ -23,10 +26,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isOwnerRoute = pathname.startsWith("/owner");
   const isAdminRoute = pathname.startsWith("/admin");
 
-  // 1. Create a close handler
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  // 2. Pass the close handler to the sidebars
   const SidebarContent = isOwnerRoute ? (
     <OwnerSidebar onClose={closeMobileMenu} />
   ) : isAdminRoute ? (
@@ -73,26 +74,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       }}
     >
+      {/* 2. Added CSS logic to handle smooth sliding animations */}
       <style jsx global>{`
         /* Default: Mobile View */
         .dashboard-sider { display: none !important; }
-        .dashboard-main { margin-left: 0 !important; }
+        .dashboard-main { 
+          margin-left: 0 !important; 
+          transition: margin-left 0.3s cubic-bezier(0.2, 0, 0, 1) !important;
+        }
+        .desktop-menu-btn { display: none !important; }
+        .mobile-menu-btn { display: inline-flex !important; }
         
-        /* Desktop View */
+        /* Desktop View (992px and up) */
         @media (min-width: 992px) {
-          .dashboard-sider { display: block !important; }
-          .dashboard-main { margin-left: 260px !important; }
+          .dashboard-sider { 
+            display: block !important; 
+            transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1) !important;
+          }
+          
+          /* Dynamic classes controlled by React state */
+          .dashboard-sider.sidebar-closed { transform: translateX(-260px) !important; }
+          .dashboard-sider.sidebar-open { transform: translateX(0) !important; }
+          
+          .dashboard-main.sidebar-closed { margin-left: 0 !important; }
+          .dashboard-main.sidebar-open { margin-left: 260px !important; }
+          
           .mobile-menu-btn { display: none !important; }
+          .desktop-menu-btn { display: inline-flex !important; }
         }
       `}</style>
 
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout style={{ minHeight: '100vh', overflow: 'hidden' }}>
         
         {/* --- DESKTOP SIDEBAR --- */}
         <Sider 
           width={260} 
           theme="light" 
-          className="dashboard-sider"
+          /* 3. Apply dynamic class based on state */
+          className={`dashboard-sider ${desktopSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}
           style={{ 
             borderRight: '1px solid #E2E8F0',
             position: 'fixed', 
@@ -116,12 +135,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }}
           closable={false}
         >
-          {/* SidebarContent here receives the closeMobileMenu prop */}
           {SidebarContent}
         </Drawer>
 
         {/* --- MAIN LAYOUT --- */}
-        <Layout className="dashboard-main" style={{ transition: 'margin-left 0.2s' }}>
+        {/* 4. Apply dynamic class to shift the main content area */}
+        <Layout className={`dashboard-main ${desktopSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           
           <Header style={{ 
             padding: '0 24px', 
@@ -137,10 +156,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }}>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              
+              {/* Mobile Menu Button (Only shows on small screens) */}
               <Button 
                 className="mobile-menu-btn"
                 icon={<MenuOutlined />} 
                 onClick={() => setMobileMenuOpen(true)} 
+                size="large"
+                type="text"
+              />
+
+              {/* 5. Desktop Menu Button (Only shows on large screens) */}
+              <Button 
+                className="desktop-menu-btn"
+                icon={desktopSidebarOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />} 
+                onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)} 
                 size="large"
                 type="text"
               />

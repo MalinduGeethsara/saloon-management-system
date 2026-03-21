@@ -35,11 +35,13 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
       style={{ height: '100vh', borderRight: '1px solid #E2E8F0', position: 'sticky', top: 0 }}
     >
       {/* Admin Logo */}
-      <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{ width: 32, height: 32, background: '#7C4DFF', borderRadius: 8, display: 'grid', placeItems: 'center', color: 'white', fontWeight: 'bold' }}>C</div>
-        <span style={{ fontSize: '22px', fontWeight: 800, color: '#2D3748', letterSpacing: '-1px' }}>cascal</span>
-      </div>
-
+      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+  {/* The Text */}
+  <div style={{ display: 'grid', color: '#7C4DFF', fontWeight: 'bolder', fontSize: '18px' }}>SYSTEM ADMIN</div>
+  
+  {/* The Horizontal Divider Line */}
+  <div style={{ padding: '1px',width: '100%', height: '1px', backgroundColor: '#7C4DFF' }} />
+</div>
       <Menu
         mode="inline"
         selectedKeys={[pathname]}
