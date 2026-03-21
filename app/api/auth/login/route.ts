@@ -3,9 +3,10 @@ import { cookies } from 'next/headers';
 
 // --- Hardcoded Temporary Database ---
 const USERS = [
-  { email: 'owner@salon.com', password: 'password123', role: 'owner', name: 'Mali' },
   { email: 'admin@salon.com', password: 'password123', role: 'admin', name: 'System Admin' },
-  { email: 'barber@salon.com', password: 'password123', role: 'staff', name: 'Kasun' }
+  { email: 'owner@salon.com', password: 'password123', role: 'owner', name: 'Mali' },
+  { email: 'manager@salon.com', password: 'password123', role: 'manager', name: 'Sarah' },  
+  { email: 'barber@salon.com', password: 'password123', role: 'barber', name: 'Kasun' }     
 ];
 
 export async function POST(request: Request) {

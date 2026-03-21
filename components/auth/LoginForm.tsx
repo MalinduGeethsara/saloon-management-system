@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, theme } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons'; 
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image'; // ✅ CORRECT: Only import the Next.js component
+import Image from 'next/image';
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
@@ -31,7 +31,18 @@ export const LoginForm = () => {
 
       if (response.ok) {
         message.success(`Welcome back, ${data.name}!`);
-        router.push(callbackUrl === '/login' ? '/' : callbackUrl); 
+        
+        let destination = callbackUrl;
+        
+        // If they just logged in normally, figure out exactly where to send them based on their role
+        if (destination === '/' || destination === '/login') {
+          if (data.role === 'admin') destination = '/admin';
+          else if (data.role === 'manager') destination = '/owner/bookings/manage';
+          else if (data.role === 'barber') destination = '/owner/calendar';
+          else destination = '/owner'; // Owner
+        }
+
+        router.push(destination); 
         router.refresh(); 
       } else {
         message.error(data.message || 'Invalid email or password');
@@ -77,7 +88,6 @@ export const LoginForm = () => {
           />
         </div>
         
- 
       </div>
 
       <Form
@@ -114,7 +124,7 @@ export const LoginForm = () => {
           />
         </Form.Item>
 
-        {/* Demo Credentials Box */}
+        {/* ✅ Updated Demo Credentials Box */}
         <div style={{ 
           backgroundColor: '#F8F9FF', 
           padding: '12px 16px', 
@@ -126,9 +136,10 @@ export const LoginForm = () => {
           lineHeight: '1.6'
         }}>
           <strong style={{ color: token.colorPrimary }}>Demo Logins (Pass: password123)</strong><br />
-          <span style={{ display: 'inline-block', width: '50px', fontWeight: 600 }}>Owner:</span> owner@salon.com<br />
-          <span style={{ display: 'inline-block', width: '50px', fontWeight: 600 }}>Admin:</span> admin@salon.com<br />
-          <span style={{ display: 'inline-block', width: '50px', fontWeight: 600 }}>Barber:</span> barber@salon.com
+          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Admin:</span> admin@salon.com<br />
+          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Owner:</span> owner@salon.com<br />
+          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Manager:</span> manager@salon.com<br />
+          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Barber:</span> barber@salon.com
         </div>
 
         <Form.Item style={{ marginBottom: 0 }}>
