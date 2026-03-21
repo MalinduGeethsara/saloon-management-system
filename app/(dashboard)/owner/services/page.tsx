@@ -245,7 +245,7 @@ function ServicesContent() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <Title level={2} className="m-0 font-black">Catalog Management</Title>
+          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Catalog Management</Title>
           <Text type="secondary">Manage services and products. Swipe table to see all details.</Text>
         </div>
         

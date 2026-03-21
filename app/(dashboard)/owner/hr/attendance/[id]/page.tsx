@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  Card, Typography, Row, Col, Statistic, Table, Tag, Button, Alert, Tooltip
+  Card, Typography, Row, Col, Statistic, Table, Tag, Button, Alert, Tooltip, DatePicker
 } from 'antd';
 import { 
-  ArrowLeftOutlined, WarningOutlined, CheckCircleOutlined, CloseCircleOutlined
+  ArrowLeftOutlined, WarningOutlined, CheckCircleOutlined, CloseCircleOutlined, CalendarOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
@@ -15,17 +15,11 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-// --- Mock Data ---
+// --- Config & Constants ---
 const EMPLOYEE = { name: "Kasun Perera", role: "Senior Barber", baseSalary: 75000 };
 const MONTHLY_WORK_DAYS = 25;
 const REQUIRED_HOURS = 11;
 const MAX_LEAVES = 4;
-
-const MOCK_ATTENDANCE_LOG = [
-  { key: '1', date: "2023-10-25", clockIn: "08:00 AM", clockOut: "07:30 PM" }, // 11.5 hrs
-  { key: '2', date: "2023-10-24", clockIn: "09:00 AM", clockOut: "05:00 PM" }, // 8 hrs (Short)
-  { key: '3', date: "2023-10-23", clockIn: "07:45 AM", clockOut: "08:15 PM" }, // 12.5 hrs
-];
 
 const MOCK_LEAVES = [
   { key: '1', dates: "2023-10-10", reason: "Sick Leave - Doctor appointment", status: "Approved" },
@@ -34,7 +28,7 @@ const MOCK_LEAVES = [
 
 // --- Algorithm: Calculate Hours Between Time Strings ---
 const calculateHours = (clockIn: string, clockOut: string) => {
-  if (clockIn === "-" || clockOut === "-") return 0;
+  if (!clockIn || !clockOut || clockIn === "-" || clockOut === "-") return 0;
   const start = dayjs(`2000-01-01 ${clockIn}`, "YYYY-MM-DD hh:mm A");
   const end = dayjs(`2000-01-01 ${clockOut}`, "YYYY-MM-DD hh:mm A");
   return end.diff(start, 'hour', true); // returns decimal hours
@@ -44,31 +38,84 @@ function EmployeeProfileContent() {
   const router = useRouter();
   const { showAlert } = useAlert();
   
+  // ✅ Added mounted state to prevent hydration errors
+  const [mounted, setMounted] = useState(false);
+  
   // States
+  const [selectedMonth, setSelectedMonth] = useState(dayjs());
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [leaves, setLeaves] = useState(MOCK_LEAVES);
 
   // Dynamic Confirmation Modal State
   const [confirmConfig, setConfirmConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    description: string;
-    confirmText: string;
-    isDanger: boolean;
-    action: (() => void) | null;
+    isOpen: boolean; title: string; description: string; confirmText: string; isDanger: boolean; action: (() => void) | null;
   }>({
-    isOpen: false,
-    title: '',
-    description: '',
-    confirmText: '',
-    isDanger: false,
-    action: null
+    isOpen: false, title: '', description: '', confirmText: '', isDanger: false, action: null
   });
+
+  // ✅ Trigger mounted state on client load
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
-  // Calculations
+  // Calculations for Leaves
   const approvedLeaves = leaves.filter(l => l.status === 'Approved').length;
   const remainingLeaves = MAX_LEAVES - approvedLeaves;
-  
+
+  // --- Dynamic Monthly Log Generator ---
+  const monthlyLogs = useMemo(() => {
+    const daysInMonth = selectedMonth.daysInMonth();
+    const logs = [];
+    const today = dayjs();
+
+    for (let i = 1; i <= daysInMonth; i++) {
+      const currentDate = selectedMonth.date(i);
+      const dateString = currentDate.format('YYYY-MM-DD');
+      const dayOfWeek = currentDate.format('ddd');
+      const isPastOrToday = currentDate.isBefore(today, 'day') || currentDate.isSame(today, 'day');
+      const isSunday = currentDate.day() === 0;
+
+      // Check if this specific date has an Approved Leave
+      const hasLeave = leaves.some(l => l.status === 'Approved' && l.dates.includes(dateString));
+
+      let clockIn = "-";
+      let clockOut = "-";
+      let status = "Future";
+
+      if (hasLeave) {
+        status = "Leave";
+      } else if (isSunday) {
+        status = "Holiday";
+      } else if (isPastOrToday) {
+        // Generating realistic mock data for past days
+        // 90% chance they showed up, 10% chance absent
+        const showedUp = Math.random() > 0.1;
+        if (showedUp) {
+          clockIn = "08:00 AM";
+          // 80% chance they worked full hours, 20% left early
+          clockOut = Math.random() > 0.2 ? "07:30 PM" : "05:00 PM";
+          status = "Worked";
+        } else {
+          status = "Absent";
+        }
+      }
+
+      logs.push({
+        key: dateString,
+        date: dateString,
+        dayOfWeek,
+        clockIn,
+        clockOut,
+        status
+      });
+    }
+    
+    // Return newest days at the top
+    return logs.reverse();
+  }, [selectedMonth, leaves]);
+
+  const daysWorked = monthlyLogs.filter(log => log.status === 'Worked').length;
+
   // --- Core Handlers (These run AFTER confirmation) ---
   const executeApplyLeave = (values: any) => {
     const startDate = values.dates[0].format('YYYY-MM-DD');
@@ -100,8 +147,6 @@ function EmployeeProfileContent() {
   };
 
   // --- Prompts (These trigger the Confirmation Modal) ---
-  
-  // 1. Used by the ApplyLeaveModal
   const promptApplyLeave = (values: any) => {
     setConfirmConfig({
       isOpen: true,
@@ -111,12 +156,11 @@ function EmployeeProfileContent() {
       isDanger: false,
       action: () => {
         executeApplyLeave(values);
-        setConfirmConfig(prev => ({ ...prev, isOpen: false })); // Close confirm modal
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
       }
     });
   };
 
-  // 2. Used by the Table Action Buttons
   const promptLeaveAction = (key: string, newStatus: string) => {
     const isApprove = newStatus === 'Approved';
     setConfirmConfig({
@@ -126,39 +170,62 @@ function EmployeeProfileContent() {
         ? 'Are you sure you want to approve this leave? This will recalculate the remaining leaves and potential salary deductions.' 
         : 'Are you sure you want to reject this leave request?',
       confirmText: isApprove ? 'Approve Leave' : 'Reject Leave',
-      isDanger: !isApprove, // Turns button red if rejecting
+      isDanger: !isApprove, 
       action: () => {
         executeLeaveAction(key, newStatus);
-        setConfirmConfig(prev => ({ ...prev, isOpen: false })); // Close confirm modal
+        setConfirmConfig(prev => ({ ...prev, isOpen: false })); 
       }
     });
   };
 
   // --- Table Columns ---
   const logColumns = [
-    { title: 'Date', dataIndex: 'date', key: 'date', width: 120 },
-    { title: 'Clock In', dataIndex: 'clockIn', key: 'clockIn', width: 120, render: (t: string) => <span className="font-mono">{t}</span> },
-    { title: 'Clock Out', dataIndex: 'clockOut', key: 'clockOut', width: 120, render: (t: string) => <span className="font-mono">{t}</span> },
+    { 
+      title: 'Date', 
+      key: 'date', 
+      width: 140, 
+      render: (_: any, record: any) => (
+        <div>
+          <div className="font-bold">{dayjs(record.date).format('DD MMM')}</div>
+          <div className="text-[10px] text-slate-400 uppercase tracking-widest">{record.dayOfWeek}</div>
+        </div>
+      )
+    },
+    { title: 'In / Out', key: 'times', width: 180, render: (_: any, record: any) => (
+        record.status === 'Worked' ? (
+          <div className="flex gap-2 font-mono text-xs">
+            <Tag className="m-0 bg-slate-50">{record.clockIn}</Tag> 
+            <span className="text-slate-300">→</span> 
+            <Tag className="m-0 bg-slate-50">{record.clockOut}</Tag>
+          </div>
+        ) : <span className="text-slate-300">—</span>
+      )
+    },
     {
-      title: 'Hours Logged',
+      title: 'Hrs',
       key: 'hours',
-      width: 130,
+      width: 100,
       render: (_: any, record: any) => {
         const hours = calculateHours(record.clockIn, record.clockOut);
-        return <span className="font-bold text-slate-700">{hours.toFixed(1)} hrs</span>;
+        return hours > 0 ? <span className="font-bold text-slate-700">{hours.toFixed(1)}h</span> : <span className="text-slate-300">-</span>;
       }
     },
     {
       title: 'Day Status',
       key: 'status',
-      width: 140,
+      width: 150,
       render: (_: any, record: any) => {
+        if (record.status === 'Future') return <span className="text-xs text-slate-300 font-medium italic">Pending...</span>;
+        if (record.status === 'Leave') return <Tag color="blue" className="rounded-full px-3 py-0.5 m-0 font-bold border-0">LEAVE</Tag>;
+        if (record.status === 'Holiday') return <Tag className="rounded-full px-3 py-0.5 m-0 font-bold border-0 bg-slate-100 text-slate-400">OFF DAY</Tag>;
+        if (record.status === 'Absent') return <Tag color="red" className="rounded-full px-3 py-0.5 m-0 font-bold border-0">ABSENT</Tag>;
+        
         const hours = calculateHours(record.clockIn, record.clockOut);
-        const isComplete = hours >= REQUIRED_HOURS; // ALGORITHM CHECK
+        const isComplete = hours >= REQUIRED_HOURS;
         return (
           <Tag color={isComplete ? 'green' : 'orange'} className="rounded-full px-3 py-0.5 m-0 font-bold border-0 flex items-center gap-1 w-fit">
             {isComplete ? <CheckCircleOutlined /> : <WarningOutlined />}
-            {isComplete ? 'Complete' : 'Short Hours'}
+            {isComplete ? 'Complete' : 'Short'}
           </Tag>
         );
       }
@@ -166,8 +233,8 @@ function EmployeeProfileContent() {
   ];
 
   const leaveColumns = [
-    { title: 'Date(s)', dataIndex: 'dates', key: 'dates', width: 150 },
-    { title: 'Type & Reason', dataIndex: 'reason', key: 'reason', width: 200, render: (t: string) => <span className="text-xs text-slate-600">{t}</span> },
+    { title: 'Date(s)', dataIndex: 'dates', key: 'dates', width: 130 },
+    { title: 'Reason', dataIndex: 'reason', key: 'reason', width: 180, render: (t: string) => <span className="text-xs text-slate-600">{t}</span> },
     {
       title: 'Status',
       dataIndex: 'status',
@@ -189,7 +256,6 @@ function EmployeeProfileContent() {
         }
         return (
           <div className="flex gap-1 justify-end">
-            {/* The action buttons trigger the prompt, NOT the direct execution */}
             <Tooltip title="Approve Leave">
               <Button size="small" type="text" shape="circle" className="bg-emerald-50 hover:bg-emerald-100" icon={<CheckCircleOutlined className="text-emerald-600" />} onClick={() => promptLeaveAction(record.key, 'Approved')} />
             </Tooltip>
@@ -202,10 +268,13 @@ function EmployeeProfileContent() {
     }
   ];
 
+  // ✅ Wait until mounted before returning the UI (Prevents Hydration Mismatch)
+  if (!mounted) return null;
+
   return (
     <div className="max-w-[1600px] mx-auto pb-10 px-4">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
         <div>
           <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} className="mb-2 -ml-3 text-slate-500 font-medium">
             Back to Roster
@@ -213,14 +282,25 @@ function EmployeeProfileContent() {
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>{EMPLOYEE.name}</Title>
           <Text type="secondary">{EMPLOYEE.role} • Attendance & Leave Profile</Text>
         </div>
-        <Button 
-          type="primary" 
-          size="large" 
-          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold shadow-md shadow-purple-100 border-none w-full md:w-auto h-12"
-          onClick={() => setIsLeaveModalOpen(true)}
-        >
-          Apply Leave
-        </Button>
+        
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          {/* Month Picker to browse historical data */}
+          <DatePicker 
+            picker="month" 
+            value={selectedMonth} 
+            onChange={(date) => date && setSelectedMonth(date)} 
+            className="h-12 rounded-xl border-slate-200 shadow-sm w-full sm:w-48"
+            allowClear={false}
+          />
+          <Button 
+            type="primary" 
+            size="large" 
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold shadow-md shadow-purple-100 border-none w-full sm:w-auto h-12"
+            onClick={() => setIsLeaveModalOpen(true)}
+          >
+            Apply Leave
+          </Button>
+        </div>
       </div>
 
       {/* Warning Policy Alert */}
@@ -254,8 +334,8 @@ function EmployeeProfileContent() {
           <Card variant="borderless" className="shadow-sm rounded-3xl h-full flex flex-col justify-center text-center sm:text-left sm:items-start">
             <Statistic 
               title={<span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Days Worked</span>}
-              value={18} 
-              suffix={<span className="text-slate-300 text-lg">/ {MONTHLY_WORK_DAYS}</span>}
+              value={daysWorked} 
+              suffix={<span className="text-slate-300 text-lg">/ {selectedMonth.daysInMonth()}</span>}
               styles={{ content: { fontWeight: 800, color: '#7C4DFF', fontSize: '32px' } }}
             />
           </Card>
@@ -274,15 +354,32 @@ function EmployeeProfileContent() {
 
       {/* Layout Grid */}
       <Row gutter={[24, 24]}>
-        <Col xs={24} lg={12}>
-          <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden h-full" title={<span className="font-bold text-lg">Daily Time Logs</span>} styles={{ body: { padding: 0 } }}>
-            <Table columns={logColumns} dataSource={MOCK_ATTENDANCE_LOG} pagination={false} scroll={{ x: 500 }} />
+        <Col xs={24} lg={14}>
+          <Card 
+            variant="borderless" 
+            className="shadow-sm rounded-3xl overflow-hidden h-full" 
+            title={
+              <div className="flex items-center gap-2">
+                <CalendarOutlined className="text-slate-400" />
+                <span className="font-bold text-lg">Timesheet: {selectedMonth.format('MMMM YYYY')}</span>
+              </div>
+            } 
+            styles={{ body: { padding: 0 } }}
+          >
+            {/* Added scroll Y so the long 31-day table doesn't make the page massively long */}
+            <Table 
+              columns={logColumns} 
+              dataSource={monthlyLogs} 
+              pagination={false} 
+              scroll={{ x: 500, y: 500 }} 
+              rowClassName={(record) => record.status === 'Absent' ? 'bg-red-50/40' : record.status === 'Holiday' ? 'bg-slate-50/50' : ''}
+            />
           </Card>
         </Col>
 
-        <Col xs={24} lg={12}>
+        <Col xs={24} lg={10}>
           <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden h-full" title={<span className="font-bold text-lg">Leave Requests</span>} styles={{ body: { padding: 0 } }}>
-            <Table columns={leaveColumns} dataSource={leaves} pagination={{ pageSize: 4, size: 'small' }} scroll={{ x: 500 }} />
+            <Table columns={leaveColumns} dataSource={leaves} pagination={{ pageSize: 4, size: 'small' }} scroll={{ x: 400 }} />
           </Card>
         </Col>
       </Row>
@@ -291,7 +388,7 @@ function EmployeeProfileContent() {
       <ApplyLeaveModal 
         isOpen={isLeaveModalOpen}
         onClose={() => setIsLeaveModalOpen(false)}
-        onSave={promptApplyLeave} // Route submission through confirmation prompt
+        onSave={promptApplyLeave}
         remainingLeaves={remainingLeaves}
       />
 

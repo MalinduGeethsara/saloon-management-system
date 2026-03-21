@@ -301,7 +301,13 @@ function ManageBookingsContent() {
         </Col>
         <Col xs={12} sm={8}>
           <Card variant="borderless" className="shadow-sm rounded-2xl">
-            <Statistic title={<span className="text-xs font-bold text-gray-400 uppercase">Confirmed</span>} value={bookings.filter(b => b.status === 'Confirmed' || b.status === 'Paid').length} valueStyle={{ color: '#10B981', fontWeight: 800 }} />
+            <Statistic 
+  title={<span className="text-xs font-bold text-gray-400 uppercase">Confirmed</span>} 
+  value={bookings.filter(b => b.status === 'Confirmed' || b.status === 'Paid').length} 
+  styles={{ 
+    content: { color: '#10B981', fontWeight: 800 } 
+  }} 
+/>
           </Card>
         </Col>
       </Row>

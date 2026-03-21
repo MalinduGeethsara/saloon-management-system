@@ -1,6 +1,6 @@
 "use client";
-import React from 'react';
-import { Layout, Menu, Progress, Button, Typography } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Layout, Menu } from 'antd';
 import { 
   DashboardOutlined, 
   CalendarOutlined, 
@@ -17,7 +17,6 @@ import { usePathname, useRouter } from 'next/navigation';
 
 const { Sider } = Layout;
 
-// 1. Added onClose prop interface
 interface OwnerSidebarProps {
   onClose?: () => void;
 }
@@ -25,27 +24,44 @@ interface OwnerSidebarProps {
 export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [userRole, setUserRole] = useState<string>('owner');
 
-  const menuItems = [
-    { key: '/owner', icon: <DashboardOutlined />, label: 'Intelligence' },
-    { key: '/owner/calendar', icon: <CalendarOutlined />, label: 'Calendar' },
-    { key: '/owner/bookings/manage', icon: <CarryOutOutlined />, label: 'Bookings' },
-    { key: '/owner/staff', icon: <UsergroupAddOutlined />, label: 'Staff' },
+  useEffect(() => {
+    const match = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (match) setUserRole(match[2]);
+  }, []);
+
+ 
+  const hrChildrenLinks = userRole === 'barber' ? [
+    { key: '/owner/hr/attendance/1', label: 'My Attendance' },
+    { key: '/owner/hr/payroll/EMP-001', label: 'My Payroll' },
+  ] : [
+    { key: '/owner/hr/attendance', label: 'Attendance' },
+    { key: '/owner/hr/payroll', label: 'Payroll' },
+  ];
+
+  const rawMenuItems = [
+    { key: '/owner', icon: <DashboardOutlined />, label: 'Intelligence', allowedRoles: ['owner'] },
+    { key: '/owner/calendar', icon: <CalendarOutlined />, label: 'Calendar', allowedRoles: ['owner', 'manager', 'barber'] },
+    { key: '/owner/bookings/manage', icon: <CarryOutOutlined />, label: 'Bookings', allowedRoles: ['owner', 'manager'] },
+    { key: '/owner/staff', icon: <UsergroupAddOutlined />, label: 'Staff', allowedRoles: ['owner'] },
     { 
       key: 'hr', 
       icon: <SolutionOutlined />, 
       label: 'Human Resources',
-      children: [
-        { key: '/owner/hr/attendance', label: 'Attendance' },
-        { key: '/owner/hr/payroll', label: 'Payroll' },
-      ]
+      allowedRoles: ['owner', 'barber'],
+      children: hrChildrenLinks  
     },
-    { key: '/owner/shops', icon: <ShopOutlined />, label: 'My Shops' },
-    { key: '/owner/services', icon: <ScissorOutlined />, label: 'Services' },
-    { key: '/owner/products', icon: <TeamOutlined />, label: 'Products' },
-    { key: '/owner/payments', icon: <DollarCircleOutlined />, label: 'Payments' },
-    { key: '/owner/reports', icon: <BarChartOutlined />, label: 'Reports' },
+    { key: '/owner/shops', icon: <ShopOutlined />, label: 'My Shops', allowedRoles: ['owner'] },
+    { key: '/owner/services', icon: <ScissorOutlined />, label: 'Services', allowedRoles: ['owner', 'manager'] },
+    { key: '/owner/products', icon: <TeamOutlined />, label: 'Products', allowedRoles: ['owner', 'manager'] },
+    { key: '/owner/payments', icon: <DollarCircleOutlined />, label: 'Payments', allowedRoles: ['owner', 'manager'] },
+    { key: '/owner/reports', icon: <BarChartOutlined />, label: 'Reports', allowedRoles: ['owner'] },
   ];
+
+ const filteredMenuItems = rawMenuItems
+  .filter(item => item.allowedRoles.includes(userRole))
+  .map(({ allowedRoles, ...cleanItem }) => cleanItem);
 
   return (
     <Sider 
@@ -53,9 +69,9 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
       theme="light" 
       style={{ borderRight: '1px solid #E2E8F0', height: '100vh', position: 'sticky', top: 0 }}
     >
-      <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{ width: 32, height: 32, background: '#7C4DFF', borderRadius: 8, display: 'grid', placeItems: 'center', color: 'white', fontWeight: 'bold' }}>S</div>
-        <span style={{ fontSize: '20px', fontWeight: 800, color: '#2D3748', letterSpacing: '-1px' }}>salonpro</span>
+      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'grid', color: '#7C4DFF', fontWeight: 'bolder', fontSize: '18px' }}>MR POLAA</div>
+        <div style={{ padding: '1px',width: '100%', height: '1px', backgroundColor: '#7C4DFF' }} />
       </div>
 
       <Menu
@@ -63,30 +79,11 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
         selectedKeys={[pathname]}
         onClick={({ key }) => {
           router.push(key);
-          // 2. Call onClose when a link is clicked
           if (onClose) onClose();
         }} 
         style={{ borderRight: 0, padding: '0 12px' }}
-        items={menuItems}
+        items={filteredMenuItems}
       />
-
-      <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20, padding: '16px', background: '#F8F9FF', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Typography.Text strong style={{ fontSize: '12px' }}>Business Health</Typography.Text>
-          <Typography.Text style={{ fontSize: '10px', color: '#7C4DFF' }}>84%</Typography.Text>
-        </div>
-        
-        <Progress 
-          percent={84} 
-          showInfo={false} 
-          strokeColor="#7C4DFF" 
-          size={{ height: 8 }} 
-        />
-        
-        <Button type="primary" block size="small" style={{ marginTop: 12, borderRadius: 8, fontSize: '12px', height: '32px' }}>
-          View Full Audit
-        </Button>
-      </div>
     </Sider>
   );
 }

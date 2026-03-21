@@ -8,21 +8,21 @@ export const PORTAL_ROUTES = [
     icon: <SettingOutlined />, 
     href: '/admin', 
     color: '#7C4DFF',
-    allowedRoles: ['admin', 'owner'] 
+    allowedRoles: ['admin'] // Only admin
   },
   { 
     id: 'owner',
-    title: 'Owner Portal', 
-    desc: 'Shop reports and staff performance', 
+    title: 'Salon Portal', // Renamed slightly since Barbers/Managers use this path
+    desc: 'Dashboard, Schedule, and Reports', 
     icon: <ShopOutlined />, 
     href: '/owner', 
     color: '#48BB78',
-    allowedRoles: ['owner'] 
+    allowedRoles: ['owner', 'manager', 'barber'] // Added manager and barber
   },
   { 
     id: 'staff',
     title: 'Staff Portal', 
-    desc: 'Manager and Barber access', 
+    desc: 'General staff access', 
     icon: <UserOutlined />, 
     href: '/staff', 
     color: '#ED8936',
@@ -35,6 +35,6 @@ export const PORTAL_ROUTES = [
     icon: <GlobalOutlined />, 
     href: '/public', 
     color: '#3182CE',
-    allowedRoles: ['public', 'staff', 'owner', 'admin'] 
+    allowedRoles: ['public', 'staff', 'owner', 'manager', 'barber', 'admin'] 
   },
 ];

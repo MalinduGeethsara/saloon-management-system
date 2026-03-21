@@ -59,7 +59,7 @@ export default function PortalSelection() {
 
       <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
         <Title level={1} style={{ fontWeight: 800, marginBottom: 8 }}>
-          SALON<span style={{ color: '#7C4DFF' }}>PRO</span>
+          Mr<span style={{ color: '#7C4DFF' }}> Polaa</span>
         </Title>
         <Text type="secondary">
           Welcome back. Select a portal below to continue.

@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, theme } from 'antd';
-import { UserOutlined, LockOutlined, TeamOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined } from '@ant-design/icons'; 
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
@@ -12,6 +13,8 @@ export const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  
+  const [messageApi, contextHolder] = message.useMessage();
   
   const { token } = useToken();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
@@ -29,15 +32,24 @@ export const LoginForm = () => {
       const data = await response.json();
 
       if (response.ok) {
-        message.success(`Welcome back, ${data.name}!`);
-        // If they just logged in normally, send them to the main portal selection page
-        router.push(callbackUrl === '/login' ? '/' : callbackUrl); 
+        messageApi.success(`Welcome back, ${data.name}!`);
+        
+        let destination = callbackUrl;
+        
+        if (destination === '/' || destination === '/login') {
+          if (data.role === 'admin') destination = '/admin';
+          else if (data.role === 'manager') destination = '/owner/bookings/manage';
+          else if (data.role === 'barber') destination = '/owner/calendar';
+          else destination = '/owner'; 
+        }
+
+        router.push(destination); 
         router.refresh(); 
       } else {
-        message.error(data.message || 'Invalid email or password');
+        messageApi.error(data.message || 'Invalid email or password');
       }
     } catch (error) {
-      message.error('Something went wrong. Please try again.');
+      messageApi.error('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -54,26 +66,32 @@ export const LoginForm = () => {
       }}
       variant="borderless" 
     >
+
+      {contextHolder}
+
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        
+        {/* Image Container */}
         <div style={{ 
-          width: 64, 
-          height: 64, 
+          width: 80, 
+          height: 80, 
           backgroundColor: `${token.colorPrimary}15`, 
           borderRadius: '50%', 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto 16px'
+          margin: '0 auto 16px',
+          overflow: 'hidden', 
+          position: 'relative' 
         }}>
-          <TeamOutlined style={{ color: token.colorPrimary, fontSize: '32px' }} />
+          <Image 
+            src="/images/dashboard/logo.png"  
+            alt="Salon Logo" 
+            fill 
+            style={{ objectFit: 'contain' }} 
+          />
         </div>
         
-        <Title level={3} style={{ marginBottom: 4, fontWeight: 600, color: token.colorTextHeading }}>
-          Welcome Back
-        </Title>
-        <Text type="secondary" style={{ fontSize: '15px' }}>
-          Please enter your credentials to login
-        </Text>
       </div>
 
       <Form
@@ -110,7 +128,7 @@ export const LoginForm = () => {
           />
         </Form.Item>
 
-        {/* --- Added Demo Credentials Box matching your theme --- */}
+        {/* Demo Credentials Box */}
         <div style={{ 
           backgroundColor: '#F8F9FF', 
           padding: '12px 16px', 
@@ -122,9 +140,10 @@ export const LoginForm = () => {
           lineHeight: '1.6'
         }}>
           <strong style={{ color: token.colorPrimary }}>Demo Logins (Pass: password123)</strong><br />
-          <span style={{ display: 'inline-block', width: '50px', fontWeight: 600 }}>Owner:</span> owner@salon.com<br />
-          <span style={{ display: 'inline-block', width: '50px', fontWeight: 600 }}>Admin:</span> admin@salon.com<br />
-          <span style={{ display: 'inline-block', width: '50px', fontWeight: 600 }}>Barber:</span> barber@salon.com
+          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Admin:</span> admin@salon.com<br />
+          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Owner:</span> owner@salon.com<br />
+          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Manager:</span> manager@salon.com<br />
+          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Barber:</span> barber@salon.com
         </div>
 
         <Form.Item style={{ marginBottom: 0 }}>

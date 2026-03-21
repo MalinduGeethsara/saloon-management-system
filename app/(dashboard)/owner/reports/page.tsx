@@ -105,7 +105,7 @@ function ReportsContent() {
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
         <div>
-          <Title level={2} className="m-0 font-black">Analytics & Reports</Title>
+          <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Analytics & Reports</Title>
           <Text type="secondary">Monitor business performance, revenue, and staff efficiency.</Text>
         </div>
         
@@ -281,7 +281,13 @@ function ReportsContent() {
                       </div>
                       <div className="text-xs font-mono font-bold text-emerald-600">Rs. {(item.revenue/1000).toFixed(0)}k</div>
                     </div>
-                    <Progress percent={item.percentage} size="small" showInfo={false} strokeColor="#7C4DFF" trailColor="#F3F4F6" />
+                    <Progress 
+  percent={item.percentage} 
+  size="small" 
+  showInfo={false} 
+  strokeColor="#7C4DFF" 
+  railColor="#F3F4F6" 
+/>
                   </div>
                 </div>
               ))}
@@ -302,12 +308,10 @@ function ReportsContent() {
                     <span className="text-slate-400">{service.count} bookings</span>
                   </div>
                   <Progress 
-                    percent={service.percentage} 
-                    strokeColor={i === 0 ? '#10B981' : i === 1 ? '#3B82F6' : '#F59E0B'} 
-                    trailColor="#F3F4F6"
-                    size="small" 
-                    showInfo={false} 
-                  />
+  percent={service.percentage} 
+  strokeColor={i === 0 ? '#10B981' : i === 1 ? '#3B82F6' : '#F59E0B'} 
+  railColor="#F3F4F6" // <-- Fixed!
+/>
                 </div>
               ))}
             </div>
