@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Card, Typography, Row, Col, Statistic, Table, Tag, Button, Alert, Tooltip, DatePicker
@@ -38,6 +38,9 @@ function EmployeeProfileContent() {
   const router = useRouter();
   const { showAlert } = useAlert();
   
+  // ✅ Added mounted state to prevent hydration errors
+  const [mounted, setMounted] = useState(false);
+  
   // States
   const [selectedMonth, setSelectedMonth] = useState(dayjs());
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -49,6 +52,11 @@ function EmployeeProfileContent() {
   }>({
     isOpen: false, title: '', description: '', confirmText: '', isDanger: false, action: null
   });
+
+  // ✅ Trigger mounted state on client load
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Calculations for Leaves
   const approvedLeaves = leaves.filter(l => l.status === 'Approved').length;
@@ -68,7 +76,6 @@ function EmployeeProfileContent() {
       const isSunday = currentDate.day() === 0;
 
       // Check if this specific date has an Approved Leave
-      // (Basic check: in a real app, you'd parse date ranges properly)
       const hasLeave = leaves.some(l => l.status === 'Approved' && l.dates.includes(dateString));
 
       let clockIn = "-";
@@ -260,6 +267,9 @@ function EmployeeProfileContent() {
       }
     }
   ];
+
+  // ✅ Wait until mounted before returning the UI (Prevents Hydration Mismatch)
+  if (!mounted) return null;
 
   return (
     <div className="max-w-[1600px] mx-auto pb-10 px-4">

@@ -14,6 +14,8 @@ export const LoginForm = () => {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   
+  const [messageApi, contextHolder] = message.useMessage();
+  
   const { token } = useToken();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
@@ -30,25 +32,24 @@ export const LoginForm = () => {
       const data = await response.json();
 
       if (response.ok) {
-        message.success(`Welcome back, ${data.name}!`);
+        messageApi.success(`Welcome back, ${data.name}!`);
         
         let destination = callbackUrl;
         
-        // If they just logged in normally, figure out exactly where to send them based on their role
         if (destination === '/' || destination === '/login') {
           if (data.role === 'admin') destination = '/admin';
           else if (data.role === 'manager') destination = '/owner/bookings/manage';
           else if (data.role === 'barber') destination = '/owner/calendar';
-          else destination = '/owner'; // Owner
+          else destination = '/owner'; 
         }
 
         router.push(destination); 
         router.refresh(); 
       } else {
-        message.error(data.message || 'Invalid email or password');
+        messageApi.error(data.message || 'Invalid email or password');
       }
     } catch (error) {
-      message.error('Something went wrong. Please try again.');
+      messageApi.error('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -65,9 +66,12 @@ export const LoginForm = () => {
       }}
       variant="borderless" 
     >
+
+      {contextHolder}
+
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         
-        {/* ✅ Image Container */}
+        {/* Image Container */}
         <div style={{ 
           width: 80, 
           height: 80, 
@@ -124,7 +128,7 @@ export const LoginForm = () => {
           />
         </Form.Item>
 
-        {/* ✅ Updated Demo Credentials Box */}
+        {/* Demo Credentials Box */}
         <div style={{ 
           backgroundColor: '#F8F9FF', 
           padding: '12px 16px', 

@@ -26,14 +26,12 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
   const router = useRouter();
   const [userRole, setUserRole] = useState<string>('owner');
 
-  // Read the cookie to know who is logged in
   useEffect(() => {
     const match = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
     if (match) setUserRole(match[2]);
   }, []);
 
-  // ✅ DYNAMIC HR LINKS
-  // Barbers get personal links, Owners get the master lists
+ 
   const hrChildrenLinks = userRole === 'barber' ? [
     { key: '/owner/hr/attendance/1', label: 'My Attendance' },
     { key: '/owner/hr/payroll/EMP-001', label: 'My Payroll' },
@@ -52,7 +50,7 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
       icon: <SolutionOutlined />, 
       label: 'Human Resources',
       allowedRoles: ['owner', 'barber'],
-      children: hrChildrenLinks // Passed the dynamic links here
+      children: hrChildrenLinks  
     },
     { key: '/owner/shops', icon: <ShopOutlined />, label: 'My Shops', allowedRoles: ['owner'] },
     { key: '/owner/services', icon: <ScissorOutlined />, label: 'Services', allowedRoles: ['owner', 'manager'] },
@@ -61,7 +59,9 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
     { key: '/owner/reports', icon: <BarChartOutlined />, label: 'Reports', allowedRoles: ['owner'] },
   ];
 
-  const filteredMenuItems = rawMenuItems.filter(item => item.allowedRoles.includes(userRole));
+ const filteredMenuItems = rawMenuItems
+  .filter(item => item.allowedRoles.includes(userRole))
+  .map(({ allowedRoles, ...cleanItem }) => cleanItem);
 
   return (
     <Sider 

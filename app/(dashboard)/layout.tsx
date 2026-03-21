@@ -12,8 +12,6 @@ import {
 import { AdminSidebar } from "@/components/navigation/AdminSidebar";
 import { OwnerSidebar } from "@/components/navigation/OwnerSidebar";
 import { NotificationBell } from "@/components/layout/NotificationBell"; 
-
-// 1. Import your new Confirmation Modal
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Header, Content, Sider } = Layout;
@@ -25,11 +23,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter(); 
   
+  // ✅ FIX 1: Add the message hook and context holder
+  const [messageApi, contextHolder] = message.useMessage();
+  
   // Sidebar States
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
-  
-  // 2. Add state for the Logout Modal
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   
   const [mounted, setMounted] = useState(false);
@@ -40,22 +39,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  // 3. Rename handleLogout to executeLogout (this runs AFTER confirmation)
+  // Logout Execution
   const executeLogout = async () => {
     try {
       const response = await fetch('/api/auth/logout', { method: 'POST' });
       
       if (response.ok) {
         document.cookie = "user_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        message.success('Signed out successfully');
-        setIsLogoutModalOpen(false); // Close modal on success
+        
+        // ✅ FIX 2: Use messageApi instead of the static message
+        messageApi.success('Signed out successfully');
+        
+        setIsLogoutModalOpen(false); 
         router.push('/login');
         router.refresh();
       } else {
-        message.error('Failed to sign out');
+        messageApi.error('Failed to sign out');
       }
     } catch (error) {
-      message.error('Something went wrong during logout');
+      messageApi.error('Something went wrong during logout');
     }
   };
 
@@ -105,6 +107,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       }}
     >
+      {/* ✅ FIX 3: Inject the context holder right inside ConfigProvider */}
+      {contextHolder}
+
       <style jsx global>{`
         .dashboard-sider { display: none !important; }
         .dashboard-main { 
@@ -178,7 +183,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <p style={{ margin: 0, fontSize: '11px', color: '#718096' }}>{isOwnerRoute ? 'Owner Profile' : 'Super Admin'}</p>
                 </div>
                 
-                {/* 4. Update the onClick to open the Modal instead of executing immediately */}
                 <Button 
                   type="text" 
                   danger 
@@ -199,7 +203,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </Layout>
       </Layout>
 
-      {/* 5. Inject the Confirmation Modal here at the root level */}
       <ConfirmationModal 
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
