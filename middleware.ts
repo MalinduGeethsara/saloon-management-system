@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const path = url.pathname;
 
-  // 1. 🛑 STRICT GUARD: No Token = Go directly to Login
+
   const isProtectedPath = path === '/' || path.startsWith('/owner') || path.startsWith('/admin') || path.startsWith('/staff');
   
   if (!token && isProtectedPath) {
@@ -16,7 +16,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 2. ⚡ SMART ROUTING: Logged-in users hitting '/' or '/login' go straight to their dashboard
   if (token && userRole && (path === '/login' || path === '/')) {
     if (userRole === 'admin') url.pathname = '/admin';
     else if (userRole === 'manager') url.pathname = '/owner/bookings/manage';
@@ -26,7 +25,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 3. 🛡️ ROLE SECURITY: Prevent users from typing URLs they don't have access to
   if (token && userRole) {
     
     // Admin Guard
@@ -50,17 +48,16 @@ export function middleware(request: NextRequest) {
         }
       }
 
-      // ✅ BARBER SPECIFIC GUARD
       if (userRole === 'barber') {
         const allowedBarberRoutes = [
           '/owner/calendar', 
-          '/owner/hr/attendance/1', // Requires the ID, blocks the base list
-          '/owner/hr/payroll/EMP-001' // Requires the ID, blocks the base list
+          '/owner/hr/attendance/1', 
+          '/owner/hr/payroll/EMP-001' 
         ];
         
         const isAllowed = allowedBarberRoutes.some(route => path.startsWith(route));
         if (!isAllowed) {
-          url.pathname = '/owner/calendar'; // Kick them back to their calendar if they try to access list pages
+          url.pathname = '/owner/calendar';
           return NextResponse.redirect(url);
         }
       }
