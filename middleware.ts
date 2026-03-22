@@ -7,9 +7,7 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const path = url.pathname;
 
-  // 1. PUBLIC ROUTES (No Guard)
 
-  // 2. CUSTOMER ROUTE GUARDS
   const isCustomerPath = path.startsWith('/customer'); 
   
   if (isCustomerPath) {
@@ -20,7 +18,6 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 3. STAFF / ADMIN ROUTE GUARDS
 
   const isStaffPath = 
     path.startsWith('/owner') || 
@@ -38,7 +35,6 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 4. LOGIN REDIRECTIONS (If already logged in)
   if (token && userRole) {
     
     // If a logged-in user hits the customer login
