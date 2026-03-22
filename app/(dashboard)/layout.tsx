@@ -23,7 +23,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter(); 
   
-  // ✅ FIX 1: Add the message hook and context holder
   const [messageApi, contextHolder] = message.useMessage();
   
   // Sidebar States
@@ -39,19 +38,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  // Logout Execution
   const executeLogout = async () => {
     try {
+      const match = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+      const currentUserRole = match ? match[2] : null;
+
       const response = await fetch('/api/auth/logout', { method: 'POST' });
       
       if (response.ok) {
         document.cookie = "user_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         
-        // ✅ FIX 2: Use messageApi instead of the static message
         messageApi.success('Signed out successfully');
-        
         setIsLogoutModalOpen(false); 
-        router.push('/login');
+        
+        if (currentUserRole === 'customer') {
+          router.push('/');  
+        } else {
+          router.push('/staff-login'); 
+        }
+        
         router.refresh();
       } else {
         messageApi.error('Failed to sign out');

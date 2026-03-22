@@ -1,44 +1,54 @@
-import Link from "next/link";
-import Image from "next/image";
+import React from 'react';
+import Link from 'next/link';
+import { Button } from 'antd';
+import { CalendarOutlined } from '@ant-design/icons';
 
-export default function SaloonHome() {
+export default function WebsiteHomePage() {
   return (
-    <div className="flex flex-col">
-      {/* Hero Section */}
-      <section className="relative h-[80vh] flex items-center justify-center bg-[#1A1A1B] text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-40">
-           {/* Placeholder for high-quality saloon interior image */}
-           <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&q=80')] bg-cover bg-center" />
-        </div>
-        
-        <div className="relative z-10 text-center space-y-6 px-4">
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter">
-            LUXE<span className="text-[#C5A059]">BARBER</span>
-          </h1>
-          <p className="text-xl md:text-2xl font-light tracking-wide max-w-2xl mx-auto">
-            Experience the art of grooming in the heart of the city. Precision, Style, and Luxury.
-          </p>
-          <div className="pt-4">
-            <Link href="/booking" className="bg-[#C5A059] text-[#1A1A1B] px-10 py-4 rounded-full font-bold text-lg hover:bg-white transition-all transform hover:scale-105">
-              Book Your Session
-            </Link>
-          </div>
-        </div>
-      </section>
+    <div style={{ padding: '80px 5%', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+      <h1 style={{ fontSize: '3.5rem', fontWeight: 900, color: '#2D3748', marginBottom: '20px', lineHeight: 1.2 }}>
+        Premium Grooming <br />
+        <span style={{ color: '#7C4DFF' }}>Experience</span>
+      </h1>
+      
+      <p style={{ fontSize: '1.25rem', color: '#718096', marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px' }}>
+        Book your next haircut with our expert barbers today. Experience top-tier styling in a modern, relaxing environment.
+      </p>
 
-      {/* Portfolio Gallery Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-12 text-center">Our Signature Styles</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden grayscale hover:grayscale-0 transition-all duration-500">
-                <div className="w-full h-full bg-zinc-200" /> {/* Replace with actual style images */}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+        <Link href="/book">
+          <Button 
+            type="primary" 
+            size="large" 
+            icon={<CalendarOutlined />}
+            style={{ 
+              background: '#7C4DFF', 
+              borderRadius: '12px', 
+              fontWeight: 'bold',
+              height: '56px',
+              padding: '0 32px',
+              fontSize: '16px',
+              boxShadow: '0 4px 14px rgba(124, 77, 255, 0.3)'
+            }}
+          >
+            Book Appointment
+          </Button>
+        </Link>
+        <Link href="/services">
+          <Button 
+            size="large" 
+            style={{ 
+              borderRadius: '12px', 
+              fontWeight: 'bold',
+              height: '56px',
+              padding: '0 32px',
+              fontSize: '16px',
+            }}
+          >
+            Our Services
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }
