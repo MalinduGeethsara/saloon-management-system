@@ -37,14 +37,12 @@ export function middleware(request: NextRequest) {
 
   if (token && userRole) {
     
-    // If a logged-in user hits the customer login
     if (path === '/login') {
       if (userRole === 'customer') url.pathname = '/customer'; 
       else url.pathname = '/owner'; 
       return NextResponse.redirect(url);
     }
 
-    // If a logged-in user hits the staff login
     if (path === '/staff-login') {
       if (userRole === 'admin') url.pathname = '/admin';
       else if (userRole === 'manager') url.pathname = '/owner/bookings/manage';
