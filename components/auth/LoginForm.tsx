@@ -17,13 +17,15 @@ export const LoginForm = () => {
   const [messageApi, contextHolder] = message.useMessage();
   
   const { token } = useToken();
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  // ✅ Defaults back to staff-login if no callback URL is provided
+  const callbackUrl = searchParams.get('callbackUrl') || '/staff-login';
 
   const onFinish = async (values: any) => {
     setLoading(true);
     
     try {
-      const response = await fetch('/api/auth/login', {
+      // ✅ Point this to your newly renamed staff API route
+      const response = await fetch('/api/auth/staff-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
@@ -36,7 +38,8 @@ export const LoginForm = () => {
         
         let destination = callbackUrl;
         
-        if (destination === '/' || destination === '/login') {
+        // ✅ If they came directly to the staff login, route them to their specific dashboard
+        if (destination === '/staff-login' || destination === '/' || destination === '/login') {
           if (data.role === 'admin') destination = '/admin';
           else if (data.role === 'manager') destination = '/owner/bookings/manage';
           else if (data.role === 'barber') destination = '/owner/calendar';
@@ -70,8 +73,6 @@ export const LoginForm = () => {
       {contextHolder}
 
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        
-        {/* Image Container */}
         <div style={{ 
           width: 80, 
           height: 80, 
@@ -91,7 +92,6 @@ export const LoginForm = () => {
             style={{ objectFit: 'contain' }} 
           />
         </div>
-        
       </div>
 
       <Form
@@ -128,7 +128,6 @@ export const LoginForm = () => {
           />
         </Form.Item>
 
-        {/* Demo Credentials Box */}
         <div style={{ 
           backgroundColor: '#F8F9FF', 
           padding: '12px 16px', 

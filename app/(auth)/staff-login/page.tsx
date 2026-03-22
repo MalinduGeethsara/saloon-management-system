@@ -1,10 +1,10 @@
 "use client";
 
-import React, { Suspense } from 'react'; // Added Suspense
+import React, { Suspense } from 'react';
 import { ConfigProvider, Spin } from 'antd';
 import { LoginForm } from '@/components/auth/LoginForm';
 
-export default function LoginPage() {
+export default function StaffLoginPage() {
   return (
     <ConfigProvider
       theme={{
@@ -24,7 +24,6 @@ export default function LoginPage() {
           padding: '20px'
         }}
       >
-        {/* FIX: Wrap the form in Suspense to prevent the Prerender Error */}
         <Suspense fallback={<Spin size="large" />}>
           <LoginForm />
         </Suspense>

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// --- Hardcoded Temporary Database ---
 const USERS = [
   { email: 'admin@salon.com', password: 'password123', role: 'admin', name: 'System Admin' },
   { email: 'owner@salon.com', password: 'password123', role: 'owner', name: 'Mali' },
@@ -17,10 +16,8 @@ export async function POST(request: Request) {
     const user = USERS.find(u => u.email === email && u.password === password);
 
     if (user) {
-      // FIX: Await the cookies() function for Next.js 15
       const cookieStore = await cookies(); 
 
-      // 1. Secure HTTP-Only cookie (For Middleware security)
       cookieStore.set({
         name: 'auth_token',
         value: `secure_token_${user.role}_123`,
@@ -29,7 +26,7 @@ export async function POST(request: Request) {
         maxAge: 60 * 60 * 24, // 1 day
       });
 
-      // 2. Standard cookie (For UI to know the role)
+      // 2. Standard cookie
       cookieStore.set({
         name: 'user_role',
         value: user.role,
