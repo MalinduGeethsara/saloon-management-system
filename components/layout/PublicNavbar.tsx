@@ -9,10 +9,8 @@ export function PublicNavbar() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Check the initial theme when the component loads
   useEffect(() => {
     setMounted(true);
-    // Check if they have a saved preference, otherwise check their system preference
     const isDark = 
       localStorage.theme === 'dark' || 
       (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -26,7 +24,6 @@ export function PublicNavbar() {
     }
   }, []);
 
-  // Function to switch between Light and Dark mode
   const toggleTheme = () => {
     if (isDarkMode) {
       document.documentElement.classList.remove('dark');
@@ -40,45 +37,42 @@ export function PublicNavbar() {
   };
 
   return (
-    <header className="bg-white/90 dark:bg-black/90 backdrop-blur-md text-slate-900 dark:text-white border-b border-slate-200 dark:border-gray-900 sticky top-0 z-50 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+    // ✅ FIX: Changed to `fixed w-full` and bumped blur to `backdrop-blur-2xl`
+    <header className="fixed w-full top-0 left-0 z-[100] bg-white/40 dark:bg-zinc-950/40 backdrop-blur-2xl text-zinc-900 dark:text-zinc-100 border-b border-white/40 dark:border-zinc-800/50 transition-colors duration-500 shadow-sm dark:shadow-none">
+      <div className="max-w-7xl mx-auto px-6 h-24 flex justify-between items-center">
         
         {/* Left: Logo & Brand */}
-        <Link href="/" className="flex items-center gap-3">
-          {/* Logo Image Container */}
-          <div className="relative w-10 h-10 overflow-hidden rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-gray-800 transition-colors">
+        <Link href="/" className="flex items-center gap-4 group">
+          <div className="relative w-12 h-12 overflow-hidden rounded-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md border border-white/50 dark:border-zinc-700/50 transition-colors duration-500 group-hover:border-amber-500">
             <Image 
               src="/images/dashboard/logo.png" 
               alt="Mr Polaa Logo" 
               fill 
-              className="object-contain p-1" 
+              className="object-contain p-1.5" 
             />
           </div>
           
-          {/* Brand Text */}
           <div className="flex flex-col justify-center">
-            <span className="text-2xl font-black tracking-widest leading-none">MR POLAA</span>
-            <span className="text-[8px] tracking-[0.25em] text-red-500 font-bold uppercase mt-1">Premium Grooming</span>
+            <span className="text-2xl font-black tracking-[0.2em] leading-none text-zinc-900 dark:text-white drop-shadow-sm dark:drop-shadow-none">MR POLAA</span>
+            <span className="text-[9px] tracking-[0.3em] text-amber-600 dark:text-amber-500 font-bold uppercase mt-1.5 drop-shadow-sm dark:drop-shadow-none">Premium Grooming</span>
           </div>
         </Link>
 
         {/* Center: Navigation Links */}
         <nav className="hidden md:flex items-center gap-10">
-          <Link href="/" className="text-[13px] font-semibold tracking-wider text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors uppercase">Home</Link>
-          <Link href="/about" className="text-[13px] font-semibold tracking-wider text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors uppercase">About</Link>
-          <Link href="/services" className="text-[13px] font-semibold tracking-wider text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors uppercase">Services</Link>
-          <Link href="/products" className="text-[13px] font-semibold tracking-wider text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors uppercase">Product</Link>
-          <Link href="/contact" className="text-[13px] font-semibold tracking-wider text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors uppercase">Contact</Link>
+          <Link href="/" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">Home</Link>
+          <Link href="/about" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">About</Link>
+          <Link href="/services" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">Services</Link>
+          <Link href="/products" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">Product</Link>
+          <Link href="/contact" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">Contact</Link>
         </nav>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-6">
-          
-          {/* ✅ Theme Toggle Button */}
           {mounted && (
             <button 
               onClick={toggleTheme}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md border border-white/50 dark:border-zinc-700/50 text-zinc-800 dark:text-zinc-300 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-500/20 dark:hover:text-amber-500 transition-all duration-300 shadow-sm dark:shadow-none"
               aria-label="Toggle Dark Mode"
             >
               {isDarkMode ? <SunOutlined className="text-lg" /> : <MoonOutlined className="text-lg" />}
@@ -87,15 +81,15 @@ export function PublicNavbar() {
 
           <Link 
             href="/book" 
-            className="border border-slate-900 dark:border-white px-6 py-2 text-sm font-semibold tracking-wider uppercase hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
+            className="border border-zinc-900/60 dark:border-zinc-100/50 bg-white/30 dark:bg-zinc-900/30 backdrop-blur-md px-7 py-3 text-xs font-bold tracking-[0.2em] uppercase hover:bg-amber-600 hover:border-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:border-amber-500 dark:hover:text-zinc-950 transition-all duration-300 shadow-sm dark:shadow-none"
           >
             Book Now
           </Link>
           
-          <div className="flex items-center gap-2 cursor-pointer text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors">
-            <UserOutlined className="text-lg" />
-            <span className="text-sm font-medium hidden sm:block">Login</span>
-          </div>
+          <Link href="/login" className="flex items-center gap-2 cursor-pointer text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors drop-shadow-sm dark:drop-shadow-none">
+            <UserOutlined className="text-xl" />
+            <span className="text-xs font-bold tracking-widest hidden sm:block uppercase">Login</span>
+          </Link>
         </div>
 
       </div>
