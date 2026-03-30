@@ -3,11 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { UserOutlined, SunOutlined, MoonOutlined } from '@ant-design/icons';
+import { usePathname } from 'next/navigation';
+import { SunOutlined, MoonOutlined, MenuOutlined } from '@ant-design/icons';
 
 export function PublicNavbar() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -36,63 +40,182 @@ export function PublicNavbar() {
     }
   };
 
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
   return (
-    // ✅ FIX: Changed to `fixed w-full` and bumped blur to `backdrop-blur-2xl`
-    <header className="fixed w-full top-0 left-0 z-[100] bg-white/40 dark:bg-zinc-950/40 backdrop-blur-2xl text-zinc-900 dark:text-zinc-100 border-b border-white/40 dark:border-zinc-800/50 transition-colors duration-500 shadow-sm dark:shadow-none">
-      <div className="max-w-7xl mx-auto px-6 h-24 flex justify-between items-center">
-        
-        {/* Left: Logo & Brand */}
-        <Link href="/" className="flex items-center gap-4 group">
-          <div className="relative w-12 h-12 overflow-hidden rounded-none bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md border border-white/50 dark:border-zinc-700/50 transition-colors duration-500 group-hover:border-amber-500">
-            <Image 
-              src="/images/dashboard/logo.png" 
-              alt="Mr Polaa Logo" 
-              fill 
-              className="object-contain p-1.5" 
-            />
-          </div>
+    <>
+      <header className="bg-zinc-50/90 dark:bg-zinc-950/90 backdrop-blur-xl text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-900 sticky top-0 z-50 transition-colors duration-500">
+        <div className="max-w-7xl mx-auto px-6 h-24 flex justify-between items-center">
           
-          <div className="flex flex-col justify-center">
-            <span className="text-2xl font-black tracking-[0.2em] leading-none text-zinc-900 dark:text-white drop-shadow-sm dark:drop-shadow-none">MR POLAA</span>
-            <span className="text-[9px] tracking-[0.3em] text-amber-600 dark:text-amber-500 font-bold uppercase mt-1.5 drop-shadow-sm dark:drop-shadow-none">Premium Grooming</span>
-          </div>
-        </Link>
+          {/* Left: Logo & Brand (Already links to Home) */}
+          <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-1 group z-50">
+            <div className="relative w-14 h-14 overflow-hidden rounded-full transition-colors duration-500 shrink-0">
+              <Image src="/images/dashboard/logo_black.png" alt="Mr Polaa Logo Light" fill className="object-contain p-1 block dark:hidden" />
+              <Image src="/images/dashboard/logo_white.png" alt="Mr Polaa Logo Dark" fill className="object-contain p-1 hidden dark:block" />
+            </div>
+            
+            <div className="flex flex-col justify-center">
+              <span className="text-xl sm:text-2xl font-black tracking-[0.2em] leading-none text-zinc-900 dark:text-white group-hover:text-amber-500 transition-colors duration-500">
+                MR POLAA
+              </span>
+              <span className="text-[8px] sm:text-[9px] tracking-[0.3em] text-amber-600 dark:text-amber-500 font-bold uppercase mt-1.5">
+                Premium Grooming
+              </span>
+            </div>
+          </Link>
 
-        {/* Center: Navigation Links */}
-        <nav className="hidden md:flex items-center gap-10">
-          <Link href="/" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">Home</Link>
-          <Link href="/about" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">About</Link>
-          <Link href="/services" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">Services</Link>
-          <Link href="/products" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">Product</Link>
-          <Link href="/contact" className="text-xs font-bold tracking-[0.15em] text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors uppercase drop-shadow-sm dark:drop-shadow-none">Contact</Link>
-        </nav>
+        {/* Center: Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-10">
+            {[
+              { name: 'Home', path: '/' },
+              { name: 'About', path: '/about' },
+              { name: 'Services', path: '/services' },
+              { name: 'Product', path: '/products' },
+              { name: 'Contact', path: '/contact' }
+            ].map((link) => (
+              <Link 
+                key={link.name}
+                href={link.path} 
+                // ✅ Changed font-bold to font-black for thicker, heavier letters
+                className={`text-xs font-black tracking-[0.15em] transition-colors uppercase ${
+                  pathname === link.path 
+                    ? 'text-amber-600 dark:text-amber-500' // Active page stays Amber
+                    // ✅ Changed text-zinc-900 to text-black for pure black in light mode
+                    : 'd text-black dark:text-white hover:text-amber-600 dark:hover:text-amber-500' 
+                }`}
+              >
+                {link.name}
+              </Link>
+            ))}
+          </nav>
+          {/* Right: Actions */}
+          <div className="flex items-center gap-4 lg:gap-6 z-50">
+            
+            {mounted && (
+              <button 
+                onClick={toggleTheme}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-500 transition-all duration-300 active:scale-95"
+                aria-label="Toggle Dark Mode"
+              >
+                {isDarkMode ? <SunOutlined className="text-lg" /> : <MoonOutlined className="text-lg" />}
+              </button>
+            )}
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-6">
-          {mounted && (
+            <div className="hidden lg:flex items-center gap-6">
+              <Link href="/book" className="group relative flex items-center justify-center h-12 w-40 border border-zinc-900 dark:border-zinc-100 overflow-hidden cursor-pointer active:scale-95 transition-transform">
+                <span className="absolute inset-0 w-full h-full bg-amber-600 dark:bg-amber-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out z-0"></span>
+                {/* ✅ Changed text-zinc-900 to text-black and font-bold to font-black */}
+                <span className="relative z-10 text-sm font-black uppercase text-black dark:text-zinc-100 group-hover:text-white dark:group-hover:text-zinc-950 transition-colors duration-300 mt-0.5">
+                  Book Now
+                </span>
+              </Link>
+              
+              <Link href="/login" className="group relative flex items-center justify-center h-12 w-16 border border-zinc-900 dark:border-zinc-100 overflow-hidden cursor-pointer active:scale-95 transition-transform">
+                <span className="absolute inset-0 w-full h-full bg-amber-600 dark:bg-amber-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out z-0"></span>
+                <div className="relative z-10 flex items-center justify-center">
+                  {/* ✅ Changed text-zinc-900 to text-black and added stroke properties for boldness */}
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    fill="currentColor" 
+                    stroke="currentColor" 
+                    strokeWidth="0.8" 
+                    className="w-[25px] h-[25px] text-black dark:text-zinc-100 group-hover:text-white dark:group-hover:text-zinc-950 transition-colors duration-300"
+                  >
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+              </Link>
+            </div>
+
             <button 
-              onClick={toggleTheme}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/60 dark:bg-zinc-800/60 backdrop-blur-md border border-white/50 dark:border-zinc-700/50 text-zinc-800 dark:text-zinc-300 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-500/20 dark:hover:text-amber-500 transition-all duration-300 shadow-sm dark:shadow-none"
-              aria-label="Toggle Dark Mode"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className={`lg:hidden flex items-center justify-center w-10 h-10 transition-all duration-300 active:scale-90 ${isMobileMenuOpen ? 'text-amber-600 dark:text-amber-500' : 'text-zinc-900 dark:text-zinc-100 hover:text-amber-600 dark:hover:text-amber-500'}`}
+              aria-label="Toggle Mobile Menu"
             >
-              {isDarkMode ? <SunOutlined className="text-lg" /> : <MoonOutlined className="text-lg" />}
+              {isMobileMenuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+                  <circle cx="7" cy="18" r="3" />
+                  <circle cx="17" cy="18" r="3" />
+                  <line x1="8.5" y1="15.5" x2="19" y2="4" />
+                  <line x1="15.5" y1="15.5" x2="5" y2="4" />
+                  <circle cx="12" cy="10" r="1.5" fill="currentColor" stroke="none" />
+                </svg>
+              ) : (
+                <MenuOutlined className="text-xl" />
+              )}
             </button>
-          )}
 
-          <Link 
-            href="/book" 
-            className="border border-zinc-900/60 dark:border-zinc-100/50 bg-white/30 dark:bg-zinc-900/30 backdrop-blur-md px-7 py-3 text-xs font-bold tracking-[0.2em] uppercase hover:bg-amber-600 hover:border-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:border-amber-500 dark:hover:text-zinc-950 transition-all duration-300 shadow-sm dark:shadow-none"
-          >
-            Book Now
-          </Link>
-          
-          <Link href="/login" className="flex items-center gap-2 cursor-pointer text-zinc-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-500 transition-colors drop-shadow-sm dark:drop-shadow-none">
-            <UserOutlined className="text-xl" />
-            <span className="text-xs font-bold tracking-widest hidden sm:block uppercase">Login</span>
-          </Link>
+          </div>
         </div>
+      </header>
 
+      {/* Clickable Dark Backdrop Overlay */}
+      <div 
+        className={`fixed inset-0 top-24 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm z-30 lg:hidden transition-opacity duration-500 ease-in-out ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={closeMobileMenu}
+      />
+
+      {/* Mobile Menu Side Drawer */}
+      <div className={`fixed top-24 right-0 bottom-0 w-[75vw] sm:w-80 bg-zinc-50/98 dark:bg-zinc-950/98 backdrop-blur-2xl border-l border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl z-40 lg:hidden transition-transform duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex flex-col px-6 py-8 h-full overflow-y-auto pb-32">
+          
+          <nav className="flex flex-col gap-8 mb-10">
+            {[
+              { name: 'Home', path: '/' },
+              { name: 'About', path: '/about' },
+              { name: 'Services', path: '/services' },
+              { name: 'Product', path: '/products' },
+              { name: 'Contact', path: '/contact' }
+            ].map((link) => {
+              const isActive = pathname === link.path;
+              return (
+                <Link 
+                  key={link.name} 
+                  href={link.path} 
+                  onClick={closeMobileMenu} 
+                  className={`group flex items-center text-lg font-black tracking-[0.15em] uppercase transition-colors ${
+                    isActive 
+                      ? 'text-amber-600 dark:text-amber-500' 
+                      : 'text-zinc-900 dark:text-zinc-100 hover:text-amber-600 dark:hover:text-amber-500 active:text-amber-600 dark:active:text-amber-500'
+                  }`}
+                >
+                  <span className={`transform transition-transform duration-300 ${isActive ? 'translate-x-2' : 'translate-x-0 group-hover:translate-x-2 group-active:translate-x-2'}`}>
+                    {link.name}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="w-full h-px bg-zinc-200 dark:bg-zinc-800 mb-10"></div>
+
+          {/* Mobile Action Buttons */}
+          <div className="flex flex-col gap-4">
+            <Link 
+              href="/book" 
+              onClick={closeMobileMenu}
+              className="flex items-center justify-center h-14 w-full border border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 hover:text-amber-600 hover:border-amber-600 dark:hover:text-amber-500 dark:hover:border-amber-500 active:text-amber-600 active:border-amber-600 dark:active:text-amber-500 dark:active:border-amber-500 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-300"
+            >
+              Book Now
+            </Link>
+            
+            <Link 
+              href="/login" 
+              onClick={closeMobileMenu}
+              className="flex items-center justify-center h-14 w-full border border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 hover:text-amber-600 hover:border-amber-600 dark:hover:text-amber-500 dark:hover:border-amber-500 active:text-amber-600 active:border-amber-600 dark:active:text-amber-500 dark:active:border-amber-500 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-300"
+            >
+              <div className="flex items-center justify-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <span className="mt-0.5">Login</span>
+              </div>
+            </Link>
+          </div>
+          
+        </div>
       </div>
-    </header>
+    </>
   );
 }

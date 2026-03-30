@@ -265,7 +265,7 @@ export default function PayslipPreviewPage() {
           
           <div className="flex justify-between items-center border-b-2 border-black pb-6 mb-6">
             <div>
-              <h1 className="text-3xl font-black uppercase tracking-widest mb-1">Mr Polaa Saloon</h1>
+              <h1 className="text-3xl font-black uppercase tracking-widest mb-1">Mr Polaa Salon</h1>
               <p className="text-sm m-0 font-medium">Main Street, Walasmulla, Sri Lanka</p>
               <p className="text-sm m-0 font-medium">Tel: +94 41 224 5678</p>
             </div>
