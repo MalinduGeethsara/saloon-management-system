@@ -6,6 +6,7 @@ import {
   CalendarOutlined, 
   ScissorOutlined, 
   ArrowRightOutlined,
+  ArrowLeftOutlined, // ✅ This is the missing import!
   CrownOutlined,
   StarFilled,
   GoogleOutlined
@@ -69,33 +70,36 @@ export default function WebsiteHomePage() {
       {/* =========================================
           1. IMMERSIVE HERO SECTION
       ========================================= */}
-      <section className="relative flex flex-col items-center justify-center min-h-[115dvh] px-6 text-center overflow-hidden">
-        <div className="absolute inset-0 z-0 bg-white dark:bg-black transition-colors duration-500">
+      {/* ✅ FIX: min-h-[100dvh] ensures it perfectly fits 100% of the screen height on both mobile and desktop. */}
+      <section className="relative flex flex-col items-center justify-center min-h-[100dvh] w-full px-6 text-center overflow-hidden -mt-24 pt-24">
+        
+        <div className="absolute inset-0 z-0 bg-zinc-900 transition-colors duration-500">
           <video 
             autoPlay 
             loop 
             muted 
-            playsInline 
-            className="w-full h-full object-cover opacity-100 scale-125"
+            playsInline
+            className="w-full h-full  object-cover opacity-100"
           >
             <source src="/videos/home/carosel_video.mp4" type="video/mp4" />
           </video>
-          <div className="overlay-bg absolute inset-0 bg-gradient-to-b from-zinc-50/10 via-zinc-50/40 to-zinc-50 dark:from-zinc-950/40 dark:via-zinc-950/70 dark:to-zinc-950 z-10 transition-colors duration-500"></div>
+          {/* ✅ FIX: Solid gradient overlay prevents any color bands from showing up at the bottom */}
+          <div className="overlay-bg absolute inset-0 bg-black/40 dark:bg-black/60 z-10 transition-colors duration-500"></div>
         </div>
 
-        <div className="relative z-20 max-w-5xl mx-auto pt-20">
+        <div className="relative z-20 max-w-5xl mx-auto pt-10 md:pt-20">
           <div className="reveal-text inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/60 dark:bg-white/5 border border-zinc-200 dark:border-white/10 backdrop-blur-md mb-8 text-[11px] font-bold tracking-[0.3em] uppercase text-amber-600 dark:text-amber-500 transition-colors shadow-sm dark:shadow-none">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
             The Premium Standard
           </div>
           
-          <h1 className="reveal-text text-5xl md:text-7xl lg:text-[6rem] font-black text-zinc-900 dark:text-white mb-6 leading-[1.05] tracking-tighter transition-colors drop-shadow-sm dark:drop-shadow-none">
+          <h1 className="reveal-text text-5xl md:text-7xl lg:text-[6rem] font-black text-white mb-6 leading-[1.05] tracking-tighter transition-colors drop-shadow-md">
             Mastering The <br />
-            <span className="font-serif italic font-light text-amber-600 dark:text-amber-500 mr-4 transition-colors">Art</span> 
+            <span className="font-serif italic font-light text-amber-500 mr-4 transition-colors">Art</span> 
             Of Grooming.
           </h1>
           
-          <p className="reveal-text text-lg md:text-xl text-zinc-800 dark:text-zinc-300 mb-12 max-w-2xl mx-auto leading-relaxed font-medium dark:font-light transition-colors drop-shadow-md dark:drop-shadow-sm">
+          <p className="reveal-text text-lg md:text-xl text-zinc-200 dark:text-zinc-300 mb-12 max-w-2xl mx-auto leading-relaxed font-medium transition-colors drop-shadow-md">
             An exclusive sanctuary for the modern gentleman. Precision tailoring, traditional hot towel shaves, and uncompromising quality.
           </p>
 
@@ -110,7 +114,7 @@ export default function WebsiteHomePage() {
             
             <Link 
               href="/services"
-              className="reveal-btn flex items-center justify-center gap-2 bg-white/40 dark:bg-transparent backdrop-blur-sm border border-zinc-500 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300 font-bold py-4 px-10 rounded-none transition-all hover:bg-white hover:border-amber-600 hover:text-amber-600 dark:hover:border-amber-500 dark:hover:text-amber-500 tracking-wide uppercase text-sm shadow-md dark:shadow-none"
+              className="reveal-btn flex items-center justify-center gap-2 bg-white/20 backdrop-blur-md border border-white/50 text-white font-bold py-4 px-10 rounded-none transition-all hover:bg-white hover:border-amber-600 hover:text-amber-600 tracking-wide uppercase text-sm shadow-md dark:shadow-none"
             >
               Discover Services
             </Link>
@@ -128,14 +132,14 @@ export default function WebsiteHomePage() {
               <img 
                 src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?q=80&w=2000&auto=format&fit=crop" 
                 alt="Barber Tools" 
-                className="w-full h-80 object-cover rounded-none grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
+                className="w-full h-80 object-cover rounded-none md:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
               />
             </div>
             <div className="flex flex-col gap-6">
               <img 
                 src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop" 
                 alt="Vintage Chair" 
-                className="w-full h-[28rem] object-cover rounded-none grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
+                className="w-full h-[28rem] object-cover rounded-none md:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
               />
             </div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-amber-600/10 blur-[100px] rounded-full z-[-1]"></div>
@@ -184,179 +188,286 @@ export default function WebsiteHomePage() {
       {/* =========================================
           3. THE MENU (SERVICES)
       ========================================= */}
-      <section className="py-32 bg-white dark:bg-zinc-900/50 border-y border-zinc-200 dark:border-zinc-800/50 transition-colors duration-500">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-6">
+ <section className="py-32 bg-white dark:bg-zinc-900/50 border-y border-zinc-200 dark:border-zinc-800/50 transition-colors duration-500 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 relative">
+          
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 md:mb-20 gap-6">
             <div>
               <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Curated Menu</h3>
               <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors">Signature <span className="font-serif italic font-light text-zinc-500">Services</span></h2>
             </div>
-            <Link href="/services" className="border-b border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500 pb-1 text-xs font-bold tracking-[0.2em] uppercase transition-all hover:text-zinc-900 dark:hover:text-white hover:border-zinc-900 dark:hover:border-white">
+            {/* Desktop Full Menu link */}
+            <Link href="/services" className="hidden md:inline-flex border-b border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500 pb-1 text-xs font-bold tracking-[0.2em] uppercase transition-all hover:text-zinc-900 dark:hover:text-white hover:border-zinc-900 dark:hover:border-white">
               View Full Menu
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Service Cards (Same as before) */}
-            <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none">
-              <div className="h-72 overflow-hidden relative">
-                <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=1988&auto=format&fit=crop" alt="Haircut" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 grayscale group-hover:grayscale-0" />
-                <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
-                  <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 2,500</div>
-                  <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">The Executive</h4>
-                </div>
-              </div>
-              <div className="p-6 pt-2">
-                <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">A meticulous structural cut, finished with a crisp razor lineup, hot lather neck shave, and premium styling.</p>
-                <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
-                  Reserve <ArrowRightOutlined/>
-                </span>
-              </div>
-            </div>
+          {/* ✅ NEW: Relative Wrapper for Carousel & Mobile Overlay Buttons */}
+          <div className="relative group/menu -mx-6 md:mx-0">
 
-            <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none">
-              <div className="h-72 overflow-hidden relative">
-                <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                <img src="https://images.unsplash.com/photo-1512864084360-7c0c4d0a0845?q=80&w=2070&auto=format&fit=crop" alt="Shave" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 grayscale group-hover:grayscale-0" />
-                <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
-                  <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 1,800</div>
-                  <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">Classic Shave</h4>
-                </div>
-              </div>
-              <div className="p-6 pt-2">
-                <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Traditional hot towel wet shave utilizing essential oils, soothing balms, and a master's straight razor touch.</p>
-                <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
-                  Reserve <ArrowRightOutlined/>
-                </span>
-              </div>
-            </div>
+            {/* ✅ Stylish Mobile Absolute Overlay Buttons in Amber Theme */}
+            {/* Previous Button (Over Left Side) */}
+            <button 
+              onClick={() => document.getElementById('mobile-services-carousel')?.scrollBy({ left: -320, behavior: 'smooth' })}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
+              aria-label="Scroll Left"
+            >
+              <ArrowLeftOutlined className="text-xl" />
+            </button>
 
-            <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none">
-              <div className="h-72 overflow-hidden relative">
-                <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                <img src="https://images.unsplash.com/photo-1582239459526-9d18e8d87556?q=80&w=2070&auto=format&fit=crop" alt="Beard" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 grayscale group-hover:grayscale-0" />
-                <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
-                  <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 3,800</div>
-                  <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">The Sovereign</h4>
+            {/* Next Button (Over Right Side) */}
+            <button 
+              onClick={() => document.getElementById('mobile-services-carousel')?.scrollBy({ left: 320, behavior: 'smooth' })}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
+              aria-label="Scroll Right"
+            >
+              <ArrowRightOutlined className="text-xl" />
+            </button>
+
+            {/* ✅ Main Carousel Track (Bleeds out -mx-6, needs px-6 internally) */}
+            <div 
+              id="mobile-services-carousel" 
+              className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
+            >
+              {/* Service Card 1 */}
+              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none relative">
+                <div className="h-72 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                  <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=1988&auto=format&fit=crop" alt="Haircut" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 md:grayscale group-hover:grayscale-0" />
+                  <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
+                    <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 2,500</div>
+                    <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">The Executive</h4>
+                  </div>
+                </div>
+                <div className="p-6 pt-2">
+                  <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">A meticulous structural cut, finished with a crisp razor lineup, hot lather neck shave, and premium styling.</p>
+                  <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
+                    Reserve <ArrowRightOutlined/>
+                  </span>
                 </div>
               </div>
-              <div className="p-6 pt-2">
-                <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Our ultimate package. The Executive cut paired with a meticulous beard sculpting and revitalizing mini-facial.</p>
-                <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
-                  Reserve <ArrowRightOutlined/>
-                </span>
+
+              {/* Service Card 2 */}
+              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none relatives">
+                <div className="h-72 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                  <img src="https://images.unsplash.com/photo-1512864084360-7c0c4d0a0845?q=80&w=2070&auto=format&fit=crop" alt="Shave" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 md:grayscale group-hover:grayscale-0" />
+                  <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
+                    <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 1,800</div>
+                    <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">Classic Shave</h4>
+                  </div>
+                </div>
+                <div className="p-6 pt-2">
+                  <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Traditional hot towel wet shave utilizing essential oils, soothing balms, and a master's straight razor touch.</p>
+                  <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
+                    Reserve <ArrowRightOutlined/>
+                  </span>
+                </div>
+              </div>
+
+              {/* Service Card 3 */}
+              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none relations">
+                <div className="h-72 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                  <img 
+                    src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2070&auto=format&fit=crop" 
+                    alt="Premium Beard Sculpting" 
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 md:grayscale group-hover:grayscale-0" 
+                  />
+                  <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
+                    <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 3,800</div>
+                    <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">The Sovereign</h4>
+                  </div>
+                </div>
+                <div className="p-6 pt-2">
+                  <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Our ultimate package. The Executive cut paired with a meticulous beard sculpting and revitalizing mini-facial.</p>
+                  <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
+                    Reserve <ArrowRightOutlined/>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* ✅ Mobile-Only View Full Menu link (Separated & centered) */}
+          <div className="flex justify-center md:hidden mt-4">
+            <Link href="/services" className="border-b border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500 pb-1 text-xs font-bold tracking-[0.2em] uppercase transition-all active:scale-95">
+              View Full Menu
+            </Link>
+          </div>
+
         </div>
       </section>
-
       {/* =========================================
           4. THE MASTERS (TEAM)
       ========================================= */}
-      <section className="py-32 px-6 max-w-7xl mx-auto text-center border-b border-zinc-200 dark:border-zinc-800/50">
-        <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">The Artisans</h3>
-        <h2 className="text-4xl md:text-5xl font-black mb-20 text-zinc-900 dark:text-white transition-colors">Meet The <span className="font-serif italic font-light text-zinc-500">Masters</span></h2>
+<section className="py-32 overflow-hidden border-b border-zinc-200 dark:border-zinc-800/50 transition-colors duration-500">
+        <div className="max-w-7xl mx-auto px-6 relative text-center">
+          
+          <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">The Artisans</h3>
+          <h2 className="text-4xl md:text-5xl font-black mb-12 md:mb-20 text-zinc-900 dark:text-white transition-colors">Meet The <span className="font-serif italic font-light text-zinc-500">Masters</span></h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-12">
-          {/* Artisan 1 */}
-          <div className="flex flex-col items-center group cursor-pointer">
-            <div className="w-56 h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-              <img src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
-            </div>
-            <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">Kasun</h4>
-            <p className="text-zinc-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
-          </div>
+          {/* ✅ Relative Wrapper for Carousel & Mobile Overlay Buttons */}
+          <div className="relative group/artisans -mx-6 md:mx-0">
 
-          {/* Artisan 2 */}
-          <div className="flex flex-col items-center group cursor-pointer">
-            <div className="w-56 h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-              <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
-            </div>
-            <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">Danushka</h4>
-            <p className="text-zinc-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Master Stylist</p>
-          </div>
+            {/* ✅ Stylish Mobile Absolute Overlay Buttons in Amber Theme (Hidden on Desktop) */}
+            {/* Previous Button (Over Left Side) */}
+            <button 
+              onClick={() => document.getElementById('mobile-artisans-carousel')?.scrollBy({ left: -320, behavior: 'smooth' })}
+              className="absolute left-2 top-[160px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
+              aria-label="Scroll Left"
+            >
+              <ArrowLeftOutlined className="text-xl" />
+            </button>
 
-          {/* Artisan 3 */}
-          <div className="flex flex-col items-center group cursor-pointer">
-            <div className="w-56 h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+            {/* Next Button (Over Right Side) */}
+            <button 
+              onClick={() => document.getElementById('mobile-artisans-carousel')?.scrollBy({ left: 320, behavior: 'smooth' })}
+              className="absolute right-2 top-[160px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
+              aria-label="Scroll Right"
+            >
+              <ArrowRightOutlined className="text-xl" />
+            </button>
+
+            {/* ✅ Main Carousel Track (Flex on mobile for swipe, Grid on desktop) */}
+            <div 
+              id="mobile-artisans-carousel" 
+              className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-12 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
+            >
+              {/* Artisan 1 */}
+              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
+                <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
+                  {/* ✅ Changed grayscale to md:grayscale */}
+                  <img src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover md:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                </div>
+                <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">Kasun</h4>
+                <p className="text-zinc-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
+              </div>
+
+              {/* Artisan 2 */}
+              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
+                <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
+                  {/* ✅ Changed grayscale to md:grayscale */}
+                  <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover md:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                </div>
+                <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">Danushka</h4>
+                <p className="text-zinc-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Master Stylist</p>
+              </div>
+
+              {/* Artisan 3 */}
+              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
+                <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
+                  {/* ✅ Changed grayscale to md:grayscale */}
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover md:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                </div>
+                <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">Nimal</h4>
+                <p className="text-zinc-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Style Director</p>
+              </div>
             </div>
-            <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">Nimal</h4>
-            <p className="text-zinc-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Style Director</p>
+            
           </div>
         </div>
       </section>
-
       {/* =========================================
           5. CLIENT REVIEWS (NEW GOOGLE REVIEWS SECTION)
       ========================================= */}
-      <section ref={reviewsRef} className="py-32 px-6 max-w-7xl mx-auto relative overflow-hidden">
+      <section ref={reviewsRef} className="py-32 relative overflow-hidden transition-colors duration-500">
+        
         {/* Decorative Background Glows */}
         <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none"></div>
         <div className="absolute bottom-[20%] right-[10%] w-[300px] h-[300px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 
-        <div className="text-center mb-20 relative z-10">
-          <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Client Voices</h3>
-          <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors mb-6">
-            Rated <span className="font-serif italic font-light text-amber-600 dark:text-amber-500">4.5 / 5</span> on <GoogleOutlined className="text-[32px] md:text-[40px] ml-2 -mb-1 text-zinc-900 dark:text-white transition-colors" />
-          </h2>
-          <div className="flex justify-center gap-1 text-amber-500 text-xl">
-             <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled className="opacity-40" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
-          {/* Review Card 1 */}
-          <div className="review-card opacity-0 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300">
-            <div className="flex gap-1 text-amber-500 text-sm mb-6">
-              <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
-            </div>
-            <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic">
-              "Absolutely top-tier service. I walked in expecting a standard haircut and left feeling like a new man. The hot towel shave is a must-try. Mr Polaa's attention to detail is unmatched."
-            </p>
-            <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6">
-              <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">AM</div>
-              <div>
-                <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Asitha M.</h4>
-                <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
-              </div>
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          
+          <div className="text-center mb-12 md:mb-20 relative z-10">
+            <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Client Voices</h3>
+            <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors mb-6">
+              Rated <span className="font-serif italic font-light text-amber-600 dark:text-amber-500">4.5 / 5</span> on <GoogleOutlined className="text-[32px] md:text-[40px] ml-2 -mb-1 text-zinc-900 dark:text-white transition-colors" />
+            </h2>
+            <div className="flex justify-center gap-1 text-amber-500 text-xl">
+               <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled className="opacity-40" />
             </div>
           </div>
 
-          {/* Review Card 2 */}
-          <div className="review-card opacity-0 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300">
-            <div className="flex gap-1 text-amber-500 text-sm mb-6">
-              <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
-            </div>
-            <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic">
-              "The best fade I've had in Sri Lanka. Kasun understood exactly what I wanted and executed it perfectly. The ambiance of the shop feels incredibly premium yet welcoming."
-            </p>
-            <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6">
-              <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">SR</div>
-              <div>
-                <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Shehan R.</h4>
-                <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
-              </div>
-            </div>
-          </div>
+          {/* ✅ Relative Wrapper for Carousel & Mobile Overlay Buttons */}
+          <div className="relative group/reviews -mx-6 md:mx-0">
 
-          {/* Review Card 3 */}
-          <div className="review-card opacity-0 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300">
-            <div className="flex gap-1 text-amber-500 text-sm mb-6">
-              <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
-            </div>
-            <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic">
-              "Booking online was so smooth, and they started right on time. The styling products they use smell fantastic. Found my permanent grooming spot in town."
-            </p>
-            <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6">
-              <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">DJ</div>
-              <div>
-                <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Dinuka J.</h4>
-                <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+            {/* ✅ Stylish Mobile Absolute Overlay Buttons in Amber Theme (Hidden on Desktop) */}
+            {/* Previous Button */}
+            <button 
+              onClick={() => document.getElementById('mobile-reviews-carousel')?.scrollBy({ left: -320, behavior: 'smooth' })}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
+              aria-label="Scroll Left"
+            >
+              <ArrowLeftOutlined className="text-xl" />
+            </button>
+
+            {/* Next Button */}
+            <button 
+              onClick={() => document.getElementById('mobile-reviews-carousel')?.scrollBy({ left: 320, behavior: 'smooth' })}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
+              aria-label="Scroll Right"
+            >
+              <ArrowRightOutlined className="text-xl" />
+            </button>
+
+            {/* ✅ Main Carousel Track (Flex on mobile for swipe, Grid on desktop) */}
+            <div 
+              id="mobile-reviews-carousel" 
+              className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth relative z-10"
+            >
+              {/* Review Card 1 */}
+              <div className="review-card opacity-0 w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300">
+                <div className="flex gap-1 text-amber-500 text-sm mb-6">
+                  <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
+                </div>
+                <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic">
+                  "Absolutely top-tier service. I walked in expecting a standard haircut and left feeling like a new man. The hot towel shave is a must-try. Mr Polaa's attention to detail is unmatched."
+                </p>
+                <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">AM</div>
+                  <div>
+                    <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Asitha M.</h4>
+                    <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Review Card 2 */}
+              <div className="review-card opacity-0 w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300">
+                <div className="flex gap-1 text-amber-500 text-sm mb-6">
+                  <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
+                </div>
+                <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic">
+                  "The best fade I've had in Sri Lanka. Kasun understood exactly what I wanted and executed it perfectly. The ambiance of the shop feels incredibly premium yet welcoming."
+                </p>
+                <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">SR</div>
+                  <div>
+                    <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Shehan R.</h4>
+                    <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Review Card 3 */}
+              <div className="review-card opacity-0 w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300">
+                <div className="flex gap-1 text-amber-500 text-sm mb-6">
+                  <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
+                </div>
+                <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic">
+                  "Booking online was so smooth, and they started right on time. The styling products they use smell fantastic. Found my permanent grooming spot in town."
+                </p>
+                <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">DJ</div>
+                  <div>
+                    <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Dinuka J.</h4>
+                    <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+                  </div>
+                </div>
               </div>
             </div>
+            
           </div>
         </div>
       </section>
