@@ -29,7 +29,17 @@ export function PublicFooter() {
             <div className="flex flex-col items-center md:items-start">
               
               <div className="flex flex-col items-center w-fit mx-auto md:mx-0">
-                <Link href="/" className="mb-6 flex items-center gap-1 group cursor-pointer block">
+                {/* ✅ Added smooth scroll to top logic here */}
+                <Link 
+                  href="/" 
+                  onClick={(e) => {
+                    if (window.location.pathname === '/') {
+                      e.preventDefault();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className="mb-6 flex items-center gap-1 group cursor-pointer block"
+                >
                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 transition-transform group-active:scale-95">
                     <Image src="/images/dashboard/logo_black.png" alt="Mr Polaa Logo" fill className="object-contain dark:hidden" />
                     <Image src="/images/dashboard/logo_white.png" alt="Mr Polaa Logo" fill className="object-contain hidden dark:block" />
@@ -42,13 +52,13 @@ export function PublicFooter() {
                 
                 {/* Social buttons */}
                 <div className="flex gap-5 justify-center w-full">
-                  <a href="#" className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-950 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-950 transition-all duration-300 active:scale-90">
+                  <a href="https://www.facebook.com/profile.php?id=100070140811780" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-950 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-950 transition-all duration-300 active:scale-90">
                     <FacebookFilled className="text-xl" />
                   </a>
-                  <a href="#" className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-950 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-950 transition-all duration-300 active:scale-90">
+                  <a href="https://instagram.com/your_handle" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-950 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-950 transition-all duration-300 active:scale-90">
                     <InstagramOutlined className="text-xl" />
                   </a>
-                  <a href="#" className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-950 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-950 transition-all duration-300 active:scale-90">
+                  <a href="https://tiktok.com/@your_handle" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-950 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-950 transition-all duration-300 active:scale-90">
                     <TikTokOutlined className="text-xl" />
                   </a>
                 </div>
@@ -64,7 +74,6 @@ export function PublicFooter() {
                   <Link 
                     key={item} 
                     href={item === 'Home' ? '/' : `/${item.toLowerCase().replace(' & ', '-')}`} 
-                    // ✅ Changed font-bold to font-black, and text-zinc-700 to text-black
                     className="text-xs font-black tracking-widest text-black dark:text-zinc-100 hover:text-amber-600 dark:hover:text-amber-500 transition-all uppercase active:scale-[0.98] origin-center md:origin-left hover:md:translate-x-1"
                   >
                     {item}
@@ -78,7 +87,6 @@ export function PublicFooter() {
               <h4 className="text-amber-600 dark:text-amber-500 text-md tracking-[0.2em] uppercase mb-6 md:mb-8">Contact Us</h4>
               
               <div className="flex gap-4 mb-6 md:mb-8 group cursor-default">
-                {/* ✅ text-amber-600 and dark:text-amber-500 make this permanently amber! */}
                 <ClockCircleOutlined className="text-2xl mt-0.5 text-amber-600 dark:text-amber-500 transition-colors" />
                 <div className="text-center md:text-left">
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em] mb-1.5">Opening Times</p>

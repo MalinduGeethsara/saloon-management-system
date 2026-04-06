@@ -47,8 +47,19 @@ export function PublicNavbar() {
       <header className="bg-zinc-50/90 dark:bg-zinc-950/90 backdrop-blur-xl text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-900 sticky top-0 z-50 transition-colors duration-500">
         <div className="max-w-7xl mx-auto px-6 h-24 flex justify-between items-center">
           
-          {/* Left: Logo & Brand (Already links to Home) */}
-          <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-1 group z-50">
+          {/* Left: Logo & Brand */}
+          <Link 
+            href="/" 
+            onClick={(e) => {
+              // ✅ Added smooth scroll to top logic here
+              if (pathname === '/') {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+              closeMobileMenu();
+            }} 
+            className="flex items-center gap-1 group z-50"
+          >
             <div className="relative w-14 h-14 overflow-hidden rounded-full transition-colors duration-500 shrink-0">
               <Image src="/images/dashboard/logo_black.png" alt="Mr Polaa Logo Light" fill className="object-contain p-1 block dark:hidden" />
               <Image src="/images/dashboard/logo_white.png" alt="Mr Polaa Logo Dark" fill className="object-contain p-1 hidden dark:block" />
@@ -76,11 +87,9 @@ export function PublicNavbar() {
               <Link 
                 key={link.name}
                 href={link.path} 
-                // ✅ Changed font-bold to font-black for thicker, heavier letters
                 className={`text-xs font-black tracking-[0.15em] transition-colors uppercase ${
                   pathname === link.path 
                     ? 'text-amber-600 dark:text-amber-500' // Active page stays Amber
-                    // ✅ Changed text-zinc-900 to text-black for pure black in light mode
                     : 'd text-black dark:text-white hover:text-amber-600 dark:hover:text-amber-500' 
                 }`}
               >
@@ -104,7 +113,6 @@ export function PublicNavbar() {
             <div className="hidden lg:flex items-center gap-6">
               <Link href="/book" className="group relative flex items-center justify-center h-12 w-40 border border-zinc-900 dark:border-zinc-100 overflow-hidden cursor-pointer active:scale-95 transition-transform">
                 <span className="absolute inset-0 w-full h-full bg-amber-600 dark:bg-amber-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out z-0"></span>
-                {/* ✅ Changed text-zinc-900 to text-black and font-bold to font-black */}
                 <span className="relative z-10 text-sm font-black uppercase text-black dark:text-zinc-100 group-hover:text-white dark:group-hover:text-zinc-950 transition-colors duration-300 mt-0.5">
                   Book Now
                 </span>
@@ -113,7 +121,6 @@ export function PublicNavbar() {
               <Link href="/login" className="group relative flex items-center justify-center h-12 w-16 border border-zinc-900 dark:border-zinc-100 overflow-hidden cursor-pointer active:scale-95 transition-transform">
                 <span className="absolute inset-0 w-full h-full bg-amber-600 dark:bg-amber-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out z-0"></span>
                 <div className="relative z-10 flex items-center justify-center">
-                  {/* ✅ Changed text-zinc-900 to text-black and added stroke properties for boldness */}
                   <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     viewBox="0 0 24 24" 
@@ -173,7 +180,14 @@ export function PublicNavbar() {
                 <Link 
                   key={link.name} 
                   href={link.path} 
-                  onClick={closeMobileMenu} 
+                  onClick={(e) => {
+                    // ✅ Allow the drawer links to scroll to top as well if already there!
+                    if (pathname === link.path && link.path === '/') {
+                      e.preventDefault();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                    closeMobileMenu();
+                  }} 
                   className={`group flex items-center text-lg font-black tracking-[0.15em] uppercase transition-colors ${
                     isActive 
                       ? 'text-amber-600 dark:text-amber-500' 
