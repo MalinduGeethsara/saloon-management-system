@@ -105,7 +105,7 @@ export default function WebsiteHomePage() {
 
           <div className="flex flex-col sm:flex-row gap-5 justify-center w-full sm:w-auto">
             <Link 
-              href="/book"
+              href="/booking"
               className="reveal-btn group relative flex items-center justify-center gap-3 bg-amber-600 text-white dark:text-zinc-950 font-bold py-4 px-10 rounded-none overflow-hidden transition-all hover:bg-amber-700 dark:hover:bg-amber-500 shadow-xl dark:shadow-none"
             >
               <CalendarOutlined className="text-xl relative z-10" />
@@ -497,7 +497,7 @@ export default function WebsiteHomePage() {
           <h2 className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white mb-6 tracking-tight transition-colors">Demand <span className="font-serif italic font-light text-amber-600 dark:text-amber-500 transition-colors">Excellence.</span></h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-12 font-light max-w-xl mx-auto transition-colors">Your time is valuable. Bypass the waiting room by securing your preferred time and artisan online.</p>
           <Link 
-            href="/book"
+            href="/booking"
             className="inline-flex items-center justify-center gap-3 bg-amber-600 text-white dark:text-zinc-950 hover:bg-amber-700 dark:hover:bg-amber-500 font-bold uppercase tracking-widest text-sm py-5 px-12 transition-all hover:scale-105 shadow-xl dark:shadow-none"
           >
             Secure Your Appointment

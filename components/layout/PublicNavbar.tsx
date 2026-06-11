@@ -111,27 +111,22 @@ export function PublicNavbar() {
             )}
 
             <div className="hidden lg:flex items-center gap-6">
-              <Link href="/book" className="group relative flex items-center justify-center h-12 w-40 border border-zinc-900 dark:border-zinc-100 overflow-hidden cursor-pointer active:scale-95 transition-transform">
+              <Link href="/booking" className="group relative flex items-center justify-center h-12 w-40 border border-zinc-900 dark:border-zinc-100 overflow-hidden cursor-pointer active:scale-95 transition-transform">
                 <span className="absolute inset-0 w-full h-full bg-amber-600 dark:bg-amber-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out z-0"></span>
                 <span className="relative z-10 text-sm font-black uppercase text-black dark:text-zinc-100 group-hover:text-white dark:group-hover:text-zinc-950 transition-colors duration-300 mt-0.5">
                   Book Now
                 </span>
               </Link>
               
-              <Link href="/login" className="group relative flex items-center justify-center h-12 w-16 border border-zinc-900 dark:border-zinc-100 overflow-hidden cursor-pointer active:scale-95 transition-transform">
-                <span className="absolute inset-0 w-full h-full bg-amber-600 dark:bg-amber-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out z-0"></span>
-                <div className="relative z-10 flex items-center justify-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    viewBox="0 0 24 24" 
-                    fill="currentColor" 
-                    stroke="currentColor" 
-                    strokeWidth="0.8" 
-                    className="w-[25px] h-[25px] text-black dark:text-zinc-100 group-hover:text-white dark:group-hover:text-zinc-950 transition-colors duration-300"
-                  >
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
+              <div className="h-10 w-px bg-zinc-200 dark:bg-zinc-800 mx-2"></div>
+              
+              <Link href="/profile" className="flex items-center gap-3 group active:scale-95 transition-transform cursor-pointer">
+                <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white font-bold group-hover:bg-amber-600 group-hover:text-white transition-colors border border-zinc-300 dark:border-zinc-700">
+                  M
                 </div>
+                <span className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors hidden xl:block border-b border-transparent group-hover:border-amber-600 dark:group-hover:border-amber-500 pb-0.5">
+                  Malindu
+                </span>
               </Link>
             </div>
 
@@ -207,7 +202,7 @@ export function PublicNavbar() {
           {/* Mobile Action Buttons */}
           <div className="flex flex-col gap-4">
             <Link 
-              href="/book" 
+              href="/booking" 
               onClick={closeMobileMenu}
               className="flex items-center justify-center h-14 w-full border border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 hover:text-amber-600 hover:border-amber-600 dark:hover:text-amber-500 dark:hover:border-amber-500 active:text-amber-600 active:border-amber-600 dark:active:text-amber-500 dark:active:border-amber-500 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-300"
             >
