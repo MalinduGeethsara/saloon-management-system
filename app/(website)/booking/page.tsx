@@ -31,9 +31,73 @@ export default function BookingPage() {
   const [expiryMonth, setExpiryMonth] = useState("");
   const [expiryYear, setExpiryYear] = useState("");
   const [cvv, setCvv] = useState("");
+  const [bookingDate, setBookingDate] = useState("");
+
+  React.useEffect(() => {
+    // Client-side guard check
+    const roleCookie = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    const userRole = roleCookie ? roleCookie[2] : null;
+    
+    if (!roleCookie || !userRole) {
+      window.location.href = '/login?callbackUrl=/booking';
+      return;
+    }
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const formatted = tomorrow.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    setBookingDate(formatted);
+  }, []);
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Generate random code like SLAD70507
+    const randomCode = "SLAD" + Math.floor(10000 + Math.random() * 90000);
+    const newAppointment = {
+      id: Math.random().toString(),
+      code: randomCode,
+      date: bookingDate || "Sep 24, 2026",
+      time: selectedSlot || "09:00 AM",
+      status: "Pending",
+      amount: "LKR 4,000.00",
+      paymentMethod: "Card",
+      paymentStatus: "Paid",
+      barberName: selectedBarber?.name || "Kasun",
+      barberRole: selectedBarber?.role || "Senior Barber"
+    };
+
+    // Load existing appointments
+    const existing = localStorage.getItem("appointments");
+    let appointmentsList = [];
+    if (existing) {
+      try {
+        appointmentsList = JSON.parse(existing);
+      } catch (err) {
+        console.error("Failed to parse appointments:", err);
+      }
+    } else {
+      // Use the default one as initial
+      appointmentsList = [
+        {
+          id: "1",
+          code: "SLAD70507",
+          date: "2026-09-24",
+          time: "4:00 PM",
+          status: "Pending",
+          amount: "LKR 4,000.00",
+          paymentMethod: "Card",
+          paymentStatus: "Paid",
+          barberName: "Kasun",
+          barberRole: "Senior Barber"
+        }
+      ];
+    }
+
+    // Add new appointment to the start of the list
+    appointmentsList.unshift(newAppointment);
+    localStorage.setItem("appointments", JSON.stringify(appointmentsList));
+
     // Simulate payment processing
     setTimeout(() => {
       setStep(4);
@@ -323,7 +387,7 @@ export default function BookingPage() {
                       <CalendarOutlined className="text-amber-600 dark:text-amber-500 text-lg" />
                       <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Date</span>
                     </div>
-                    <strong className="text-zinc-900 dark:text-white font-bold">Sep 24, 2026</strong>
+                    <strong className="text-zinc-900 dark:text-white font-bold">{bookingDate}</strong>
                   </div>
                   
                   <div className="flex justify-between items-center py-2">
