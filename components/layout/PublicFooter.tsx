@@ -3,9 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { 
-  FacebookFilled, 
-  InstagramOutlined, 
+import {
+  FacebookFilled,
+  InstagramOutlined,
   TikTokOutlined,
   ClockCircleOutlined,
   HomeOutlined,
@@ -15,23 +15,23 @@ import {
 export function PublicFooter() {
   return (
     <div className="relative w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 transition-colors duration-500 mt-auto">
-      
+
       {/* --- Ambient Background Glows --- */}
       <div className="absolute top-0 left-[-10%] w-[40%] h-full bg-amber-500/10 blur-[120px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-full bg-blue-500/5 dark:bg-zinc-800/40 blur-[120px] rounded-full pointer-events-none"></div>
 
       <footer className="relative z-10 bg-white/40 dark:bg-zinc-950/60 backdrop-blur-3xl text-zinc-900 dark:text-zinc-100 pt-16 md:pt-24 pb-8 border-t border-white/60 dark:border-zinc-800/50 transition-colors duration-500">
         <div className="max-w-7xl mx-auto px-6">
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-12 md:mb-20">
-            
+
             {/* Column 1: Brand & Socials */}
             <div className="flex flex-col items-center md:items-start">
-              
+
               <div className="flex flex-col items-center w-fit mx-auto md:mx-0">
                 {/* ✅ Added smooth scroll to top logic here */}
-                <Link 
-                  href="/" 
+                <Link
+                  href="/"
                   onClick={(e) => {
                     if (window.location.pathname === '/') {
                       e.preventDefault();
@@ -49,7 +49,7 @@ export function PublicFooter() {
                     <span className="text-[8px] sm:text-[9px] tracking-[0.3em] text-amber-600 dark:text-amber-500 font-bold uppercase mt-2">Premium Grooming</span>
                   </div>
                 </Link>
-                
+
                 {/* Social buttons */}
                 <div className="flex gap-5 justify-center w-full">
                   <a href="https://www.facebook.com/profile.php?id=100070140811780" target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-950 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-950 transition-all duration-300 active:scale-90">
@@ -71,9 +71,9 @@ export function PublicFooter() {
               <h4 className="text-amber-600 dark:text-amber-500 text-md tracking-[0.2em] uppercase mb-6 md:mb-8 text-center md:text-left">Quick Links</h4>
               <div className="flex flex-col gap-4 md:gap-5 items-center md:items-start">
                 {['Home', 'About', 'Terms & Conditions', 'Contact'].map((item) => (
-                  <Link 
-                    key={item} 
-                    href={item === 'Home' ? '/' : `/${item.toLowerCase().replace(' & ', '-')}`} 
+                  <Link
+                    key={item}
+                    href={item === 'Home' ? '/' : `/${item.toLowerCase().replace(' & ', '-')}`}
                     className="text-xs font-black tracking-widest text-black dark:text-zinc-100 hover:text-amber-600 dark:hover:text-amber-500 transition-all uppercase active:scale-[0.98] origin-center md:origin-left hover:md:translate-x-1"
                   >
                     {item}
@@ -85,7 +85,7 @@ export function PublicFooter() {
             {/* Column 3: Contact Info */}
             <div className="flex flex-col items-center md:items-start">
               <h4 className="text-amber-600 dark:text-amber-500 text-md tracking-[0.2em] uppercase mb-6 md:mb-8">Contact Us</h4>
-              
+
               <div className="flex gap-4 mb-6 md:mb-8 group cursor-default">
                 <ClockCircleOutlined className="text-2xl mt-0.5 text-amber-600 dark:text-amber-500 transition-colors" />
                 <div className="text-center md:text-left">
@@ -98,7 +98,7 @@ export function PublicFooter() {
                 <HomeOutlined className="text-2xl mt-0.5 text-amber-600 dark:text-amber-500 transition-colors" />
                 <div className="text-center md:text-left">
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-[0.2em] mb-1.5">Our Location</p>
-                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 leading-relaxed drop-shadow-sm dark:drop-shadow-none">Mr Polaa Barber Shop,<br/> New Road, Walasmulla,<br/> Sri Lanka.</p>
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 leading-relaxed drop-shadow-sm dark:drop-shadow-none">Mr Polaa Barber Shop,<br /> New Road, Walasmulla,<br /> Sri Lanka.</p>
                 </div>
               </div>
             </div>
