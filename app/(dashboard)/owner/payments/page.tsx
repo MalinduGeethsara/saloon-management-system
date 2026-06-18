@@ -17,17 +17,17 @@ const { Title, Text } = Typography;
 // --- Mock Data ---
 const INITIAL_PAYMENTS = [
   { 
-    key: '1', id: "INV-1023", client: "Kamal Perera", contact: "0771234567", barber: "Nuwan Pradeep",
+    key: '1', id: "INV-1023", client: "Kamal Perera", contact: "0771234567", barber: "Malith Sandaruwan",
     items: [{ name: "Haircut", type: "Service", price: 2500 }], 
     amount: 2500, method: "Cash", date: "2023-10-24" 
   },
   { 
-    key: '2', id: "INV-1024", client: "Saman Kumara", contact: "0719876543", barber: "Kasun Perera",
+    key: '2', id: "INV-1024", client: "Saman Kumara", contact: "0719876543", barber: "Mahesh Madushanka",
     items: [{ name: "Beard Trim", type: "Service", price: 1500 }], 
     amount: 1500, method: "Card", date: "2023-10-24" 
   },
   { 
-    key: '3', id: "INV-1025", client: "Nimal Siripala", contact: "0765551234", barber: "Lahiru Thirimanne",
+    key: '3', id: "INV-1025", client: "Nimal Siripala", contact: "0765551234", barber: "Vindana Lakmal",
     items: [{ name: "Haircut", type: "Service", price: 2500 }, { name: "Hair Gel", type: "Product", price: 5000 }], 
     amount: 7500, method: "Transfer", date: "2023-10-25" 
   },

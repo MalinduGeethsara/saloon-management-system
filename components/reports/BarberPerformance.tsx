@@ -13,9 +13,9 @@ interface BarberStats {
 }
 
 const barberData: BarberStats[] = [
-  { name: "Alex Rivers", avatarLetter: "A", revenue: 5680, target: 6000, rating: 4.9, avgTime: "35m" },
-  { name: "Sam Wilson", avatarLetter: "S", revenue: 3420, target: 5000, rating: 4.7, avgTime: "42m" },
-  { name: "Jordan Smith", avatarLetter: "J", revenue: 4100, target: 4500, rating: 4.8, avgTime: "38m" },
+  { name: "Malith Sandaruwan", avatarLetter: "M", revenue: 5680, target: 6000, rating: 4.9, avgTime: "35m" },
+  { name: "Mahesh Madushanka", avatarLetter: "M", revenue: 3420, target: 5000, rating: 4.7, avgTime: "42m" },
+  { name: "Vindana Lakmal", avatarLetter: "V", revenue: 4100, target: 4500, rating: 4.8, avgTime: "38m" },
 ];
 
 export function BarberPerformance() {
@@ -79,7 +79,7 @@ export function BarberPerformance() {
         <CardContent>
           <div className="text-xs text-gray-500 leading-relaxed">
             Performance is calculated based on **Revenue generated** vs **Allocated shop hours**. 
-            Alex Rivers currently leads with a **94% target completion rate**, while Sam Wilson shows 
+            Malith Sandaruwan currently leads with a **94% target completion rate**, while Mahesh Madushanka shows 
             the highest customer retention but longer average service times.
           </div>
         </CardContent>

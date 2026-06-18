@@ -37,10 +37,23 @@ const fetchEmployeePayroll = (id: string, month: string) => {
     status = 'Pending';
   }
 
+  let name = 'Mahesh Madushanka';
+  let role = 'Senior Barber';
+  if (id === 'EMP-002') {
+    name = 'Malith Sandaruwan';
+    role = 'Senior Barber';
+  } else if (id === 'EMP-003') {
+    name = 'Vindana Lakmal';
+    role = 'Senior Barber';
+  } else if (id === 'EMP-004') {
+    name = 'Nimesh Haththasingha';
+    role = 'Master Stylist';
+  }
+
   return { 
     id: id || 'EMP-001', 
-    name: 'Kasun Perera', 
-    role: 'Senior Barber', 
+    name, 
+    role, 
     department: 'Hair Styling',
     basicSalary: 75000, 
     allowances: 5000, 

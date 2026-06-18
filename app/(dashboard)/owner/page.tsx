@@ -32,9 +32,9 @@ const RECENT_TRANSACTIONS = [
 ];
 
 const TOP_STAFF = [
-  { name: 'Nuwan Pradeep', role: 'Senior Barber', sales: 185000, bookings: 42 },
-  { name: 'Kasun Perera', role: 'Barber', sales: 120000, bookings: 38 },
-  { name: 'Lahiru Thirimanne', role: 'Stylist', sales: 95000, bookings: 25 },
+  { name: 'Malith Sandaruwan', role: 'Senior Barber', sales: 185000, bookings: 42 },
+  { name: 'Mahesh Madushanka', role: 'Senior Barber', sales: 120000, bookings: 38 },
+  { name: 'Vindana Lakmal', role: 'Senior Barber', sales: 95000, bookings: 25 },
 ];
 
 const POPULAR_SERVICES = [

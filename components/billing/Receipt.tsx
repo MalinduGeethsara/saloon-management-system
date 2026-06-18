@@ -12,7 +12,7 @@ export function Receipt({ data }: { data: any }) {
       <div className="border-t border-b border-dashed py-2 my-2">
         <p>Date: {new Date().toLocaleDateString()}</p>
         <p>Receipt: #TX-9901</p>
-        <p>Barber: Alex Rivers</p>
+        <p>Barber: {data?.barber || 'Mahesh Madushanka'}</p>
       </div>
 
       <div className="space-y-1 mb-4">

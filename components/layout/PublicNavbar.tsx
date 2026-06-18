@@ -12,6 +12,8 @@ export function PublicNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const pathname = usePathname();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userProfile, setUserProfile] = useState<{ name: string; initials: string } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -25,6 +27,25 @@ export function PublicNavbar() {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+    }
+
+    // Read cookie for customer state
+    const roleCookie = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    const userRole = roleCookie ? roleCookie[2] : null;
+
+    const nameCookie = document.cookie.match(new RegExp('(^| )user_name=([^;]+)'));
+    const userName = nameCookie ? decodeURIComponent(nameCookie[2]) : null;
+
+    if (userRole) {
+      setIsLoggedIn(true);
+      const displayName = userName || (userRole === 'customer' ? 'Malindu' : userRole.charAt(0).toUpperCase() + userRole.slice(1));
+      setUserProfile({
+        name: displayName,
+        initials: displayName.charAt(0).toUpperCase()
+      });
+    } else {
+      setIsLoggedIn(false);
+      setUserProfile(null);
     }
   }, []);
 
@@ -69,8 +90,8 @@ export function PublicNavbar() {
               <span className="text-xl sm:text-2xl font-black tracking-[0.2em] leading-none text-zinc-900 dark:text-white group-hover:text-amber-500 transition-colors duration-500">
                 MR POLAA
               </span>
-              <span className="text-[8px] sm:text-[9px] tracking-[0.3em] text-amber-600 dark:text-amber-500 font-bold uppercase mt-1.5">
-                Premium Grooming
+              <span className="text-[8px] sm:text-[9px] tracking-[0.82em] text-amber-600 dark:text-amber-500 font-bold uppercase mt-1.5">
+                Unisex salon
               </span>
             </div>
           </Link>
@@ -120,14 +141,28 @@ export function PublicNavbar() {
               
               <div className="h-10 w-px bg-zinc-200 dark:bg-zinc-800 mx-2"></div>
               
-              <Link href="/profile" className="flex items-center gap-3 group active:scale-95 transition-transform cursor-pointer">
-                <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white font-bold group-hover:bg-amber-600 group-hover:text-white transition-colors border border-zinc-300 dark:border-zinc-700">
-                  M
-                </div>
-                <span className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors hidden xl:block border-b border-transparent group-hover:border-amber-600 dark:group-hover:border-amber-500 pb-0.5">
-                  Malindu
-                </span>
-              </Link>
+              {isLoggedIn && userProfile ? (
+                <Link href="/profile" className="flex items-center gap-3 group active:scale-95 transition-transform cursor-pointer">
+                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white font-bold group-hover:bg-amber-600 group-hover:text-white transition-colors border border-zinc-300 dark:border-zinc-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                  </div>
+                  <span className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors hidden xl:block border-b border-transparent group-hover:border-amber-600 dark:group-hover:border-amber-500 pb-0.5">
+                    {userProfile.name}
+                  </span>
+                </Link>
+              ) : (
+                <Link 
+                  href="/login" 
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-500 transition-all duration-300 active:scale-95"
+                  aria-label="Login"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </Link>
+              )}
             </div>
 
             <button 
@@ -209,18 +244,34 @@ export function PublicNavbar() {
               Book Now
             </Link>
             
-            <Link 
-              href="/login" 
-              onClick={closeMobileMenu}
-              className="flex items-center justify-center h-14 w-full border border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 hover:text-amber-600 hover:border-amber-600 dark:hover:text-amber-500 dark:hover:border-amber-500 active:text-amber-600 active:border-amber-600 dark:active:text-amber-500 dark:active:border-amber-500 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-300"
-            >
-              <div className="flex items-center justify-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-                <span className="mt-0.5">Login</span>
-              </div>
-            </Link>
+            {isLoggedIn && userProfile ? (
+              <Link 
+                href="/profile" 
+                onClick={closeMobileMenu}
+                className="flex items-center justify-center h-14 w-full border border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 hover:text-amber-600 hover:border-amber-600 dark:hover:text-amber-500 dark:hover:border-amber-500 active:text-amber-600 active:border-amber-600 dark:active:text-amber-500 dark:active:border-amber-500 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-300"
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[12px] h-[12px]">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                  </div>
+                  <span className="mt-0.5">{userProfile.name}</span>
+                </div>
+              </Link>
+            ) : (
+              <Link 
+                href="/login" 
+                onClick={closeMobileMenu}
+                className="flex items-center justify-center h-14 w-full border border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 hover:text-amber-600 hover:border-amber-600 dark:hover:text-amber-500 dark:hover:border-amber-500 active:text-amber-600 active:border-amber-600 dark:active:text-amber-500 dark:active:border-amber-500 transition-colors duration-300"
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+              </Link>
+            )}
           </div>
           
         </div>

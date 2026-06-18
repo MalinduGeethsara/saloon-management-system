@@ -8,10 +8,10 @@ export function middleware(request: NextRequest) {
   const path = url.pathname;
 
 
-  const isCustomerPath = path.startsWith('/customer'); 
+  const isCustomerPath = path.startsWith('/customer') || path.startsWith('/profile') || path.startsWith('/booking'); 
   
   if (isCustomerPath) {
-    if (!token || userRole !== 'customer') {
+    if (!token) {
       url.pathname = '/login'; 
       url.searchParams.set('callbackUrl', path);
       return NextResponse.redirect(url);
@@ -38,7 +38,7 @@ export function middleware(request: NextRequest) {
   if (token && userRole) {
     
     if (path === '/login') {
-      if (userRole === 'customer') url.pathname = '/customer'; 
+      if (userRole === 'customer') url.pathname = '/profile'; 
       else url.pathname = '/owner'; 
       return NextResponse.redirect(url);
     }

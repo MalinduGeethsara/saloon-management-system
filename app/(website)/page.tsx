@@ -2,9 +2,9 @@
 
 import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { 
-  CalendarOutlined, 
-  ScissorOutlined, 
+import {
+  CalendarOutlined,
+  ScissorOutlined,
   ArrowRightOutlined,
   ArrowLeftOutlined, // ✅ This is the missing import!
   CrownOutlined,
@@ -23,30 +23,30 @@ export default function WebsiteHomePage() {
       const tl = gsap.timeline();
 
       // Hero Overlay Fade
-      tl.fromTo('.overlay-bg', 
-        { opacity: 1 }, 
+      tl.fromTo('.overlay-bg',
+        { opacity: 1 },
         { opacity: 0.6, duration: 1.5, ease: 'power2.inOut' }
       )
-      // Hero Text Stagger
-      .fromTo('.reveal-text', 
-        { y: 60, opacity: 0, skewY: 5 }, 
-        { y: 0, opacity: 1, skewY: 0, duration: 1.2, stagger: 0.15, ease: 'power4.out' },
-        "-=1.0"
-      )
-      // Hero Buttons
-      .fromTo('.reveal-btn', 
-        { y: 30, opacity: 0 }, 
-        { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'back.out(1.7)' },
-        "-=0.6"
-      );
+        // Hero Text Stagger
+        .fromTo('.reveal-text',
+          { y: 60, opacity: 0, skewY: 5 },
+          { y: 0, opacity: 1, skewY: 0, duration: 1.2, stagger: 0.15, ease: 'power4.out' },
+          "-=1.0"
+        )
+        // Hero Buttons
+        .fromTo('.reveal-btn',
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'back.out(1.7)' },
+          "-=0.6"
+        );
     }, containerRef);
 
     // --- Scroll-Triggered Animation for Review Cards ---
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          gsap.fromTo('.review-card', 
-            { y: 60, opacity: 0 }, 
+          gsap.fromTo('.review-card',
+            { y: 60, opacity: 0 },
             { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: 'power3.out' }
           );
           observer.unobserve(entry.target); // Only animate once
@@ -66,18 +66,18 @@ export default function WebsiteHomePage() {
 
   return (
     <div ref={containerRef} className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500">
-      
+
       {/* =========================================
           1. IMMERSIVE HERO SECTION
       ========================================= */}
       {/* ✅ FIX: min-h-[100dvh] ensures it perfectly fits 100% of the screen height on both mobile and desktop. */}
       <section className="relative flex flex-col items-center justify-center min-h-[100dvh] w-full px-6 text-center overflow-hidden -mt-24 pt-24">
-        
+
         <div className="absolute inset-0 z-0 bg-zinc-900 transition-colors duration-500">
-          <video 
-            autoPlay 
-            loop 
-            muted 
+          <video
+            autoPlay
+            loop
+            muted
             playsInline
             className="w-full h-full  object-cover opacity-100"
           >
@@ -92,27 +92,27 @@ export default function WebsiteHomePage() {
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
             The Premium Standard
           </div>
-          
+
           <h1 className="reveal-text text-5xl md:text-7xl lg:text-[6rem] font-black text-white mb-6 leading-[1.05] tracking-tighter transition-colors drop-shadow-md">
             Mastering The <br />
-            <span className="font-serif italic font-light text-amber-500 mr-4 transition-colors">Art</span> 
+            <span className="font-serif italic font-light text-amber-500 mr-4 transition-colors">Art</span>
             Of Grooming.
           </h1>
-          
+
           <p className="reveal-text text-lg md:text-xl text-zinc-200 dark:text-zinc-300 mb-12 max-w-2xl mx-auto leading-relaxed font-medium transition-colors drop-shadow-md">
             An exclusive sanctuary for the modern gentleman. Precision tailoring, traditional hot towel shaves, and uncompromising quality.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-5 justify-center w-full sm:w-auto">
-            <Link 
+            <Link
               href="/booking"
               className="reveal-btn group relative flex items-center justify-center gap-3 bg-amber-600 text-white dark:text-zinc-950 font-bold py-4 px-10 rounded-none overflow-hidden transition-all hover:bg-amber-700 dark:hover:bg-amber-500 shadow-xl dark:shadow-none"
             >
               <CalendarOutlined className="text-xl relative z-10" />
               <span className="relative z-10 tracking-wide uppercase text-sm">Reserve Your Chair</span>
             </Link>
-            
-            <Link 
+
+            <Link
               href="/services"
               className="reveal-btn flex items-center justify-center gap-2 bg-white/20 backdrop-blur-md border border-white/50 text-white font-bold py-4 px-10 rounded-none transition-all hover:bg-white hover:border-amber-600 hover:text-amber-600 tracking-wide uppercase text-sm shadow-md dark:shadow-none"
             >
@@ -123,22 +123,47 @@ export default function WebsiteHomePage() {
       </section>
 
       {/* =========================================
+          BRAND PARTNERS MARQUEE (BEAUTY PRODUCTS)
+      ========================================= */}
+      <div className="relative py-12 bg-white dark:bg-zinc-950/20 border-b border-zinc-200 dark:border-zinc-900 transition-colors duration-500 overflow-hidden select-none">
+        <div className="max-w-7xl mx-auto px-6 mb-4 flex items-center justify-center gap-3">
+          <span className="h-[1px] w-12 bg-zinc-200 dark:bg-zinc-800 transition-colors"></span>
+          <span className="text-[10px] uppercase font-bold tracking-[0.35em] text-zinc-400 dark:text-zinc-500 transition-colors">Premium Products We Trust</span>
+          <span className="h-[1px] w-12 bg-zinc-200 dark:bg-zinc-800 transition-colors"></span>
+        </div>
+        
+        <div className="relative w-full overflow-hidden flex mask-gradient-marquee py-2">
+          {/* We repeat the brand set 4 times for smooth density and seamless looping */}
+          <div className="animate-marquee flex items-center gap-20 md:gap-32 whitespace-nowrap pr-20 md:pr-32">
+            {[...Array(4)].map((_, i) => (
+              <React.Fragment key={i}>
+                <span className="text-zinc-800 dark:text-zinc-500 font-serif tracking-[0.2em] font-extrabold text-xl uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">Bellose</span>
+                <span className="text-zinc-800 dark:text-zinc-500 font-sans tracking-[0.3em] font-black text-base uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">Derma Pro</span>
+                <span className="text-zinc-800 dark:text-zinc-500 font-sans tracking-[0.25em] font-bold text-lg uppercase italic transition-colors hover:text-amber-600 dark:hover:text-amber-500 font-mono">Keune</span>
+                <span className="text-zinc-800 dark:text-zinc-500 font-serif tracking-[0.15em] font-medium text-lg uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">L'Oréal</span>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* =========================================
           2. THE CRAFT (ABOUT)
       ========================================= */}
       <section className="py-32 px-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           <div className="lg:col-span-7 grid grid-cols-2 gap-6 relative">
             <div className="flex flex-col gap-6 mt-12">
-              <img 
-                src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?q=80&w=2000&auto=format&fit=crop" 
-                alt="Barber Tools" 
+              <img
+                src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?q=80&w=2000&auto=format&fit=crop"
+                alt="Barber Tools"
                 className="w-full h-80 object-cover rounded-none xl:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
               />
             </div>
             <div className="flex flex-col gap-6">
-              <img 
-                src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop" 
-                alt="Vintage Chair" 
+              <img
+                src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop"
+                alt="Vintage Chair"
                 className="w-full h-[28rem] object-cover rounded-none xl:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
               />
             </div>
@@ -150,12 +175,12 @@ export default function WebsiteHomePage() {
               <span className="w-12 h-[1px] bg-amber-600 dark:bg-amber-500 transition-colors"></span> Est. 2024
             </h3>
             <h2 className="text-4xl md:text-5xl font-black mb-8 leading-tight text-zinc-900 dark:text-white transition-colors">
-              Tradition Meets <br/><span className="font-serif italic font-light text-zinc-500">Modern Precision.</span>
+              Tradition Meets <br /><span className="font-serif italic font-light text-zinc-500">Modern Precision.</span>
             </h2>
             <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed mb-10 font-light transition-colors">
               We don't just cut hair; we architect your personal style. Every detail, from the ambient lighting to the rich lather of our shaving creams, is curated to provide a momentary escape from the ordinary.
             </p>
-            
+
             <div className="grid grid-cols-1 gap-8 mb-12">
               <div className="flex items-start gap-5">
                 <div className="w-12 h-12 bg-white dark:bg-zinc-900 flex items-center justify-center shrink-0 border border-zinc-200 dark:border-zinc-800 text-amber-600 dark:text-amber-500 transition-colors shadow-sm dark:shadow-none">
@@ -178,7 +203,7 @@ export default function WebsiteHomePage() {
             </div>
 
             <Link href="/about" className="text-zinc-900 dark:text-white font-bold hover:text-amber-600 dark:hover:text-amber-500 transition-colors flex items-center gap-3 w-fit group uppercase tracking-widest text-xs">
-              Explore Our Heritage 
+              Explore Our Heritage
               <ArrowRightOutlined className="transition-transform group-hover:translate-x-2 text-amber-600 dark:text-amber-500" />
             </Link>
           </div>
@@ -188,9 +213,9 @@ export default function WebsiteHomePage() {
       {/* =========================================
           3. THE MENU (SERVICES)
       ========================================= */}
- <section className="py-32 bg-white dark:bg-zinc-900/50 border-y border-zinc-200 dark:border-zinc-800/50 transition-colors duration-500 overflow-hidden">
+      <section className="py-32 bg-white dark:bg-zinc-900/50 border-y border-zinc-200 dark:border-zinc-800/50 transition-colors duration-500 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative">
-          
+
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 md:mb-20 gap-6">
             <div>
               <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Curated Menu</h3>
@@ -207,7 +232,7 @@ export default function WebsiteHomePage() {
 
             {/* ✅ Stylish Mobile Absolute Overlay Buttons in Amber Theme */}
             {/* Previous Button (Perfectly centered over the image part) */}
-            <button 
+            <button
               onClick={() => document.getElementById('mobile-services-carousel')?.scrollBy({ left: -350, behavior: 'smooth' })}
               className="absolute left-2 top-[144px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Left"
@@ -216,7 +241,7 @@ export default function WebsiteHomePage() {
             </button>
 
             {/* Next Button (Perfectly centered over the image part) */}
-            <button 
+            <button
               onClick={() => document.getElementById('mobile-services-carousel')?.scrollBy({ left: 350, behavior: 'smooth' })}
               className="absolute right-2 top-[144px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Right"
@@ -225,8 +250,8 @@ export default function WebsiteHomePage() {
             </button>
 
             {/* ✅ Main Carousel Track */}
-            <div 
-              id="mobile-services-carousel" 
+            <div
+              id="mobile-services-carousel"
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
               {/* Service Card 1 */}
@@ -243,7 +268,7 @@ export default function WebsiteHomePage() {
                 <div className="p-6 pt-2">
                   <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">A meticulous structural cut, finished with a crisp razor lineup, hot lather neck shave, and premium styling.</p>
                   <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
-                    Reserve <ArrowRightOutlined/>
+                    Reserve <ArrowRightOutlined />
                   </span>
                 </div>
               </div>
@@ -262,7 +287,7 @@ export default function WebsiteHomePage() {
                 <div className="p-6 pt-2">
                   <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Traditional hot towel wet shave utilizing essential oils, soothing balms, and a master's straight razor touch.</p>
                   <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
-                    Reserve <ArrowRightOutlined/>
+                    Reserve <ArrowRightOutlined />
                   </span>
                 </div>
               </div>
@@ -272,10 +297,10 @@ export default function WebsiteHomePage() {
                 <div className="h-72 overflow-hidden relative">
                   <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
                   {/* ✅ Changed md:grayscale to xl:grayscale */}
-                  <img 
-                    src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2070&auto=format&fit=crop" 
-                    alt="Premium Beard Sculpting" 
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0" 
+                  <img
+                    src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2070&auto=format&fit=crop"
+                    alt="Premium Beard Sculpting"
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
                   />
                   <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
                     <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 3,800</div>
@@ -285,7 +310,7 @@ export default function WebsiteHomePage() {
                 <div className="p-6 pt-2">
                   <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Our ultimate package. The Executive cut paired with a meticulous beard sculpting and revitalizing mini-facial.</p>
                   <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
-                    Reserve <ArrowRightOutlined/>
+                    Reserve <ArrowRightOutlined />
                   </span>
                 </div>
               </div>
@@ -304,9 +329,9 @@ export default function WebsiteHomePage() {
       {/* =========================================
           4. THE MASTERS (TEAM)
       ========================================= */}
-<section className="py-32 overflow-hidden border-b border-zinc-200 dark:border-zinc-800/50 transition-colors duration-500">
+      <section className="py-32 overflow-hidden border-b border-zinc-200 dark:border-zinc-800/50 transition-colors duration-500">
         <div className="max-w-7xl mx-auto px-6 relative text-center">
-          
+
           <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">The Artisans</h3>
           <h2 className="text-4xl md:text-5xl font-black mb-12 md:mb-20 text-zinc-900 dark:text-white transition-colors">Meet The <span className="font-serif italic font-light text-zinc-500">Masters</span></h2>
 
@@ -315,7 +340,7 @@ export default function WebsiteHomePage() {
 
             {/* ✅ Stylish Mobile Absolute Overlay Buttons in Amber Theme (Hidden on Desktop) */}
             {/* Previous Button (Over Left Side) */}
-            <button 
+            <button
               onClick={() => document.getElementById('mobile-artisans-carousel')?.scrollBy({ left: -320, behavior: 'smooth' })}
               className="absolute left-2 top-[160px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Left"
@@ -324,7 +349,7 @@ export default function WebsiteHomePage() {
             </button>
 
             {/* Next Button (Over Right Side) */}
-            <button 
+            <button
               onClick={() => document.getElementById('mobile-artisans-carousel')?.scrollBy({ left: 320, behavior: 'smooth' })}
               className="absolute right-2 top-[160px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Right"
@@ -333,41 +358,47 @@ export default function WebsiteHomePage() {
             </button>
 
             {/* ✅ Main Carousel Track (Flex on mobile for swipe, Grid on desktop) */}
-            <div 
-              id="mobile-artisans-carousel" 
-              className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-12 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
+            <div
+              id="mobile-artisans-carousel"
+              className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-4 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
-              {/* Artisan 1 */}
+              {/* Artisan 1 - Owner */}
               <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
                 <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                  {/* ✅ Changed to xl:grayscale so touch devices stay in full color */}
-                  <img src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
                 </div>
-                <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">Kasun</h4>
-                <p className="text-zinc-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
+                <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Nimesh Haththasingha</h4>
+                <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Master Stylist</p>
               </div>
 
               {/* Artisan 2 */}
               <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
                 <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                  {/* ✅ Changed to xl:grayscale so touch devices stay in full color */}
-                  <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                  <img src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
                 </div>
-                <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">Danushka</h4>
-                <p className="text-zinc-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Master Stylist</p>
+                <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Mahesh Madushanka</h4>
+                <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
               </div>
 
               {/* Artisan 3 */}
               <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
                 <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                  {/* ✅ Changed to xl:grayscale so touch devices stay in full color */}
+                  <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                </div>
+                <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Malith Sandaruwan</h4>
+                <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
+              </div>
+
+              {/* Artisan 4 */}
+              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
+                <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
                   <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
                 </div>
-                <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">Nimal</h4>
-                <p className="text-zinc-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Style Director</p>
+                <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Vindana Lakmal</h4>
+                <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
               </div>
             </div>
-            
+
           </div>
         </div>
       </section>
@@ -375,20 +406,20 @@ export default function WebsiteHomePage() {
           5. CLIENT REVIEWS (NEW GOOGLE REVIEWS SECTION)
       ========================================= */}
       <section ref={reviewsRef} className="py-32 relative overflow-hidden transition-colors duration-500">
-        
+
         {/* Decorative Background Glows */}
         <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none"></div>
         <div className="absolute bottom-[20%] right-[10%] w-[300px] h-[300px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          
+
           <div className="text-center mb-12 md:mb-20 relative z-10">
             <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Client Voices</h3>
             <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors mb-6">
               Rated <span className="font-serif italic font-light text-amber-600 dark:text-amber-500">4.5 / 5</span> on <GoogleOutlined className="text-[32px] md:text-[40px] ml-2 -mb-1 text-zinc-900 dark:text-white transition-colors" />
             </h2>
             <div className="flex justify-center gap-1 text-amber-500 text-xl">
-               <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled className="opacity-40" />
+              <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled className="opacity-40" />
             </div>
           </div>
 
@@ -397,7 +428,7 @@ export default function WebsiteHomePage() {
 
             {/* ✅ Stylish Mobile Absolute Overlay Buttons in Amber Theme (Hidden on Desktop) */}
             {/* Previous Button */}
-            <button 
+            <button
               onClick={() => document.getElementById('mobile-reviews-carousel')?.scrollBy({ left: -320, behavior: 'smooth' })}
               className="absolute left-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Left"
@@ -406,7 +437,7 @@ export default function WebsiteHomePage() {
             </button>
 
             {/* Next Button */}
-            <button 
+            <button
               onClick={() => document.getElementById('mobile-reviews-carousel')?.scrollBy({ left: 320, behavior: 'smooth' })}
               className="absolute right-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Right"
@@ -415,8 +446,8 @@ export default function WebsiteHomePage() {
             </button>
 
             {/* ✅ Main Carousel Track (Flex on mobile for swipe, Grid on desktop) */}
-            <div 
-              id="mobile-reviews-carousel" 
+            <div
+              id="mobile-reviews-carousel"
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth relative z-10"
             >
               {/* Review Card 1 */}
@@ -447,7 +478,7 @@ export default function WebsiteHomePage() {
                 </div>
                 {/* ✅ Added flex-1 to paragraph */}
                 <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
-                  "The best fade I've had in Sri Lanka. Kasun understood exactly what I wanted and executed it perfectly. The ambiance of the shop feels incredibly premium yet welcoming."
+                  "The best fade I've had in Sri Lanka. Mahesh understood exactly what I wanted and executed it perfectly. The ambiance of the shop feels incredibly premium yet welcoming."
                 </p>
                 {/* ✅ Added mt-auto */}
                 <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
@@ -479,7 +510,7 @@ export default function WebsiteHomePage() {
                 </div>
               </div>
             </div>
-            
+
           </div>
         </div>
       </section>
@@ -492,11 +523,11 @@ export default function WebsiteHomePage() {
           <img src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=2070&auto=format&fit=crop" alt="Shop Interior" className="w-full h-full object-cover opacity-20 dark:opacity-10 grayscale mix-blend-overlay" />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-100 via-zinc-100/80 dark:from-zinc-950 dark:via-zinc-950/80 to-transparent transition-colors duration-500"></div>
         </div>
-        
+
         <div className="relative z-10 max-w-3xl mx-auto text-center">
           <h2 className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white mb-6 tracking-tight transition-colors">Demand <span className="font-serif italic font-light text-amber-600 dark:text-amber-500 transition-colors">Excellence.</span></h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-12 font-light max-w-xl mx-auto transition-colors">Your time is valuable. Bypass the waiting room by securing your preferred time and artisan online.</p>
-          <Link 
+          <Link
             href="/booking"
             className="inline-flex items-center justify-center gap-3 bg-amber-600 text-white dark:text-zinc-950 hover:bg-amber-700 dark:hover:bg-amber-500 font-bold uppercase tracking-widest text-sm py-5 px-12 transition-all hover:scale-105 shadow-xl dark:shadow-none"
           >

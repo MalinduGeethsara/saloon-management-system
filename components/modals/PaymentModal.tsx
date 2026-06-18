@@ -15,7 +15,7 @@ interface PaymentModalProps {
   paymentToEdit?: any;
 }
 
-const BARBERS = ["Nuwan Pradeep", "Kasun Perera", "Lahiru Thirimanne", "Chamara Silva"];
+const BARBERS = ["Malith", "Mahesh", "Vindana", "Nimesh"];
 
 // PREDEFINED CATALOG FOR SEARCH DROPDOWN
 const CATALOG = [

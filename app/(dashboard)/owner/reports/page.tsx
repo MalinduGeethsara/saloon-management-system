@@ -44,9 +44,9 @@ const PERFORMANCE_DATA = [
 ];
 
 const TOP_STAFF = [
-  { name: "Alex Rivers", role: "Senior Barber", revenue: 450000, percentage: 85, avatar: "https://i.pravatar.cc/150?u=1" },
-  { name: "Jordan Smith", role: "Specialist", revenue: 320000, percentage: 65, avatar: "https://i.pravatar.cc/150?u=2" },
-  { name: "Sam Wilson", role: "Barber", revenue: 210000, percentage: 45, avatar: "https://i.pravatar.cc/150?u=3" },
+  { name: "Malith Sandaruwan", role: "Senior Barber", revenue: 450000, percentage: 85, avatar: "https://i.pravatar.cc/150?u=1" },
+  { name: "Mahesh Madushanka", role: "Senior Barber", revenue: 320000, percentage: 65, avatar: "https://i.pravatar.cc/150?u=2" },
+  { name: "Vindana Lakmal", role: "Senior Barber", revenue: 210000, percentage: 45, avatar: "https://i.pravatar.cc/150?u=3" },
 ];
 
 const TOP_SERVICES = [
