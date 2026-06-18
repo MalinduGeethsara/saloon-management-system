@@ -41,16 +41,16 @@ const { Title, Text } = Typography;
 
 // --- Mock Initial Data ---
 const INITIAL_BOOKINGS = [
-  { key: "1", id: "B-101", client: "Kamal Perera", barber: "Nuwan Pradeep", status: "Pending", total: 2500, date: "2023-10-26" },
-  { key: "2", id: "B-102", client: "Saman Kumara", barber: "Kasun Perera", status: "Confirmed", total: 1800, date: "2023-10-26" },
-  { key: "3", id: "B-103", client: "Nimal Siripala", barber: "Lahiru Thirimanne", status: "Pending", total: 3200, date: "2023-10-27" },
-  { key: "4", id: "B-104", client: "Ruwan Fernando", barber: "Nuwan Pradeep", status: "Cancelled", total: 1500, date: "2023-10-25" },
+  { key: "1", id: "B-101", client: "Kamal Perera", barber: "Malith Sandaruwan", status: "Pending", total: 2500, date: "2023-10-26" },
+  { key: "2", id: "B-102", client: "Saman Kumara", barber: "Mahesh Madushanka", status: "Confirmed", total: 1800, date: "2023-10-26" },
+  { key: "3", id: "B-103", client: "Nimal Siripala", barber: "Vindana Lakmal", status: "Pending", total: 3200, date: "2023-10-27" },
+  { key: "4", id: "B-104", client: "Ruwan Fernando", barber: "Malith Sandaruwan", status: "Cancelled", total: 1500, date: "2023-10-25" },
 ];
 
 const BARBERS_LIST = [
-  { id: 1, name: 'Nuwan Pradeep', color: '#18181b' },
-  { id: 2, name: 'Kasun Perera', color: '#7C4DFF' },
-  { id: 3, name: 'Lahiru Thirimanne', color: '#2563eb' },
+  { id: 1, name: 'Malith Sandaruwan', color: '#18181b' },
+  { id: 2, name: 'Mahesh Madushanka', color: '#7C4DFF' },
+  { id: 3, name: 'Vindana Lakmal', color: '#2563eb' },
 ];
 
 function ManageBookingsContent() {

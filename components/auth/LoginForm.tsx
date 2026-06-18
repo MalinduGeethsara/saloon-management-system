@@ -86,7 +86,7 @@ export const LoginForm = () => {
           position: 'relative' 
         }}>
           <Image 
-            src="/images/dashboard/logo.png"  
+            src="/images/dashboard/logo_black.png"  
             alt="Salon Logo" 
             fill 
             style={{ objectFit: 'contain' }} 

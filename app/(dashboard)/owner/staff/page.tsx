@@ -35,10 +35,10 @@ const { Title, Text } = Typography;
 
 // --- Mock Data ---
 const STAFF_DATA = [
-  { key: '1', name: "Nuwan Pradeep", role: "Senior Barber", branch: "Downtown", earnings: "Rs. 185,000", status: "Active", email: "nuwan@salon.com", phone: "0771234567" },
-  { key: '2', name: "Kasun Perera", role: "Barber", branch: "Downtown", earnings: "Rs. 120,000", status: "Active", email: "kasun@salon.com", phone: "0719876543" },
-  { key: '3', name: "Lahiru Thirimanne", role: "Manager", branch: "Westside", earnings: "Rs. 250,000", status: "On Leave", email: "lahiru@salon.com", phone: "0765551234" },
-  { key: '4', name: "Chamara Silva", role: "Barber", branch: "Westside", earnings: "Rs. 98,500", status: "Active", email: "chamara@salon.com", phone: "0702223333" },
+  { key: '1', name: "Malith Sandaruwan", role: "Senior Barber", branch: "Downtown", earnings: "Rs. 185,000", status: "Active", email: "malith@salon.com", phone: "0771234567" },
+  { key: '2', name: "Mahesh Madushanka", role: "Senior Barber", branch: "Downtown", earnings: "Rs. 120,000", status: "Active", email: "mahesh@salon.com", phone: "0719876543" },
+  { key: '3', name: "Vindana Lakmal", role: "Senior Barber", branch: "Westside", earnings: "Rs. 250,000", status: "On Leave", email: "vindana@salon.com", phone: "0765551234" },
+  { key: '4', name: "Nimesh Haththasingha", role: "Master Stylist", branch: "Westside", earnings: "Rs. 98,500", status: "Active", email: "nimesh@salon.com", phone: "0702223333" },
 ];
 
 function StaffContent() {

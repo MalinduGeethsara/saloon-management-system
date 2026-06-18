@@ -7,9 +7,10 @@ import { Clock, CheckCircle, XCircle } from "lucide-react";
 
 export default function AttendancePage() {
   const staff = [
-    { id: 1, name: "Alex Rivers", role: "Senior Barber", status: "Present", time: "08:45 AM" },
-    { id: 2, name: "Sam Wilson", role: "Style Expert", status: "Absent", time: "-" },
-    { id: 3, name: "Jordan Smith", role: "Manager", status: "Present", time: "08:30 AM" },
+    { id: 1, name: "Malith Sandaruwan", role: "Senior Barber", status: "Present", time: "08:45 AM" },
+    { id: 2, name: "Mahesh Madushanka", role: "Senior Barber", status: "Present", time: "08:50 AM" },
+    { id: 3, name: "Vindana Lakmal", role: "Senior Barber", status: "Absent", time: "-" },
+    { id: 4, name: "Nimesh Haththasingha", role: "Master Stylist", status: "Present", time: "08:30 AM" },
   ];
 
   return ( 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { 
   Card, Typography, Row, Col, Statistic, Table, Tag, Button, Alert, Tooltip, DatePicker
 } from 'antd';
@@ -15,8 +15,6 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-// --- Config & Constants ---
-const EMPLOYEE = { name: "Kasun Perera", role: "Senior Barber", baseSalary: 75000 };
 const MONTHLY_WORK_DAYS = 25;
 const REQUIRED_HOURS = 11;
 const MAX_LEAVES = 4;
@@ -36,6 +34,29 @@ const calculateHours = (clockIn: string, clockOut: string) => {
 
 function EmployeeProfileContent() {
   const router = useRouter();
+  const params = useParams();
+  const employeeId = params?.id as string;
+
+  const EMPLOYEE = useMemo(() => {
+    let name = "Mahesh Madushanka";
+    let role = "Senior Barber";
+    let baseSalary = 75000;
+    if (employeeId === '2') {
+      name = "Malith Sandaruwan";
+      role = "Senior Barber";
+      baseSalary = 55000;
+    } else if (employeeId === '3') {
+      name = "Vindana Lakmal";
+      role = "Senior Barber";
+      baseSalary = 65000;
+    } else if (employeeId === '4') {
+      name = "Nimesh Haththasingha";
+      role = "Master Stylist";
+      baseSalary = 40000;
+    }
+    return { name, role, baseSalary };
+  }, [employeeId]);
+
   const { showAlert } = useAlert();
   
   // ✅ Added mounted state to prevent hydration errors

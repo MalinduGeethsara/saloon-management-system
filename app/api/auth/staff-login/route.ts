@@ -3,9 +3,9 @@ import { cookies } from 'next/headers';
 
 const USERS = [
   { email: 'admin@salon.com', password: 'password123', role: 'admin', name: 'System Admin' },
-  { email: 'owner@salon.com', password: 'password123', role: 'owner', name: 'Mali' },
+  { email: 'owner@salon.com', password: 'password123', role: 'owner', name: 'Nimesh' },
   { email: 'manager@salon.com', password: 'password123', role: 'manager', name: 'Sarah' },  
-  { email: 'barber@salon.com', password: 'password123', role: 'barber', name: 'Kasun' }     
+  { email: 'barber@salon.com', password: 'password123', role: 'barber', name: 'Mahesh' }     
 ];
 
 export async function POST(request: Request) {

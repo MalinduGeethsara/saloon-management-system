@@ -6,47 +6,89 @@ import { ArrowRightOutlined } from '@ant-design/icons';
 
 const services = [
   {
-    title: "The Executive",
-    price: "LKR 2,500",
-    description: "A meticulous structural cut, finished with a crisp razor lineup, hot lather neck shave, and premium styling.",
+    title: "Hair Cutting",
+    price: "LKR 500",
+    description: "A precision haircut tailored to your preferences, complete with styling.",
     img: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=1988&auto=format&fit=crop"
   },
   {
-    title: "Classic Shave",
-    price: "LKR 1,800",
-    description: "Traditional hot towel wet shave utilizing essential oils, soothing balms, and a master's straight razor touch.",
-    img: "https://images.unsplash.com/photo-1512864084360-7c0c4d0a0845?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    title: "The Sovereign",
-    price: "LKR 3,800",
-    description: "Our ultimate package. The Executive cut paired with a meticulous beard sculpting and revitalizing mini-facial.",
-    img: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2070&auto=format&fit=crop"
-  },
-  {
-    title: "Buzz Cut",
-    price: "LKR 1,500",
-    description: "A precision single or double-grade clipper cut all over, perfectly faded and lined up.",
-    img: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2074&auto=format&fit=crop"
-  },
-  {
-    title: "Beard Sculpting",
-    price: "LKR 1,200",
-    description: "Detailed beard shaping, trimming, and conditioning to suit your facial structure.",
+    title: "Beard Cutting",
+    price: "LKR 400",
+    description: "Expert beard shaping, trimming, and lineup to compliment your face structure.",
     img: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=2070&auto=format&fit=crop"
   },
   {
-    title: "Mini-Facial",
+    title: "Head Quick Massage",
+    price: "LKR 400",
+    description: "A relaxing head massage to ease tension, soothe stress, and improve circulation.",
+    img: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?q=80&w=1987&auto=format&fit=crop"
+  },
+  {
+    title: "Oil Treatment",
+    price: "LKR 1,500",
+    description: "Nourishing hot oil hair treatment to condition your scalp and strengthen hair follicles.",
+    img: "https://images.unsplash.com/photo-1626806819282-2c1de02d0801?q=80&w=2070&auto=format&fit=crop"
+  },
+  {
+    title: "Gray Hair Cover",
+    price: "LKR 1,200",
+    description: "Seamless coverage of gray hairs using premium, natural-looking coloring solutions.",
+    img: "https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=2070&auto=format&fit=crop"
+  },
+  {
+    title: "Full Facial Treatment",
+    price: "LKR 6,000",
+    description: "Complete premium multi-step skin therapy including cleansing, scrub, mask, and deep hydration.",
+    img: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?q=80&w=2070&auto=format&fit=crop"
+  },
+  {
+    title: "Gold Facial Treatment",
+    price: "LKR 5,000",
+    description: "Luxury skin rejuvenation infused with active gold elements for a bright, healthy glow.",
+    img: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=2070&auto=format&fit=crop"
+  },
+  {
+    title: "Normal Facial Treatment",
+    price: "LKR 3,500",
+    description: "Standard facial cleansing and masking to refresh and clear your skin.",
+    img: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=2070&auto=format&fit=crop"
+  },
+  {
+    title: "Gold Cleanup",
+    price: "LKR 4,000",
+    description: "Quick skin cleansing and tan removal treatment using premium gold scrubs and packs.",
+    img: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?q=80&w=2070&auto=format&fit=crop"
+  },
+  {
+    title: "Scrub",
+    price: "LKR 1,000",
+    description: "Deep exfoliating facial scrub to clear dead skin cells and blackheads.",
+    img: "https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=2070&auto=format&fit=crop"
+  },
+  {
+    title: "Ear Piercing",
+    price: "LKR 500",
+    description: "Safe, quick, and hygienic ear piercing using sterile, premium studs.",
+    img: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=2070&auto=format&fit=crop"
+  },
+  {
+    title: "Nose Piercing",
+    price: "LKR 1,000",
+    description: "Professional nose piercing performed under strict sterile conditions.",
+    img: "https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?q=80&w=1974&auto=format&fit=crop"
+  },
+  {
+    title: "Tongue Piercing",
     price: "LKR 2,000",
-    description: "A rejuvenating facial treatment including cleansing, exfoliation, and a deep-conditioning mask.",
-    img: "https://images.unsplash.com/photo-1516975080661-422fc996d1f9?q=80&w=1974&auto=format&fit=crop"
+    description: "Hygiene-first professional tongue piercing using medical-grade titanium bars.",
+    img: "https://images.unsplash.com/photo-1590246814883-57c511e76523?q=80&w=1974&auto=format&fit=crop"
   }
 ];
 
 export default function ServicesPage() {
   return (
     <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24 pb-32">
-      
+
       <div className="max-w-7xl mx-auto px-6 w-full">
         <div className="text-center mb-20">
           <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Curated Menu</h3>
@@ -74,7 +116,7 @@ export default function ServicesPage() {
           ))}
         </div>
       </div>
-      
+
     </div>
   );
 }

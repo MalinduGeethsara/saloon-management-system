@@ -23,22 +23,22 @@ const NO_PAY_RATE = 1000;
 // --- Mock Data ---
 const PAYROLL_DATA = [
   { 
-    key: '1', id: 'EMP-001', name: 'Kasun Perera', role: 'Senior Barber', 
+    key: '1', id: 'EMP-001', name: 'Mahesh Madushanka', role: 'Senior Barber', 
     basicSalary: 75000, allowances: 5000, commissions: 15000, 
     leavesTaken: 2, status: 'Paid', method: 'Bank Transfer' 
   },
   { 
-    key: '2', id: 'EMP-002', name: 'Amila Silva', role: 'Barber', 
+    key: '2', id: 'EMP-002', name: 'Malith Sandaruwan', role: 'Senior Barber', 
     basicSalary: 55000, allowances: 2000, commissions: 8000, 
     leavesTaken: 5, status: 'Pending', method: 'Cash' 
   },
   { 
-    key: '3', id: 'EMP-003', name: 'Nimali Dias', role: 'Stylist', 
+    key: '3', id: 'EMP-003', name: 'Vindana Lakmal', role: 'Senior Barber', 
     basicSalary: 65000, allowances: 3000, commissions: 12000, 
     leavesTaken: 1, status: 'Paid', method: 'Bank Transfer' 
   },
   { 
-    key: '4', id: 'EMP-004', name: 'Ruwan Fernando', role: 'Junior Barber', 
+    key: '4', id: 'EMP-004', name: 'Nimesh Haththasingha', role: 'Master Stylist', 
     basicSalary: 40000, allowances: 1000, commissions: 4000, 
     leavesTaken: 6, status: 'Pending', method: 'Cash' 
   },

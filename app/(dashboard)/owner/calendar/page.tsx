@@ -42,10 +42,10 @@ const { useToken } = theme;
 
 // --- Sri Lankan Staff Data ---
 const BARBERS = [
-  { id: 1, name: 'Nuwan Pradeep', color: '#18181b', role: 'Senior Barber' }, 
-  { id: 2, name: 'Kasun Perera', color: '#7C4DFF', role: 'Stylist' }, 
-  { id: 3, name: 'Lahiru Thirimanne', color: '#2563eb', role: 'Barber' },
-  { id: 4, name: 'Chamara Silva', color: '#059669', role: 'Trainee' },
+  { id: 1, name: 'Malith Sandaruwan', color: '#18181b', role: 'Senior Barber' }, 
+  { id: 2, name: 'Mahesh Madushanka', color: '#7C4DFF', role: 'Senior Barber' }, 
+  { id: 3, name: 'Vindana Lakmal', color: '#2563eb', role: 'Senior Barber' },
+  { id: 4, name: 'Nimesh Haththasingha', color: '#059669', role: 'Master Stylist' },
 ];
 
 // --- Helper: Generate Dates ---

@@ -13,9 +13,10 @@ import {
 } from '@ant-design/icons';
 
 const barbers = [
-  { id: 1, name: "Kasun", role: "Senior Barber", img: "https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" },
-  { id: 2, name: "Danushka", role: "Master Stylist", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" },
-  { id: 3, name: "Nimal", role: "Style Director", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" },
+  { id: 4, name: "Nimesh Haththasingha", role: "Master Stylist", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop" },
+  { id: 1, name: "Mahesh Madushanka", role: "Senior Barber", img: "https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" },
+  { id: 2, name: "Malith Sandaruwan", role: "Senior Barber", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" },
+  { id: 3, name: "Vindana Lakmal", role: "Senior Barber", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" },
 ];
 
 const timeSlots = ["09:00 AM", "09:45 AM", "10:30 AM", "11:15 AM", "01:00 PM", "01:45 PM", "02:30 PM", "04:00 PM"];
@@ -31,9 +32,73 @@ export default function BookingPage() {
   const [expiryMonth, setExpiryMonth] = useState("");
   const [expiryYear, setExpiryYear] = useState("");
   const [cvv, setCvv] = useState("");
+  const [bookingDate, setBookingDate] = useState("");
+
+  React.useEffect(() => {
+    // Client-side guard check
+    const roleCookie = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    const userRole = roleCookie ? roleCookie[2] : null;
+    
+    if (!roleCookie || !userRole) {
+      window.location.href = '/login?callbackUrl=/booking';
+      return;
+    }
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const formatted = tomorrow.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    setBookingDate(formatted);
+  }, []);
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Generate random code like SLAD70507
+    const randomCode = "SLAD" + Math.floor(10000 + Math.random() * 90000);
+    const newAppointment = {
+      id: Math.random().toString(),
+      code: randomCode,
+      date: bookingDate || "Sep 24, 2026",
+      time: selectedSlot || "09:00 AM",
+      status: "Pending",
+      amount: "LKR 4,000.00",
+      paymentMethod: "Card",
+      paymentStatus: "Paid",
+      barberName: selectedBarber?.name || "Mahesh Madushanka",
+      barberRole: selectedBarber?.role || "Senior Barber"
+    };
+
+    // Load existing appointments
+    const existing = localStorage.getItem("appointments");
+    let appointmentsList = [];
+    if (existing) {
+      try {
+        appointmentsList = JSON.parse(existing);
+      } catch (err) {
+        console.error("Failed to parse appointments:", err);
+      }
+    } else {
+      // Use the default one as initial
+      appointmentsList = [
+        {
+          id: "1",
+          code: "SLAD70507",
+          date: "2026-09-24",
+          time: "4:00 PM",
+          status: "Pending",
+          amount: "LKR 4,000.00",
+          paymentMethod: "Card",
+          paymentStatus: "Paid",
+          barberName: "Mahesh Madushanka",
+          barberRole: "Senior Barber"
+        }
+      ];
+    }
+
+    // Add new appointment to the start of the list
+    appointmentsList.unshift(newAppointment);
+    localStorage.setItem("appointments", JSON.stringify(appointmentsList));
+
     // Simulate payment processing
     setTimeout(() => {
       setStep(4);
@@ -78,7 +143,7 @@ export default function BookingPage() {
                 Select Your Artisan
               </h2>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 xl:gap-6">
                 {barbers.map((b) => {
                   const isSelected = selectedBarber?.id === b.id;
                   return (
@@ -88,7 +153,7 @@ export default function BookingPage() {
                         setSelectedBarber(b); 
                         setTimeout(() => setStep(2), 300); // Small delay for visual feedback
                       }}
-                      className={`group relative flex flex-col items-center p-6 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border ${isSelected ? 'border-amber-500 shadow-md shadow-amber-500/20' : 'border-zinc-200 dark:border-zinc-800/60 hover:border-amber-500/50'} cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md dark:shadow-none`}
+                      className={`group relative flex flex-col items-center px-4 py-6 sm:px-6 sm:py-6 lg:px-2 lg:py-5 xl:px-4 xl:py-6 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border ${isSelected ? 'border-amber-500 shadow-md shadow-amber-500/20' : 'border-zinc-200 dark:border-zinc-800/60 hover:border-amber-500/50'} cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md dark:shadow-none w-full overflow-hidden`}
                     >
                       <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden mb-6 border-2 border-transparent group-hover:border-amber-500/30 transition-all duration-500">
                         <img 
@@ -97,8 +162,8 @@ export default function BookingPage() {
                           className={`w-full h-full object-cover transition-all duration-700 ${isSelected ? 'grayscale-0 scale-105' : 'grayscale group-hover:grayscale-0 group-hover:scale-105'}`}
                         />
                       </div>
-                      <h4 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">{b.name}</h4>
-                      <p className="text-amber-600 dark:text-amber-500 font-light text-xs mb-2 tracking-widest uppercase mt-1">{b.role}</p>
+                      <h4 className="text-[13px] sm:text-[14px] md:text-[15px] lg:text-[12.5px] xl:text-[14px] 2xl:text-base font-bold text-zinc-900 dark:text-white tracking-wide transition-colors text-center whitespace-nowrap">{b.name}</h4>
+                      <p className="text-amber-600 dark:text-amber-500 font-light text-xs mb-2 tracking-widest uppercase mt-1 text-center">{b.role}</p>
                       
                       <div className={`absolute top-4 right-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isSelected ? 'border-amber-500 bg-amber-500 text-white' : 'border-zinc-300 dark:border-zinc-700 text-transparent'}`}>
                         <CheckCircleFilled className="text-sm" />
@@ -323,7 +388,7 @@ export default function BookingPage() {
                       <CalendarOutlined className="text-amber-600 dark:text-amber-500 text-lg" />
                       <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Date</span>
                     </div>
-                    <strong className="text-zinc-900 dark:text-white font-bold">Sep 24, 2026</strong>
+                    <strong className="text-zinc-900 dark:text-white font-bold">{bookingDate}</strong>
                   </div>
                   
                   <div className="flex justify-between items-center py-2">

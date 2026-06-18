@@ -81,6 +81,7 @@ export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Form.Item name="role" label="Job Role" rules={[{ required: true }]}>
                   <Select placeholder="Select Role" size="large">
+                    <Option value="Master Stylist">Master Stylist</Option>
                     <Option value="Senior Barber">Senior Barber</Option>
                     <Option value="Barber">Barber</Option>
                     <Option value="Manager">Manager</Option>
