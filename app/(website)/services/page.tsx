@@ -9,79 +9,79 @@ const services = [
     title: "Hair Cutting",
     price: "LKR 500",
     description: "A precision haircut tailored to your preferences, complete with styling.",
-    img: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=1988&auto=format&fit=crop"
+    img: "images/website/services/1.jpg"
   },
   {
     title: "Beard Cutting",
     price: "LKR 400",
     description: "Expert beard shaping, trimming, and lineup to compliment your face structure.",
-    img: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=2070&auto=format&fit=crop"
+    img: "images/website/services/2.jpg"
   },
   {
-    title: "Head Quick Massage",
+    title: "Quick Head Massage",
     price: "LKR 400",
     description: "A relaxing head massage to ease tension, soothe stress, and improve circulation.",
-    img: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?q=80&w=1987&auto=format&fit=crop"
+    img: "images/website/services/3.jpg"
   },
   {
     title: "Oil Treatment",
     price: "LKR 1,500",
     description: "Nourishing hot oil hair treatment to condition your scalp and strengthen hair follicles.",
-    img: "https://images.unsplash.com/photo-1626806819282-2c1de02d0801?q=80&w=2070&auto=format&fit=crop"
+    img: "images/website/services/4.jpg"
   },
   {
     title: "Gray Hair Cover",
     price: "LKR 1,200",
     description: "Seamless coverage of gray hairs using premium, natural-looking coloring solutions.",
-    img: "https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=2070&auto=format&fit=crop"
+    img: "images/website/services/5.jpg"
   },
   {
     title: "Full Facial Treatment",
     price: "LKR 6,000",
     description: "Complete premium multi-step skin therapy including cleansing, scrub, mask, and deep hydration.",
-    img: "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?q=80&w=2070&auto=format&fit=crop"
+    img: "images/website/services/6.jpg"
   },
   {
     title: "Gold Facial Treatment",
     price: "LKR 5,000",
     description: "Luxury skin rejuvenation infused with active gold elements for a bright, healthy glow.",
-    img: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=2070&auto=format&fit=crop"
+    img: "images/website/services/7.jpg"
   },
   {
     title: "Normal Facial Treatment",
     price: "LKR 3,500",
     description: "Standard facial cleansing and masking to refresh and clear your skin.",
-    img: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=2070&auto=format&fit=crop"
+    img: "images/website/services/8.jpg"
   },
   {
     title: "Gold Cleanup",
     price: "LKR 4,000",
     description: "Quick skin cleansing and tan removal treatment using premium gold scrubs and packs.",
-    img: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?q=80&w=2070&auto=format&fit=crop"
+    img: "images/website/services/9.jpg"
   },
   {
     title: "Scrub",
     price: "LKR 1,000",
     description: "Deep exfoliating facial scrub to clear dead skin cells and blackheads.",
-    img: "https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=2070&auto=format&fit=crop"
+    img: "images/website/services/10.jpg"
   },
   {
     title: "Ear Piercing",
     price: "LKR 500",
     description: "Safe, quick, and hygienic ear piercing using sterile, premium studs.",
-    img: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=2070&auto=format&fit=crop"
+    img: "images/website/services/11.jpg"
   },
   {
     title: "Nose Piercing",
     price: "LKR 1,000",
     description: "Professional nose piercing performed under strict sterile conditions.",
-    img: "https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?q=80&w=1974&auto=format&fit=crop"
+    img: "images/website/services/12.jpg"
   },
   {
     title: "Tongue Piercing",
     price: "LKR 2,000",
     description: "Hygiene-first professional tongue piercing using medical-grade titanium bars.",
-    img: "https://images.unsplash.com/photo-1590246814883-57c511e76523?q=80&w=1974&auto=format&fit=crop"
+    img: "images/website/services/13.jpg"
   }
 ];
 
@@ -101,13 +101,13 @@ export default function ServicesPage() {
               <div className="h-64 overflow-hidden relative">
                 <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
                 <img src={service.img} alt={service.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0" />
-                <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-white dark:from-zinc-900/90 to-transparent">
+                <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-linear-to-t from-white dark:from-zinc-900/90 to-transparent">
                   <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">{service.price}</div>
                   <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">{service.title}</h4>
                 </div>
               </div>
-              <div className="p-6 flex-grow flex flex-col">
-                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors flex-grow">{service.description}</p>
+              <div className="p-6 grow flex flex-col">
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors grow">{service.description}</p>
                 <Link href="/booking" className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors mt-auto w-fit">
                   Reserve <ArrowRightOutlined />
                 </Link>
