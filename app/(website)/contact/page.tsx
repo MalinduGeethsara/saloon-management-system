@@ -8,13 +8,16 @@ export default function ContactPage() {
     <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24 pb-32 overflow-hidden relative">
 
       {/* Decorative Background Glows */}
-      <div className="absolute top-[20%] right-[10%] w-[400px] h-[400px] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-[10%] left-[10%] w-[300px] h-[300px] bg-blue-500/5 blur-[150px] rounded-full pointer-events-none"></div>
+      <div className="absolute top-[20%] right-[10%] w-100 h-100 bg-amber-500/10 blur-[150px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-[10%] left-[10%] w-75 h-75 bg-blue-500/5 blur-[150px] rounded-full pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-6 w-full relative z-10 flex flex-col items-center">
         <div className="text-center mb-16">
           <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Get in Touch</h3>
           <h1 className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white transition-colors">Contact <span className="font-serif italic font-light text-zinc-500">Us</span></h1>
+          <p className="text-zinc-500 dark:text-zinc-400 mt-6 max-w-xl mx-auto text-justify">
+            Whether you have inquiries about our premium services, need assistance scheduling your next appointment, or simply want expert grooming advice, our dedicated team is always here to help.
+          </p>
         </div>
 
         {/* Glassmorphic Container for Alignment and Blur */}
@@ -119,11 +122,11 @@ export default function ContactPage() {
           </div>
 
           {/* Right Column: Map & Direction */}
-          <div className="flex-1 flex flex-col relative min-h-[400px] lg:min-h-full">
-            <div className="w-full h-full flex-grow bg-zinc-200 dark:bg-zinc-800 relative border border-zinc-200 dark:border-zinc-800 shadow-inner group overflow-hidden">
+          <div className="flex-1 flex flex-col relative min-h-100 lg:min-h-full">
+            <div className="w-full h-full grow bg-zinc-200 dark:bg-zinc-800 relative border border-zinc-200 dark:border-zinc-800 shadow-inner group overflow-hidden">
 
               {/* Location Name & Town Header Overlay Card */}
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-100 dark:border-zinc-800/80 p-3 flex items-center justify-between gap-6 w-full max-w-[290px] rounded-sm transition-all duration-300 group-hover:border-amber-500/50">
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-100 dark:border-zinc-800/80 p-3 flex items-center justify-between gap-6 w-full max-w-72.5 rounded-sm transition-all duration-300 group-hover:border-amber-500/50">
                 <div className="flex flex-col">
                   <a
                     href="https://maps.app.goo.gl/AH8aASqV71PkZk8R6"

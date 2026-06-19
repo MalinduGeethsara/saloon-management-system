@@ -12,7 +12,7 @@ export default function WebsiteLayout({
       
       <PublicNavbar />
       
-      <main className="flex-grow">
+      <main className="grow">
         {children}
       </main>
 

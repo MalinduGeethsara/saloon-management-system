@@ -90,13 +90,13 @@ export default function ProductsPage() {
               <div className="h-64 overflow-hidden relative bg-zinc-100 dark:bg-zinc-950">
                 <div className="absolute inset-0 bg-black/25 dark:bg-black/45 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
                 <img src={product.img} alt={product.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0 mix-blend-multiply dark:mix-blend-normal" />
-                <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-white dark:from-zinc-900/90 to-transparent">
+                <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-linear-to-t from-white dark:from-zinc-900/90 to-transparent">
                   <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">{product.price}</div>
                   <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">{product.title}</h4>
                 </div>
               </div>
-              <div className="p-6 flex-grow flex flex-col">
-                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors flex-grow line-clamp-2">{product.description}</p>
+              <div className="p-6 grow flex flex-col">
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors grow line-clamp-2">{product.description}</p>
                 <Link href="/contact" className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:hover:text-amber-500 transition-colors mt-auto w-fit">
                   Inquire Now <ArrowRightOutlined />
                 </Link>
