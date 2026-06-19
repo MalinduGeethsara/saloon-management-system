@@ -6,28 +6,70 @@ import { ArrowRightOutlined } from '@ant-design/icons';
 
 const products = [
   {
-    title: "Matte Styling Clay",
-    price: "LKR 3,000",
-    description: "Provides a strong, pliable hold with a completely matte finish. Perfect for textured styles.",
-    img: "https://images.unsplash.com/photo-1626285861696-9f0bf5a49c6d?q=80&w=2070&auto=format&fit=crop"
+    title: "Centella Ampoule Calming Hydrating Serum 100ml",
+    price: "LKR 9,900",
+    description: "Powered by Centella Asiatica extract, this lightweight ampoule calms irritation, reduces redness, and strengthens the skin barrier.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/CENT11_1Primary.webp?v=1781677590"
   },
   {
-    title: "Nourishing Beard Oil",
-    price: "LKR 2,500",
-    description: "Infused with argan and jojoba oils to soften the beard and moisturize the skin underneath.",
-    img: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1974&auto=format&fit=crop"
+    title: "La Roche Posay Toleriane Purifying Foaming Cream Cleanser 125ml",
+    price: "LKR 12,500",
+    description: "A gentle purifying foaming cream cleanser formulated to cleanse skin while protecting its natural moisture barrier.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/LAR48_1Primary.webp?v=1781677351"
   },
   {
-    title: "Premium Pomade",
-    price: "LKR 2,800",
-    description: "Water-based pomade offering a medium hold and high shine for classic, slicked-back looks.",
-    img: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=2000&auto=format&fit=crop"
+    title: "La Roche Posay Effaclar Deep Cleansing Foaming Facial Cleanser 125ml",
+    price: "LKR 12,500",
+    description: "A deep cleansing foaming gel specifically formulated to gently eliminate impurities and excess sebum.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/LAR47_1Primary.webp?v=1781677117"
   },
   {
-    title: "Invigorating Shampoo",
-    price: "LKR 2,200",
-    description: "A daily cleanser infused with peppermint and tea tree oil for a refreshing deep clean.",
-    img: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=1974&auto=format&fit=crop"
+    title: "Cetaphil Gentle Skin Cleanser 473ml",
+    price: "LKR 10,500",
+    description: "A dermatologist-recommended gentle skin cleanser that hydrates and soothes skin as it cleanses.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/CET65_1primaryimage.webp?v=1781676221"
+  },
+  {
+    title: "Cetaphil Daily Facial Cleanser 473ml",
+    price: "LKR 10,500",
+    description: "Effectively removes dirt, excess oil, and impurities without stripping normal to oily skin of its natural moisture.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/Cetaphil_Daily_Facial_Cleanser_473ml_-_CET62-1_primary_1.webp?v=1743407864"
+  },
+  {
+    title: "La Roche-Posay Hyalu B5 Suractive Anti-wrinkle Repairing Serum 30ml",
+    price: "LKR 10,500",
+    description: "Anti-wrinkle repairing serum formulated with hyaluronic acid and vitamin B5 to plump, hydrate, and repair the skin barrier.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/LAR46_1primaryimage.webp?v=1781339684"
+  },
+  {
+    title: "Cantu Shea Butter Strengthening Styling Gel 524g",
+    price: "LKR 7,950",
+    description: "Infused with pure shea butter to nourish strands while providing firm, flake-free control for textured and curly hair.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/CANT001_1.jpg?v=1760071792"
+  },
+  {
+    title: "La Roche Posay Mela B3 Gel Cleanser 200ml",
+    price: "LKR 13,500",
+    description: "Enriched with Niacinamide and gentle PHA exfoliants, it helps refine skin texture, brighten complexion, and support barrier health.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/LAR45_1Primary.webp?v=1781268017"
+  },
+  {
+    title: "La Roche Posay Vitamin C Purifying Cleanser 200ml",
+    price: "LKR 13,500",
+    description: "A purifying facial cleanser enriched with Vitamin C to brighten, smooth, and refresh the skin.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/LAR44_1Primary.webp?v=1781267669"
+  },
+  {
+    title: "Jovees Dry Skin Full Pack 1",
+    price: "LKR 11,905",
+    description: "A carefully selected dry skin collection combining essential products designed to cleanse, nourish, and revive skin.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/BU024_1.webp?v=1780660628"
+  },
+  {
+    title: "Neutrogena Ultra Sheer Face Lotion Sunscreen SPF 50 88ml",
+    price: "LKR 5,900",
+    description: "Lightweight face sunscreen with dry-touch technology and water-resistant protection, perfect for daily outdoor activities.",
+    img: "https://cdn.shopify.com/s/files/1/0630/2036/7937/files/Neutrogena_Ultra_Sheer_Face_Lotion_Sunscreen_SPF_50_88ml_-_NUSS02-1primary.webp?v=1743407572"
   }
 ];
 
@@ -54,7 +96,7 @@ export default function ProductsPage() {
                 </div>
               </div>
               <div className="p-6 flex-grow flex flex-col">
-                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors flex-grow">{product.description}</p>
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors flex-grow line-clamp-2">{product.description}</p>
                 <Link href="/contact" className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:hover:text-amber-500 transition-colors mt-auto w-fit">
                   Inquire Now <ArrowRightOutlined />
                 </Link>
