@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { SunOutlined, MoonOutlined, MenuOutlined } from '@ant-design/icons';
+import Magnetic from "@/components/ui/Magnetic";
 
 export function PublicNavbar() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -105,63 +106,72 @@ export function PublicNavbar() {
               { name: 'Product', path: '/products' },
               { name: 'Contact', path: '/contact' }
             ].map((link) => (
-              <Link 
-                key={link.name}
-                href={link.path} 
-                className={`text-xs font-black tracking-[0.15em] transition-colors uppercase ${
-                  pathname === link.path 
-                    ? 'text-amber-600 dark:text-amber-500' // Active page stays Amber
-                    : 'd text-black dark:text-white hover:text-amber-600 dark:hover:text-amber-500' 
-                }`}
-              >
-                {link.name}
-              </Link>
+              <Magnetic key={link.name} range={35} strength={0.3}>
+                <Link 
+                  href={link.path} 
+                  className={`text-xs font-black tracking-[0.15em] transition-colors uppercase ${
+                    pathname === link.path 
+                      ? 'text-amber-600 dark:text-amber-500' // Active page stays Amber
+                      : 'd text-black dark:text-white hover:text-amber-600 dark:hover:text-amber-500' 
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              </Magnetic>
             ))}
           </nav>
           {/* Right: Actions */}
           <div className="flex items-center gap-4 lg:gap-6 z-50">
             
             {mounted && (
-              <button 
-                onClick={toggleTheme}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-500 transition-all duration-300 active:scale-95"
-                aria-label="Toggle Dark Mode"
-              >
-                {isDarkMode ? <SunOutlined className="text-lg" /> : <MoonOutlined className="text-lg" />}
-              </button>
+              <Magnetic range={40} strength={0.35}>
+                <button 
+                  onClick={toggleTheme}
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-500 transition-all duration-300 active:scale-95"
+                  aria-label="Toggle Dark Mode"
+                >
+                  {isDarkMode ? <SunOutlined className="text-lg" /> : <MoonOutlined className="text-lg" />}
+                </button>
+              </Magnetic>
             )}
 
             <div className="hidden lg:flex items-center gap-6">
-              <Link href="/booking" className="group relative flex items-center justify-center h-12 w-40 border border-zinc-900 dark:border-zinc-100 overflow-hidden cursor-pointer active:scale-95 transition-transform">
-                <span className="absolute inset-0 w-full h-full bg-amber-600 dark:bg-amber-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out z-0"></span>
-                <span className="relative z-10 text-sm font-black uppercase text-black dark:text-zinc-100 group-hover:text-white dark:group-hover:text-zinc-950 transition-colors duration-300 mt-0.5">
-                  Book Now
-                </span>
-              </Link>
+              <Magnetic range={50} strength={0.3}>
+                <Link href="/booking" className="group relative flex items-center justify-center h-12 w-40 border border-zinc-900 dark:border-zinc-100 overflow-hidden cursor-pointer active:scale-95 transition-transform">
+                  <span className="absolute inset-0 w-full h-full bg-amber-600 dark:bg-amber-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out z-0"></span>
+                  <span className="relative z-10 text-sm font-black uppercase text-black dark:text-zinc-100 group-hover:text-white dark:group-hover:text-zinc-950 transition-colors duration-300 mt-0.5">
+                    Book Now
+                  </span>
+                </Link>
+              </Magnetic>
               
               <div className="h-10 w-px bg-zinc-200 dark:bg-zinc-800 mx-2"></div>
               
               {isLoggedIn && userProfile ? (
-                <Link href="/profile" className="flex items-center gap-3 group active:scale-95 transition-transform cursor-pointer">
-                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white font-bold group-hover:bg-amber-600 group-hover:text-white transition-colors border border-zinc-300 dark:border-zinc-700">
+                <Magnetic range={40} strength={0.3}>
+                  <Link href="/profile" className="flex items-center gap-3 group active:scale-95 transition-transform cursor-pointer">
+                    <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white font-bold group-hover:bg-amber-600 group-hover:text-white transition-colors border border-zinc-300 dark:border-zinc-700">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                      </svg>
+                    </div>
+                    <span className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors hidden xl:block border-b border-transparent group-hover:border-amber-600 dark:group-hover:border-amber-500 pb-0.5">
+                      {userProfile.name}
+                    </span>
+                  </Link>
+                </Magnetic>
+              ) : (
+                <Magnetic range={40} strength={0.3}>
+                  <Link 
+                    href="/login" 
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-500 transition-all duration-300 active:scale-95"
+                    aria-label="Login"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
                       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
-                  </div>
-                  <span className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors hidden xl:block border-b border-transparent group-hover:border-amber-600 dark:group-hover:border-amber-500 pb-0.5">
-                    {userProfile.name}
-                  </span>
-                </Link>
-              ) : (
-                <Link 
-                  href="/login" 
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-amber-100 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-500 transition-all duration-300 active:scale-95"
-                  aria-label="Login"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                </Link>
+                  </Link>
+                </Magnetic>
               )}
             </div>
 

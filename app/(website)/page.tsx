@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   CalendarOutlined,
   ScissorOutlined,
@@ -12,6 +13,8 @@ import {
   GoogleOutlined
 } from '@ant-design/icons';
 import gsap from 'gsap';
+import Magnetic from "@/components/ui/Magnetic";
+import ScrollReveal from "@/components/ui/ScrollReveal";
 
 export default function WebsiteHomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,26 +44,8 @@ export default function WebsiteHomePage() {
         );
     }, containerRef);
 
-    // --- Scroll-Triggered Animation for Review Cards ---
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          gsap.fromTo('.review-card',
-            { y: 60, opacity: 0 },
-            { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: 'power3.out' }
-          );
-          observer.unobserve(entry.target); // Only animate once
-        }
-      });
-    }, { threshold: 0.2 }); // Triggers when 20% of the section is visible
-
-    if (reviewsRef.current) {
-      observer.observe(reviewsRef.current);
-    }
-
     return () => {
       ctx.revert();
-      observer.disconnect();
     };
   }, []);
 
@@ -103,21 +88,25 @@ export default function WebsiteHomePage() {
             An exclusive sanctuary for the modern gentleman. Precision tailoring, traditional hot towel shaves, and uncompromising quality.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-5 justify-center w-full sm:w-auto">
-            <Link
-              href="/booking"
-              className="reveal-btn group relative flex items-center justify-center gap-3 bg-amber-600 text-white dark:text-zinc-950 font-bold py-4 px-10 rounded-none overflow-hidden transition-all hover:bg-amber-700 dark:hover:bg-amber-500 shadow-xl dark:shadow-none"
-            >
-              <CalendarOutlined className="text-xl relative z-10" />
-              <span className="relative z-10 tracking-wide uppercase text-sm">Reserve Your Chair</span>
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-5 justify-center w-full sm:w-auto items-center">
+            <Magnetic range={50} strength={0.3} className="reveal-btn w-full sm:w-auto">
+              <Link
+                href="/booking"
+                className="group relative flex items-center justify-center gap-3 bg-amber-600 text-white dark:text-zinc-950 font-bold py-4 px-10 rounded-none overflow-hidden transition-all hover:bg-amber-700 dark:hover:bg-amber-500 shadow-xl dark:shadow-none w-full sm:w-auto"
+              >
+                <CalendarOutlined className="text-xl relative z-10" />
+                <span className="relative z-10 tracking-wide uppercase text-sm">Reserve Your Chair</span>
+              </Link>
+            </Magnetic>
 
-            <Link
-              href="/services"
-              className="reveal-btn flex items-center justify-center gap-2 bg-white/20 backdrop-blur-md border border-white/50 text-white font-bold py-4 px-10 rounded-none transition-all hover:bg-white hover:border-amber-600 hover:text-amber-600 tracking-wide uppercase text-sm shadow-md dark:shadow-none"
-            >
-              Discover Services
-            </Link>
+            <Magnetic range={50} strength={0.3} className="reveal-btn w-full sm:w-auto">
+              <Link
+                href="/services"
+                className="flex items-center justify-center gap-2 bg-white/20 backdrop-blur-md border border-white/50 text-white font-bold py-4 px-10 rounded-none transition-all hover:bg-white hover:border-amber-600 hover:text-amber-600 tracking-wide uppercase text-sm shadow-md dark:shadow-none w-full sm:w-auto"
+              >
+                Discover Services
+              </Link>
+            </Magnetic>
           </div>
         </div>
       </section>
@@ -125,7 +114,8 @@ export default function WebsiteHomePage() {
       {/* =========================================
           BRAND PARTNERS MARQUEE (BEAUTY PRODUCTS)
       ========================================= */}
-      <div className="relative py-12 bg-white dark:bg-zinc-950/20 border-b border-zinc-200 dark:border-zinc-900 transition-colors duration-500 overflow-hidden select-none">
+      <ScrollReveal direction="down" delay={0.1}>
+        <div className="relative py-12 bg-white dark:bg-zinc-950/20 border-b border-zinc-200 dark:border-zinc-900 transition-colors duration-500 overflow-hidden select-none">
         <div className="max-w-7xl mx-auto px-6 mb-4 flex items-center justify-center gap-3">
           <span className="h-[1px] w-12 bg-zinc-200 dark:bg-zinc-800 transition-colors"></span>
           <span className="text-[10px] uppercase font-bold tracking-[0.35em] text-zinc-400 dark:text-zinc-500 transition-colors">Premium Products We Trust</span>
@@ -146,13 +136,14 @@ export default function WebsiteHomePage() {
           </div>
         </div>
       </div>
+      </ScrollReveal>
 
       {/* =========================================
           2. THE CRAFT (ABOUT)
       ========================================= */}
       <section className="py-32 px-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-          <div className="lg:col-span-7 grid grid-cols-2 gap-6 relative">
+          <ScrollReveal direction="down" className="lg:col-span-7 grid grid-cols-2 gap-6 relative">
             <div className="flex flex-col gap-6 mt-12">
               <img
                 src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?q=80&w=2000&auto=format&fit=crop"
@@ -168,9 +159,9 @@ export default function WebsiteHomePage() {
               />
             </div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-amber-600/10 blur-[100px] rounded-full z-[-1]"></div>
-          </div>
+          </ScrollReveal>
 
-          <div className="lg:col-span-5 flex flex-col">
+          <ScrollReveal direction="down" delay={0.25} className="lg:col-span-5 flex flex-col">
             <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-6 flex items-center gap-4 transition-colors">
               <span className="w-12 h-[1px] bg-amber-600 dark:bg-amber-500 transition-colors"></span> Est. 2024
             </h3>
@@ -206,7 +197,7 @@ export default function WebsiteHomePage() {
               Explore Our Heritage
               <ArrowRightOutlined className="transition-transform group-hover:translate-x-2 text-amber-600 dark:text-amber-500" />
             </Link>
-          </div>
+          </ScrollReveal>
         </div>
       </section>
 
@@ -216,16 +207,18 @@ export default function WebsiteHomePage() {
       <section className="py-32 bg-white dark:bg-zinc-900/50 border-y border-zinc-200 dark:border-zinc-800/50 transition-colors duration-500 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative">
 
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12 md:mb-20 gap-6">
-            <div>
-              <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Curated Menu</h3>
-              <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors">Signature <span className="font-serif italic font-light text-zinc-500">Services</span></h2>
+          <ScrollReveal direction="down">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12 md:mb-20 gap-6">
+              <div>
+                <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Curated Menu</h3>
+                <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors">Signature <span className="font-serif italic font-light text-zinc-500">Services</span></h2>
+              </div>
+              {/* Desktop Full Menu link */}
+              <Link href="/services" className="hidden md:inline-flex border-b border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500 pb-1 text-xs font-bold tracking-[0.2em] uppercase transition-all hover:text-zinc-900 dark:hover:text-white hover:border-zinc-900 dark:hover:border-white">
+                View Full Menu
+              </Link>
             </div>
-            {/* Desktop Full Menu link */}
-            <Link href="/services" className="hidden md:inline-flex border-b border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500 pb-1 text-xs font-bold tracking-[0.2em] uppercase transition-all hover:text-zinc-900 dark:hover:text-white hover:border-zinc-900 dark:hover:border-white">
-              View Full Menu
-            </Link>
-          </div>
+          </ScrollReveal>
 
           {/* ✅ Relative Wrapper for Carousel & Mobile Overlay Buttons */}
           <div className="relative group/menu -mx-6 md:mx-0">
@@ -255,65 +248,91 @@ export default function WebsiteHomePage() {
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
               {/* Service Card 1 */}
-              <div className="w-[85vw] max-w-[350px] shrink-0 snap-center md:w-auto md:shrink group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none relative">
-                <div className="h-72 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                  {/* ✅ Changed md:grayscale to xl:grayscale so tablets get full color too */}
-                  <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=1988&auto=format&fit=crop" alt="Haircut" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0" />
-                  <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
-                    <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 2,500</div>
-                    <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">The Executive</h4>
+              <ScrollReveal direction="down" delay={0.1} className="w-[85vw] max-w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+                <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relative">
+                  <div className="h-72 overflow-hidden relative">
+                    <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                    <Image
+                      src="/images/website/services/1.jpg"
+                      alt="Hair Cutting"
+                      width={500}
+                      height={350}
+                      className="w-full h-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-105 xl:grayscale group-hover:grayscale-0 will-change-transform"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
+                      <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 500</div>
+                      <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">Hair Cutting</h4>
+                    </div>
+                  </div>
+                  <div className="p-6 pt-2 flex flex-col justify-between h-[calc(100%-18rem)]">
+                    <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">A precision haircut tailored to your preferences, complete with styling.</p>
+                    <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
+                      <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors pointer-events-auto">
+                        Reserve <ArrowRightOutlined />
+                      </span>
+                    </Magnetic>
                   </div>
                 </div>
-                <div className="p-6 pt-2">
-                  <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">A meticulous structural cut, finished with a crisp razor lineup, hot lather neck shave, and premium styling.</p>
-                  <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
-                    Reserve <ArrowRightOutlined />
-                  </span>
-                </div>
-              </div>
+              </ScrollReveal>
 
               {/* Service Card 2 */}
-              <div className="w-[85vw] max-w-[350px] shrink-0 snap-center md:w-auto md:shrink group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none relatives">
-                <div className="h-72 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                  {/* ✅ Changed md:grayscale to xl:grayscale */}
-                  <img src="https://images.unsplash.com/photo-1512864084360-7c0c4d0a0845?q=80&w=2070&auto=format&fit=crop" alt="Shave" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0" />
-                  <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
-                    <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 1,800</div>
-                    <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">Classic Shave</h4>
+              <ScrollReveal direction="down" delay={0.25} className="w-[85vw] max-w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+                <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relatives">
+                  <div className="h-72 overflow-hidden relative">
+                    <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                    <Image
+                      src="/images/website/services/2.jpg"
+                      alt="Beard Cutting"
+                      width={500}
+                      height={350}
+                      className="w-full h-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-105 xl:grayscale group-hover:grayscale-0 will-change-transform"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
+                      <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 400</div>
+                      <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">Beard Cutting</h4>
+                    </div>
+                  </div>
+                  <div className="p-6 pt-2 flex flex-col justify-between h-[calc(100%-18rem)]">
+                    <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Expert beard shaping, trimming, and lineup to compliment your face structure.</p>
+                    <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
+                      <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors pointer-events-auto">
+                        Reserve <ArrowRightOutlined />
+                      </span>
+                    </Magnetic>
                   </div>
                 </div>
-                <div className="p-6 pt-2">
-                  <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Traditional hot towel wet shave utilizing essential oils, soothing balms, and a master's straight razor touch.</p>
-                  <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
-                    Reserve <ArrowRightOutlined />
-                  </span>
-                </div>
-              </div>
+              </ScrollReveal>
 
               {/* Service Card 3 */}
-              <div className="w-[85vw] max-w-[350px] shrink-0 snap-center md:w-auto md:shrink group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none relations">
-                <div className="h-72 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                  {/* ✅ Changed md:grayscale to xl:grayscale */}
-                  <img
-                    src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2070&auto=format&fit=crop"
-                    alt="Premium Beard Sculpting"
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
-                  />
-                  <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
-                    <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 3,800</div>
-                    <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">The Sovereign</h4>
+              <ScrollReveal direction="down" delay={0.4} className="w-[85vw] max-w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+                <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relations">
+                  <div className="h-72 overflow-hidden relative">
+                    <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                    <Image
+                      src="/images/website/services/3.jpg"
+                      alt="Quick Head Massage"
+                      width={500}
+                      height={350}
+                      className="w-full h-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-105 xl:grayscale group-hover:grayscale-0 will-change-transform"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
+                      <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 400</div>
+                      <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">Quick Head Massage</h4>
+                    </div>
+                  </div>
+                  <div className="p-6 pt-2 flex flex-col justify-between h-[calc(100%-18rem)]">
+                    <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">A relaxing head massage to ease tension, soothe stress, and improve circulation.</p>
+                    <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
+                      <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors pointer-events-auto">
+                        Reserve <ArrowRightOutlined />
+                      </span>
+                    </Magnetic>
                   </div>
                 </div>
-                <div className="p-6 pt-2">
-                  <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Our ultimate package. The Executive cut paired with a meticulous beard sculpting and revitalizing mini-facial.</p>
-                  <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
-                    Reserve <ArrowRightOutlined />
-                  </span>
-                </div>
-              </div>
+              </ScrollReveal>
             </div>
           </div>
 
@@ -363,40 +382,48 @@ export default function WebsiteHomePage() {
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-4 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
               {/* Artisan 1 - Owner */}
-              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
-                <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+              <ScrollReveal direction="down" className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
+                <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
+                  <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                  </div>
+                  <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Nimesh Haththasingha</h4>
+                  <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Master Stylist</p>
                 </div>
-                <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Nimesh Haththasingha</h4>
-                <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Master Stylist</p>
-              </div>
+              </ScrollReveal>
 
               {/* Artisan 2 */}
-              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
-                <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                  <img src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+              <ScrollReveal direction="down" delay={0.15} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
+                <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
+                  <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
+                    <img src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                  </div>
+                  <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Mahesh Madushanka</h4>
+                  <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
                 </div>
-                <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Mahesh Madushanka</h4>
-                <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
-              </div>
+              </ScrollReveal>
 
               {/* Artisan 3 */}
-              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
-                <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                  <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+              <ScrollReveal direction="down" delay={0.3} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
+                <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
+                  <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
+                    <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                  </div>
+                  <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Malith Sandaruwan</h4>
+                  <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
                 </div>
-                <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Malith Sandaruwan</h4>
-                <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
-              </div>
+              </ScrollReveal>
 
               {/* Artisan 4 */}
-              <div className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col items-center group cursor-pointer relative">
-                <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+              <ScrollReveal direction="down" delay={0.45} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
+                <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
+                  <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                  </div>
+                  <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Vindana Lakmal</h4>
+                  <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
                 </div>
-                <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Vindana Lakmal</h4>
-                <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
-              </div>
+              </ScrollReveal>
             </div>
 
           </div>
@@ -451,64 +478,62 @@ export default function WebsiteHomePage() {
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth relative z-10"
             >
               {/* Review Card 1 */}
-              {/* ✅ Added flex, flex-col, and h-full here */}
-              <div className="review-card flex flex-col h-full opacity-0 w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300">
-                <div className="flex gap-1 text-amber-500 text-sm mb-6">
-                  <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
-                </div>
-                {/* ✅ Added flex-1 to paragraph to push footer to bottom */}
-                <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
-                  "Absolutely top-tier service. I walked in expecting a standard haircut and left feeling like a new man. The hot towel shave is a must-try. Mr Polaa's attention to detail is unmatched."
-                </p>
-                {/* ✅ Added mt-auto as an extra safety measure to align bottom */}
-                <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
-                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">AM</div>
-                  <div>
-                    <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Asitha M.</h4>
-                    <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+              <ScrollReveal direction="down" className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex">
+                <div className="review-card flex flex-col h-full bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300 w-full">
+                  <div className="flex gap-1 text-amber-500 text-sm mb-6">
+                    <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
+                  </div>
+                  {/* ✅ Exchanged opacity and flex layout to ensure equal card heights */}
+                  <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
+                    "Absolutely top-tier service. I walked in expecting a standard haircut and left feeling like a new man. The hot towel shave is a must-try. Mr Polaa's attention to detail is unmatched."
+                  </p>
+                  <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
+                    <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">AM</div>
+                    <div>
+                      <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Asitha M.</h4>
+                      <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </ScrollReveal>
 
               {/* Review Card 2 */}
-              {/* ✅ Added flex, flex-col, and h-full here */}
-              <div className="review-card flex flex-col h-full opacity-0 w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300">
-                <div className="flex gap-1 text-amber-500 text-sm mb-6">
-                  <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
-                </div>
-                {/* ✅ Added flex-1 to paragraph */}
-                <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
-                  "The best fade I've had in Sri Lanka. Mahesh understood exactly what I wanted and executed it perfectly. The ambiance of the shop feels incredibly premium yet welcoming."
-                </p>
-                {/* ✅ Added mt-auto */}
-                <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
-                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">SR</div>
-                  <div>
-                    <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Shehan R.</h4>
-                    <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+              <ScrollReveal direction="down" delay={0.15} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex">
+                <div className="review-card flex flex-col h-full bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300 w-full">
+                  <div className="flex gap-1 text-amber-500 text-sm mb-6">
+                    <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
+                  </div>
+                  <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
+                    "The best fade I've had in Sri Lanka. Mahesh understood exactly what I wanted and executed it perfectly. The ambiance of the shop feels incredibly premium yet welcoming."
+                  </p>
+                  <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
+                    <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">SR</div>
+                    <div>
+                      <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Shehan R.</h4>
+                      <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </ScrollReveal>
 
               {/* Review Card 3 */}
-              {/* ✅ Added flex, flex-col, and h-full here */}
-              <div className="review-card flex flex-col h-full opacity-0 w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300">
-                <div className="flex gap-1 text-amber-500 text-sm mb-6">
-                  <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
-                </div>
-                {/* ✅ Added flex-1 to paragraph */}
-                <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
-                  "Booking online was so smooth, and they started right on time. The styling products they use smell fantastic. Found my permanent grooming spot in town."
-                </p>
-                {/* ✅ Added mt-auto */}
-                <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
-                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">DJ</div>
-                  <div>
-                    <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Dinuka J.</h4>
-                    <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+              <ScrollReveal direction="down" delay={0.3} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex">
+                <div className="review-card flex flex-col h-full bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300 w-full">
+                  <div className="flex gap-1 text-amber-500 text-sm mb-6">
+                    <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
+                  </div>
+                  <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
+                    "Booking online was so smooth, and they started right on time. The styling products they use smell fantastic. Found my permanent grooming spot in town."
+                  </p>
+                  <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
+                    <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">DJ</div>
+                    <div>
+                      <h4 className="font-bold text-sm text-zinc-900 dark:text-white tracking-wide">Dinuka J.</h4>
+                      <p className="text-[10px] text-zinc-500 tracking-widest uppercase">Verified Client</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </ScrollReveal>
             </div>
 
           </div>

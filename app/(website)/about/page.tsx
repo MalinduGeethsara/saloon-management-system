@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Magnetic from "@/components/ui/Magnetic";
 
 export default function AboutPage() {
   return (
@@ -114,9 +115,11 @@ export default function AboutPage() {
           <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed mb-12 font-light transition-colors">
             From the moment you step through our doors, you are transported to an exclusive sanctuary. The ambient lighting, the rich scent of our premium products, and the tailored service are all designed to provide an unparalleled experience.
           </p>
-          <Link href="/booking" className="inline-flex items-center justify-center gap-3 bg-amber-600 text-white dark:text-zinc-950 hover:bg-amber-700 dark:hover:bg-amber-500 font-bold uppercase tracking-widest text-sm py-5 px-12 transition-all hover:scale-105 shadow-xl dark:shadow-none">
-            Experience the Standard
-          </Link>
+          <Magnetic range={50} strength={0.3}>
+            <Link href="/booking" className="inline-flex items-center justify-center gap-3 bg-amber-600 text-white dark:text-zinc-950 hover:bg-amber-700 dark:hover:bg-amber-500 font-bold uppercase tracking-widest text-sm py-5 px-12 transition-all hover:scale-105 shadow-xl dark:shadow-none">
+              Experience the Standard
+            </Link>
+          </Magnetic>
         </div>
       </section>
 

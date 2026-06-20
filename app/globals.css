@@ -22,3 +22,39 @@
   -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
 }
 
+/* --- Lenis Smooth Scroll Configuration --- */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* --- Premium Custom Cursor Reset --- */
+@media (pointer: fine) {
+  .has-custom-cursor,
+  .has-custom-cursor body,
+  .has-custom-cursor a,
+  .has-custom-cursor button,
+  .has-custom-cursor [role="button"],
+  .has-custom-cursor input,
+  .has-custom-cursor textarea,
+  .has-custom-cursor select,
+  .has-custom-cursor .interactive-hover {
+    cursor: none !important;
+  }
+}
+
