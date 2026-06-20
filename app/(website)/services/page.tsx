@@ -2,7 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRightOutlined } from '@ant-design/icons';
+import Magnetic from "@/components/ui/Magnetic";
 
 const services = [
   {
@@ -101,7 +103,14 @@ export default function ServicesPage() {
             <div key={index} className="group bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 shadow-sm hover:shadow-md dark:shadow-none flex flex-col h-full">
               <div className="h-64 overflow-hidden relative">
                 <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                <img src={service.img} alt={service.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0" />
+                <Image
+                  src={`/${service.img}`}
+                  alt={service.title}
+                  width={500}
+                  height={350}
+                  className="w-full h-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-105 xl:grayscale group-hover:grayscale-0 will-change-transform"
+                  loading="lazy"
+                />
                 <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-linear-to-t from-white dark:from-zinc-900/90 to-transparent">
                   <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">{service.price}</div>
                   <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">{service.title}</h4>
@@ -109,9 +118,11 @@ export default function ServicesPage() {
               </div>
               <div className="p-6 grow flex flex-col">
                 <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors grow">{service.description}</p>
-                <Link href="/booking" className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors mt-auto w-fit">
-                  Reserve <ArrowRightOutlined />
-                </Link>
+                <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
+                  <Link href="/booking" className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors w-fit">
+                    Reserve <ArrowRightOutlined />
+                  </Link>
+                </Magnetic>
               </div>
             </div>
           ))}
