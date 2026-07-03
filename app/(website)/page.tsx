@@ -257,7 +257,7 @@ export default function WebsiteHomePage() {
                       alt="Hair Cutting"
                       width={500}
                       height={350}
-                      className="w-full h-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-105 xl:grayscale group-hover:grayscale-0 will-change-transform"
+                      className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
                       loading="lazy"
                     />
                     <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
@@ -286,7 +286,7 @@ export default function WebsiteHomePage() {
                       alt="Beard Cutting"
                       width={500}
                       height={350}
-                      className="w-full h-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-105 xl:grayscale group-hover:grayscale-0 will-change-transform"
+                      className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
                       loading="lazy"
                     />
                     <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
@@ -315,7 +315,7 @@ export default function WebsiteHomePage() {
                       alt="Quick Head Massage"
                       width={500}
                       height={350}
-                      className="w-full h-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-105 xl:grayscale group-hover:grayscale-0 will-change-transform"
+                      className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
                       loading="lazy"
                     />
                     <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">

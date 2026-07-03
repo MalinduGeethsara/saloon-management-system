@@ -108,7 +108,7 @@ export default function ServicesPage() {
                   alt={service.title}
                   width={500}
                   height={350}
-                  className="w-full h-full object-cover transition-[transform,filter] duration-700 ease-out group-hover:scale-105 xl:grayscale group-hover:grayscale-0 will-change-transform"
+                  className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
                   loading="lazy"
                 />
                 <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-linear-to-t from-white dark:from-zinc-900/90 to-transparent">
