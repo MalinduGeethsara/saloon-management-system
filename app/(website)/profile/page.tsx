@@ -140,42 +140,44 @@ export default function ProfileDashboard() {
           
           {/* Sidebar */}
           <div className="w-full lg:w-72 shrink-0">
-            <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 p-8 flex flex-col items-center mb-6 shadow-sm dark:shadow-none">
-              <div className="w-24 h-24 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4 border border-amber-200 dark:border-amber-800/50 animate-in fade-in zoom-in-95 duration-500">
-                <span className="text-3xl text-amber-600 dark:text-amber-500 font-bold uppercase">{user.initials}</span>
+            <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 p-6 lg:p-8 flex flex-row lg:flex-col items-center gap-4 lg:gap-0 lg:items-center mb-6 shadow-sm dark:shadow-none">
+              <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center lg:mb-4 border border-amber-200 dark:border-amber-800/50 animate-in fade-in zoom-in-95 duration-500 shrink-0">
+                <span className="text-2xl lg:text-3xl text-amber-600 dark:text-amber-500 font-bold uppercase">{user.initials}</span>
               </div>
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-wide capitalize">{user.name}</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 font-mono text-sm mt-1">{user.phone}</p>
+              <div className="flex flex-col items-start lg:items-center">
+                <h2 className="text-lg lg:text-xl font-bold text-zinc-900 dark:text-white tracking-wide capitalize">{user.name}</h2>
+                <p className="text-zinc-500 dark:text-zinc-400 font-mono text-xs lg:text-sm mt-1">{user.phone}</p>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2 bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 shadow-sm dark:shadow-none">
+            <div className="flex flex-row lg:flex-col gap-1 lg:gap-2 bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 shadow-sm dark:shadow-none p-1 lg:p-0 overflow-x-auto">
               <button 
                 onClick={() => setActiveTab("dashboard")}
-                className={`flex items-center gap-3 px-6 py-5 font-bold text-sm transition-all border-l-4 cursor-pointer ${
+                className={`flex-1 flex items-center justify-center lg:justify-start gap-2 lg:gap-3 px-3 py-4 lg:px-6 lg:py-5 font-bold text-xs lg:text-sm transition-all border-b-2 lg:border-b-0 lg:border-l-4 cursor-pointer ${
                   activeTab === "dashboard" 
                     ? "bg-zinc-50 dark:bg-zinc-900 border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500" 
                     : "border-transparent text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900"
                 }`}
               >
-                <HomeOutlined className="text-lg" /> Dashboard
+                <HomeOutlined className="text-base lg:text-lg" /> <span>Dashboard</span>
               </button>
               
               <button 
                 onClick={() => setActiveTab("appointments")}
-                className={`flex items-center gap-3 px-6 py-5 font-bold text-sm transition-all border-l-4 cursor-pointer ${
+                className={`flex-1 flex items-center justify-center lg:justify-start gap-2 lg:gap-3 px-3 py-4 lg:px-6 lg:py-5 font-bold text-xs lg:text-sm transition-all border-b-2 lg:border-b-0 lg:border-l-4 cursor-pointer ${
                   activeTab === "appointments" 
                     ? "bg-zinc-50 dark:bg-zinc-900 border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500" 
                     : "border-transparent text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900"
                 }`}
               >
-                <CalendarOutlined className="text-lg" /> Appointments ({appointments.length})
+                <CalendarOutlined className="text-base lg:text-lg" /> <span>Appointments ({appointments.length})</span>
               </button>
               
               <button 
                 onClick={handleLogout}
-                className="w-full text-left flex items-center gap-3 px-6 py-5 font-bold text-sm text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900 transition-all border-t border-zinc-200 dark:border-zinc-800 border-l-4 border-l-transparent cursor-pointer"
+                className="flex-1 flex items-center justify-center lg:justify-start gap-2 lg:gap-3 px-3 py-4 lg:px-6 lg:py-5 font-bold text-xs lg:text-sm text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900 transition-all border-b-2 lg:border-b-0 border-transparent lg:border-t lg:border-zinc-200 lg:dark:border-zinc-800 lg:border-l-4 lg:border-l-transparent cursor-pointer"
               >
-                <LogoutOutlined className="text-lg text-red-500" /> <span className="text-red-500">Logout</span>
+                <LogoutOutlined className="text-base lg:text-lg text-red-500" /> <span className="text-red-500">Logout</span>
               </button>
             </div>
           </div>

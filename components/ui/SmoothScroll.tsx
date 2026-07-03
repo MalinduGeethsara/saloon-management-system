@@ -12,6 +12,16 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
     // Register GSAP ScrollTrigger
     gsap.registerPlugin(ScrollTrigger);
 
+    // Disable smooth scroll on mobile/tablet devices and touch screens
+    const isTouchOrMobile = 
+      window.innerWidth < 1024 || 
+      'ontouchstart' in window || 
+      navigator.maxTouchPoints > 0;
+
+    if (isTouchOrMobile) {
+      return;
+    }
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Smooth easeOutExpo

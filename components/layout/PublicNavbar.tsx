@@ -103,7 +103,7 @@ export function PublicNavbar() {
               { name: 'Home', path: '/' },
               { name: 'About', path: '/about' },
               { name: 'Services', path: '/services' },
-              { name: 'Product', path: '/products' },
+              { name: 'Products', path: '/products' },
               { name: 'Contact', path: '/contact' }
             ].map((link) => (
               <Magnetic key={link.name} range={35} strength={0.3}>
@@ -212,7 +212,7 @@ export function PublicNavbar() {
               { name: 'Home', path: '/' },
               { name: 'About', path: '/about' },
               { name: 'Services', path: '/services' },
-              { name: 'Product', path: '/products' },
+              { name: 'Products', path: '/products' },
               { name: 'Contact', path: '/contact' }
             ].map((link) => {
               const isActive = pathname === link.path;
