@@ -7,7 +7,7 @@ import {
   CalendarOutlined,
   ScissorOutlined,
   ArrowRightOutlined,
-  ArrowLeftOutlined, // ✅ This is the missing import!
+  ArrowLeftOutlined,
   CrownOutlined,
   StarFilled,
   GoogleOutlined
@@ -116,26 +116,26 @@ export default function WebsiteHomePage() {
       ========================================= */}
       <ScrollReveal direction="down" delay={0.1}>
         <div className="relative py-12 bg-white dark:bg-zinc-950/20 border-b border-zinc-200 dark:border-zinc-900 transition-colors duration-500 overflow-hidden select-none">
-        <div className="max-w-7xl mx-auto px-6 mb-4 flex items-center justify-center gap-3">
-          <span className="h-[1px] w-12 bg-zinc-200 dark:bg-zinc-800 transition-colors"></span>
-          <span className="text-[10px] uppercase font-bold tracking-[0.35em] text-zinc-400 dark:text-zinc-500 transition-colors">Premium Products We Trust</span>
-          <span className="h-[1px] w-12 bg-zinc-200 dark:bg-zinc-800 transition-colors"></span>
-        </div>
-        
-        <div className="relative w-full overflow-hidden flex mask-gradient-marquee py-2">
-          {/* We repeat the brand set 4 times for smooth density and seamless looping */}
-          <div className="animate-marquee flex items-center gap-20 md:gap-32 whitespace-nowrap pr-20 md:pr-32">
-            {[...Array(4)].map((_, i) => (
-              <React.Fragment key={i}>
-                <span className="text-zinc-800 dark:text-zinc-500 font-serif tracking-[0.2em] font-extrabold text-xl uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">Bellose</span>
-                <span className="text-zinc-800 dark:text-zinc-500 font-sans tracking-[0.3em] font-black text-base uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">Derma Pro</span>
-                <span className="text-zinc-800 dark:text-zinc-500 font-sans tracking-[0.25em] font-bold text-lg uppercase italic transition-colors hover:text-amber-600 dark:hover:text-amber-500 font-mono">Keune</span>
-                <span className="text-zinc-800 dark:text-zinc-500 font-serif tracking-[0.15em] font-medium text-lg uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">L'Oréal</span>
-              </React.Fragment>
-            ))}
+          <div className="max-w-7xl mx-auto px-6 mb-4 flex items-center justify-center gap-3">
+            <span className="h-[1px] w-12 bg-zinc-200 dark:bg-zinc-800 transition-colors"></span>
+            <span className="text-[10px] uppercase font-bold tracking-[0.35em] text-zinc-400 dark:text-zinc-500 transition-colors">Premium Products We Trust</span>
+            <span className="h-[1px] w-12 bg-zinc-200 dark:bg-zinc-800 transition-colors"></span>
+          </div>
+
+          <div className="relative w-full overflow-hidden flex mask-gradient-marquee py-2">
+            {/* We repeat the brand set 4 times for smooth density and seamless looping */}
+            <div className="animate-marquee flex items-center gap-20 md:gap-32 whitespace-nowrap pr-20 md:pr-32">
+              {[...Array(4)].map((_, i) => (
+                <React.Fragment key={i}>
+                  <span className="text-zinc-800 dark:text-zinc-500 font-serif tracking-[0.2em] font-extrabold text-xl uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">Bellose</span>
+                  <span className="text-zinc-800 dark:text-zinc-500 font-sans tracking-[0.3em] font-black text-base uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">Derma Pro</span>
+                  <span className="text-zinc-800 dark:text-zinc-500 font-sans tracking-[0.25em] font-bold text-lg uppercase italic transition-colors hover:text-amber-600 dark:hover:text-amber-500 font-mono">Keune</span>
+                  <span className="text-zinc-800 dark:text-zinc-500 font-serif tracking-[0.15em] font-medium text-lg uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">L'Oréal</span>
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
       </ScrollReveal>
 
       {/* =========================================

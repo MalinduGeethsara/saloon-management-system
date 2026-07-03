@@ -1,37 +1,33 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   UserOutlined, 
   LockOutlined, 
   MailOutlined,
   PhoneOutlined,
-  ArrowLeftOutlined,
-  GoogleOutlined
+  ArrowLeftOutlined
 } from '@ant-design/icons';
 
-function LoginFormContent() {
+function ForgotPasswordContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/profile';
 
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [step, setStep] = useState<'request' | 'verify' | 'reset'>('request');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Form states
+  const [method, setMethod] = useState<'email' | 'phone'>('email');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-
-  const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email');
-  const [signupStep, setSignupStep] = useState<'input' | 'verify'>('input');
-  const [sentCode, setSentCode] = useState('');
   const [enteredCode, setEnteredCode] = useState('');
+  const [sentCode, setSentCode] = useState('');
   const [resendCountdown, setResendCountdown] = useState(0);
+
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [showNotification, setShowNotification] = useState<{
     show: boolean;
     type: 'sms' | 'email';
@@ -50,27 +46,14 @@ function LoginFormContent() {
     }
   }, [resendCountdown]);
 
-  // Clear message and verification state on tab switch
-  useEffect(() => {
-    if (activeTab === 'login' && searchParams.get('reset') === 'success') {
-      setMessage({ type: 'success', text: 'Password reset successfully. Please sign in with your new password.' });
-    } else {
-      setMessage(null);
-    }
-    setSignupStep('input');
-    setEnteredCode('');
-    setSentCode('');
-    setShowNotification(null);
-  }, [activeTab, searchParams]);
-
   const handleSendCode = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setLoading(true);
     setMessage(null);
 
-    const identifier = signupMethod === 'email' ? email : phone;
+    const identifier = method === 'email' ? email : phone;
     if (!identifier) {
-      setMessage({ type: 'error', text: `Please enter a valid ${signupMethod === 'email' ? 'email address' : 'phone number'}.` });
+      setMessage({ type: 'error', text: `Please enter a valid ${method === 'email' ? 'email address' : 'phone number'}.` });
       setLoading(false);
       return;
     }
@@ -86,7 +69,7 @@ function LoginFormContent() {
 
       if (response.ok) {
         setSentCode(data.code);
-        setSignupStep('verify');
+        setStep('verify');
         setResendCountdown(30);
 
         setShowNotification({
@@ -94,8 +77,8 @@ function LoginFormContent() {
           type: data.type,
           title: data.type === 'sms' ? 'New Message from MR POLAA' : 'Verification Code Inbox',
           message: data.type === 'sms' 
-            ? `Your verification OTP for MR POLAA Premium Grooming is: ${data.code}` 
-            : `Please verify your email address to complete registration. Your verification code is: ${data.code}`,
+            ? `Your password reset code for MR POLAA Premium Grooming is: ${data.code}` 
+            : `Please verify your email address to reset password. Your reset code is: ${data.code}`,
           code: data.code
         });
 
@@ -112,7 +95,7 @@ function LoginFormContent() {
     }
   };
 
-  const handleVerifyAndRegister = async (e: React.FormEvent) => {
+  const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
@@ -123,92 +106,39 @@ function LoginFormContent() {
       return;
     }
 
-    try {
-      const payload = {
-        name,
-        password,
-        email: signupMethod === 'email' ? email : '',
-        phone: signupMethod === 'phone' ? phone : '',
-        isRegister: true
-      };
-
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage({
-          type: 'success',
-          text: 'Account verified & created successfully! Logging you in...'
-        });
-        
-        setTimeout(() => {
-          router.push(callbackUrl);
-          router.refresh();
-        }, 1200);
-      } else {
-        setMessage({
-          type: 'error',
-          text: data.message || 'Something went wrong during registration.'
-        });
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
-    } finally {
-      setLoading(false);
-    }
+    setStep('reset');
+    setLoading(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
-    try {
-      const payload = { email, password };
-
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage({
-          type: 'success',
-          text: `Welcome back, ${data.name}!`
-        });
-        
-        setTimeout(() => {
-          router.push(callbackUrl);
-          router.refresh();
-        }, 1200);
-      } else {
-        setMessage({
-          type: 'error',
-          text: data.message || 'Something went wrong. Please try again.'
-        });
-      }
-    } catch (err) {
-      setMessage({
-        type: 'error',
-        text: 'Network error. Please try again later.'
-      });
-    } finally {
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: 'error', text: 'Passwords do not match.' });
       setLoading(false);
+      return;
     }
-  };
 
-  const fillDemoCredentials = (usePhone = false) => {
-    setEmail(usePhone ? '+94 71 330 7710' : 'customer@salon.com');
-    setPassword('password123');
-    setActiveTab('login');
+    if (newPassword.length < 6) {
+      setMessage({ type: 'error', text: 'Password must be at least 6 characters long.' });
+      setLoading(false);
+      return;
+    }
+
+    // Simulate password updates successfully
+    setTimeout(() => {
+      setMessage({
+        type: 'success',
+        text: 'Your password has been reset successfully! Redirecting to login...'
+      });
+      setLoading(false);
+
+      setTimeout(() => {
+        router.push('/login?reset=success');
+      }, 1500);
+    }, 1000);
   };
 
   return (
@@ -279,12 +209,12 @@ function LoginFormContent() {
         {/* Brand Message */}
         <div className="relative z-10 max-w-xl">
           <h1 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
-            Your Chair <br />
-            Is Awaiting <br />
-            <span className="font-serif italic font-light text-amber-500">Excellence.</span>
+            Regain Access <br />
+            To Premium <br />
+            <span className="font-serif italic font-light text-amber-500">Service.</span>
           </h1>
           <p className="text-zinc-400 leading-relaxed font-light text-sm">
-            Sign in to manage your appointments, view historical styling sessions, explore products, and book premium artisan barber slots with ease.
+            Easily reset your password and get back to booking premium artisan barber services, monitoring grooming history, and exploring salon items.
           </p>
         </div>
 
@@ -312,47 +242,25 @@ function LoginFormContent() {
 
         {/* Back Link */}
         <Link 
-          href="/" 
+          href="/login" 
           className="absolute top-6 left-6 text-xs font-bold text-zinc-500 hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors duration-300"
         >
-          <ArrowLeftOutlined /> Back to home
+          <ArrowLeftOutlined /> Back to login
         </Link>
 
         <div className="w-full max-w-md">
           {/* Headline */}
           <div className="mb-8">
             <h2 className="text-2xl font-black text-white tracking-wide">
-              {activeTab === 'login' ? 'Welcome Back' : 'Create Account'}
+              {step === 'request' && 'Reset Password'}
+              {step === 'verify' && 'Verify Identity'}
+              {step === 'reset' && 'Create New Password'}
             </h2>
             <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed">
-              {activeTab === 'login' 
-                ? 'Sign in to access your grooming history & details.' 
-                : 'Join MR POLAA to secure premium slots instantly.'}
+              {step === 'request' && 'Enter email or phone linked to your account.'}
+              {step === 'verify' && 'Enter the 6-digit OTP code sent to your device.'}
+              {step === 'reset' && 'Choose a strong new password for your account.'}
             </p>
-          </div>
-
-          {/* Form Tabs Switcher */}
-          <div className="grid grid-cols-2 bg-zinc-950/80 p-1 mb-8 border border-zinc-800/80">
-            <button
-              onClick={() => setActiveTab('login')}
-              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${
-                activeTab === 'login' 
-                  ? 'bg-amber-600 text-white shadow-lg' 
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => setActiveTab('signup')}
-              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${
-                activeTab === 'signup' 
-                  ? 'bg-amber-600 text-white shadow-lg' 
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              Sign Up
-            </button>
           </div>
 
           {/* Message Alert */}
@@ -367,86 +275,18 @@ function LoginFormContent() {
           )}
 
           {/* Forms */}
-          {activeTab === 'login' ? (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                  Email Address or Phone Number
-                </label>
-                <div className="relative">
-                  {/^[+\d\s-]+$/.test(email) ? (
-                    <PhoneOutlined className="absolute left-4 top-3.5 text-zinc-500 text-sm" />
-                  ) : (
-                    <MailOutlined className="absolute left-4 top-3.5 text-zinc-500 text-sm" />
-                  )}
-                  <input
-                    type="text"
-                    required
-                    placeholder="customer@salon.com or +94 71 330 7710"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Password</label>
-                  <Link 
-                    href="/forgot-password" 
-                    className="text-[10px] font-bold uppercase tracking-widest text-amber-500/85 hover:text-amber-500 underline transition-colors"
-                  >
-                    Forgot Password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <LockOutlined className="absolute left-4 top-3.5 text-zinc-500 text-sm" />
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white py-4 text-xs font-bold uppercase tracking-widest transition-all duration-300 shadow-xl active:scale-95 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed disabled:active:scale-100 flex justify-center items-center gap-2"
-              >
-                {loading ? 'Processing...' : 'Sign In'}
-              </button>
-            </form>
-          ) : signupStep === 'input' ? (
+          {step === 'request' && (
             <form onSubmit={handleSendCode} className="space-y-5">
+              
+              {/* Method Switcher */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Full Name</label>
-                <div className="relative">
-                  <UserOutlined className="absolute left-4 top-3.5 text-zinc-500 text-sm" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Malindu Geethsara"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none"
-                  />
-                </div>
-              </div>
-
-              {/* Signup Method Switcher */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Sign Up Method</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Method</label>
                 <div className="grid grid-cols-2 bg-zinc-950/80 p-1 border border-zinc-800/80">
                   <button
                     type="button"
-                    onClick={() => setSignupMethod('email')}
+                    onClick={() => setMethod('email')}
                     className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${
-                      signupMethod === 'email' 
+                      method === 'email' 
                         ? 'bg-zinc-800 text-white shadow' 
                         : 'text-zinc-500 hover:text-zinc-300'
                     }`}
@@ -455,9 +295,9 @@ function LoginFormContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSignupMethod('phone')}
+                    onClick={() => setMethod('phone')}
                     className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${
-                      signupMethod === 'phone' 
+                      method === 'phone' 
                         ? 'bg-zinc-800 text-white shadow' 
                         : 'text-zinc-500 hover:text-zinc-300'
                     }`}
@@ -467,7 +307,7 @@ function LoginFormContent() {
                 </div>
               </div>
 
-              {signupMethod === 'email' ? (
+              {method === 'email' ? (
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Email Address</label>
                   <div className="relative">
@@ -499,36 +339,23 @@ function LoginFormContent() {
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Password</label>
-                <div className="relative">
-                  <LockOutlined className="absolute left-4 top-3.5 text-zinc-500 text-sm" />
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none"
-                  />
-                </div>
-              </div>
-
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full bg-amber-600 hover:bg-amber-700 text-white py-4 text-xs font-bold uppercase tracking-widest transition-all duration-300 shadow-xl active:scale-95 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed disabled:active:scale-100 flex justify-center items-center gap-2"
               >
-                {loading ? 'Processing...' : signupMethod === 'email' ? 'Send Email Code' : 'Send SMS OTP'}
+                {loading ? 'Processing...' : method === 'email' ? 'Send Reset Code' : 'Send Reset SMS OTP'}
               </button>
             </form>
-          ) : (
-            <form onSubmit={handleVerifyAndRegister} className="space-y-5">
+          )}
+
+          {step === 'verify' && (
+            <form onSubmit={handleVerifyCode} className="space-y-5">
               <div className="p-4 bg-zinc-950/60 border border-zinc-800/60 text-xs text-zinc-400 leading-relaxed font-light">
                 <span className="font-bold text-amber-500 block mb-1">Verify Identity</span>
                 We simulated sending a 6-digit verification code to: <br />
                 <span className="font-mono font-bold text-white mt-1 block">
-                  {signupMethod === 'email' ? email : phone}
+                  {method === 'email' ? email : phone}
                 </span>
               </div>
 
@@ -553,16 +380,16 @@ function LoginFormContent() {
                 disabled={loading || enteredCode.length < 6}
                 className="w-full bg-amber-600 hover:bg-amber-700 text-white py-4 text-xs font-bold uppercase tracking-widest transition-all duration-300 shadow-xl active:scale-95 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed disabled:active:scale-100 flex justify-center items-center gap-2"
               >
-                {loading ? 'Verifying...' : 'Verify & Register'}
+                {loading ? 'Verifying...' : 'Verify Code'}
               </button>
 
               <div className="flex justify-between items-center text-xs mt-4">
                 <button
                   type="button"
-                  onClick={() => setSignupStep('input')}
+                  onClick={() => setStep('request')}
                   className="text-zinc-500 hover:text-zinc-300 font-bold uppercase tracking-wider text-[10px]"
                 >
-                  ← Edit Details
+                  ← Back
                 </button>
 
                 <button
@@ -577,48 +404,47 @@ function LoginFormContent() {
             </form>
           )}
 
-          {/* Social Logins */}
-          <div className="mt-8 pt-8 border-t border-zinc-800/50 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <button 
-                type="button"
-                onClick={() => fillDemoCredentials(false)}
-                className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
+          {step === 'reset' && (
+            <form onSubmit={handleResetPassword} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">New Password</label>
+                <div className="relative">
+                  <LockOutlined className="absolute left-4 top-3.5 text-zinc-500 text-sm" />
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Confirm New Password</label>
+                <div className="relative">
+                  <LockOutlined className="absolute left-4 top-3.5 text-zinc-500 text-sm" />
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white py-4 text-xs font-bold uppercase tracking-widest transition-all duration-300 shadow-xl active:scale-95 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed disabled:active:scale-100 flex justify-center items-center gap-2"
               >
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                Demo Email
+                {loading ? 'Saving...' : 'Reset Password'}
               </button>
-
-              <button 
-                type="button"
-                onClick={() => fillDemoCredentials(true)}
-                className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                Demo Phone
-              </button>
-            </div>
-
-            <button 
-              type="button" 
-              className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white py-3.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 cursor-not-allowed opacity-50"
-              disabled
-            >
-              <GoogleOutlined className="text-sm" />
-              Continue with Google
-            </button>
-          </div>
-
-          {/* Assistance details */}
-          <div className="mt-8 p-5 bg-zinc-950/60 border border-zinc-800/60 text-[11px] text-zinc-500 leading-relaxed font-light">
-            <span className="font-bold text-amber-500 uppercase tracking-widest block mb-2">Demo Credentials</span>
-            <span className="font-bold text-zinc-400">Email:</span> customer@salon.com <br />
-            <span className="font-bold text-zinc-400">Phone:</span> +94 71 330 7710 <br />
-            <span className="font-bold text-zinc-400">Password:</span> password123 <br />
-            <span className="block mt-3 text-[10px] text-zinc-600 border-t border-zinc-900 pt-2">
-              Are you a staff member? <Link href="/staff-login" className="text-amber-500/80 hover:text-amber-500 underline font-bold uppercase tracking-wider text-[9px] ml-1">Staff Portal</Link>
-            </span>
-          </div>
+            </form>
+          )}
 
         </div>
 
@@ -628,7 +454,7 @@ function LoginFormContent() {
   );
 }
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
@@ -638,7 +464,7 @@ export default function LoginPage() {
         </div>
       </div>
     }>
-      <LoginFormContent />
+      <ForgotPasswordContent />
     </Suspense>
   );
 }

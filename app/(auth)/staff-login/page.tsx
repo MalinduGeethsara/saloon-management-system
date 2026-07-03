@@ -14,16 +14,7 @@ export default function StaffLoginPage() {
         },
       }}
     >
-      <div 
-        style={{ 
-          minHeight: '100vh', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          backgroundColor: '#F4F0FF',
-          padding: '20px'
-        }}
-      >
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#F4F0FF] py-10 px-4 sm:px-6 md:px-8 overflow-y-auto">
         <Suspense fallback={<Spin size="large" />}>
           <LoginForm />
         </Suspense>
