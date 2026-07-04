@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { 
   HomeOutlined, 
   CalendarOutlined, 
@@ -9,11 +8,24 @@ import {
   EyeOutlined
 } from '@ant-design/icons';
 
+interface Appointment {
+  id: string;
+  code: string;
+  date: string;
+  time: string;
+  status: string;
+  amount: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  barberName?: string;
+  barberRole?: string;
+}
+
 export default function ProfileDashboard() {
   const [activeTab, setActiveTab] = useState("appointments");
   const [mounted, setMounted] = useState(false);
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [user, setUser] = useState({
     name: "malindu",

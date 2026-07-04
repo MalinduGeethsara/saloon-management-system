@@ -95,7 +95,7 @@ export default function ServicesPage() {
           <div className="text-center mb-20">
             <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Curated Menu</h3>
             <h1 className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white transition-colors">Signature <span className="font-serif italic font-light text-zinc-500">Services</span></h1>
-            <p className="text-zinc-500 dark:text-zinc-400 mt-6 max-w-xl mx-auto">Experience the pinnacle of men's grooming with our carefully curated selection of bespoke haircuts, traditional shaves, and premium treatments.</p>
+            <p className="text-zinc-500 dark:text-zinc-400 mt-6 max-w-xl mx-auto">Experience the pinnacle of men&apos;s grooming with our carefully curated selection of bespoke haircuts, traditional shaves, and premium treatments.</p>
           </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

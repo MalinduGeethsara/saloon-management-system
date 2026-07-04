@@ -13,7 +13,7 @@ export default function AboutPage() {
           <div className="text-center mb-20">
             <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Our Heritage</h3>
             <h1 className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white transition-colors">About <span className="font-serif italic font-light text-zinc-500">Mr Polaa</span></h1>
-            <p className="text-zinc-500 dark:text-zinc-400 mt-6 max-w-xl mx-auto">Discover the tradition, precision, and passion behind our craft. We don't just cut hair; we architect your personal style.</p>
+            <p className="text-zinc-500 dark:text-zinc-400 mt-6 max-w-xl mx-auto">Discover the tradition, precision, and passion behind our craft. We don&apos;t just cut hair; we architect your personal style.</p>
           </div>
         </div>
 
@@ -35,12 +35,12 @@ export default function AboutPage() {
               <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2 transition-colors">Humble Beginnings</h3>
               <p className="text-amber-600 dark:text-amber-500 font-bold text-xs uppercase tracking-widest mb-6">New Road, Walasmulla • Feb 21, 2021</p>
               <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed font-light transition-colors">
-                On February 21, 2021, Nimesh founded Mr Polaa in a cozy, single-chair corner spot at New Road, Walasmulla. Designed exclusively as a men's-only barber shop, he started with just a few basic styling shears, a traditional straight razor, and a commitment to meticulous craftsmanship. He worked long hours, focusing on detailed blends and classic cuts, which quickly earned him a reputation for excellence and a deeply loyal local following.
+                On February 21, 2021, Nimesh founded Mr Polaa in a cozy, single-chair corner spot at New Road, Walasmulla. Designed exclusively as a men&apos;s-only barber shop, he started with just a few basic styling shears, a traditional straight razor, and a commitment to meticulous craftsmanship. He worked long hours, focusing on detailed blends and classic cuts, which quickly earned him a reputation for excellence and a deeply loyal local following.
               </p>
             </div>
             <div className="mt-8 border-t border-dashed border-zinc-200 dark:border-zinc-800 pt-6">
               <span className="text-xs text-amber-600 dark:text-amber-500 uppercase tracking-wider block font-bold">Initial Setup</span>
-              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-300 block mt-1">1 Chair • Men's Only Barbering • New Road Startup</span>
+              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-300 block mt-1">1 Chair • Men&apos;s Only Barbering • New Road Startup</span>
             </div>
           </div>
 

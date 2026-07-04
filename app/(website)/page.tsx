@@ -130,7 +130,7 @@ export default function WebsiteHomePage() {
                   <span className="text-zinc-800 dark:text-zinc-500 font-serif tracking-[0.2em] font-extrabold text-xl uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">Bellose</span>
                   <span className="text-zinc-800 dark:text-zinc-500 font-sans tracking-[0.3em] font-black text-base uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">Derma Pro</span>
                   <span className="text-zinc-800 dark:text-zinc-500 font-sans tracking-[0.25em] font-bold text-lg uppercase italic transition-colors hover:text-amber-600 dark:hover:text-amber-500 font-mono">Keune</span>
-                  <span className="text-zinc-800 dark:text-zinc-500 font-serif tracking-[0.15em] font-medium text-lg uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">L'Oréal</span>
+                  <span className="text-zinc-800 dark:text-zinc-500 font-serif tracking-[0.15em] font-medium text-lg uppercase transition-colors hover:text-amber-600 dark:hover:text-amber-500">L&apos;Oréal</span>
                 </React.Fragment>
               ))}
             </div>
@@ -169,7 +169,7 @@ export default function WebsiteHomePage() {
               Tradition Meets <br /><span className="font-serif italic font-light text-zinc-500">Modern Precision.</span>
             </h2>
             <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed mb-10 font-light transition-colors">
-              We don't just cut hair; we architect your personal style. Every detail, from the ambient lighting to the rich lather of our shaving creams, is curated to provide a momentary escape from the ordinary.
+              We don&apos;t just cut hair; we architect your personal style. Every detail, from the ambient lighting to the rich lather of our shaving creams, is curated to provide a momentary escape from the ordinary.
             </p>
 
             <div className="grid grid-cols-1 gap-8 mb-12">
@@ -479,7 +479,7 @@ export default function WebsiteHomePage() {
                   </div>
                   {/* ✅ Exchanged opacity and flex layout to ensure equal card heights */}
                   <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
-                    "Absolutely top-tier service. I walked in expecting a standard haircut and left feeling like a new man. The hot towel shave is a must-try. Mr Polaa's attention to detail is unmatched."
+                    &ldquo;Absolutely top-tier service. I walked in expecting a standard haircut and left feeling like a new man. The hot towel shave is a must-try. Mr Polaa&apos;s attention to detail is unmatched.&rdquo;
                   </p>
                   <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
                     <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">AM</div>
@@ -498,7 +498,7 @@ export default function WebsiteHomePage() {
                     <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
                   </div>
                   <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
-                    "The best fade I've had in Sri Lanka. Mahesh understood exactly what I wanted and executed it perfectly. The ambiance of the shop feels incredibly premium yet welcoming."
+                    &ldquo;The best fade I&apos;ve had in Sri Lanka. Mahesh understood exactly what I wanted and executed it perfectly. The ambiance of the shop feels incredibly premium yet welcoming.&rdquo;
                   </p>
                   <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
                     <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">SR</div>
@@ -517,7 +517,7 @@ export default function WebsiteHomePage() {
                     <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
                   </div>
                   <p className="text-zinc-600 dark:text-zinc-300 font-light leading-relaxed mb-8 italic flex-1">
-                    "Booking online was so smooth, and they started right on time. The styling products they use smell fantastic. Found my permanent grooming spot in town."
+                    &ldquo;Booking online was so smooth, and they started right on time. The styling products they use smell fantastic. Found my permanent grooming spot in town.&rdquo;
                   </p>
                   <div className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-auto">
                     <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-zinc-600 dark:text-zinc-400">DJ</div>

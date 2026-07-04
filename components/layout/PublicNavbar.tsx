@@ -17,37 +17,42 @@ export function PublicNavbar() {
   const [userProfile, setUserProfile] = useState<{ name: string; initials: string } | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-    const isDark = 
-      localStorage.theme === 'dark' || 
-      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
-    setIsDarkMode(isDark);
-    
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    const timer = setTimeout(() => {
+      setMounted(true);
+      
+      const isDark = 
+        localStorage.theme === 'dark' || 
+        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      
+      setIsDarkMode(isDark);
+      
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
 
-    // Read cookie for customer state
-    const roleCookie = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    const userRole = roleCookie ? roleCookie[2] : null;
+      // Read cookie for customer state
+      const roleCookie = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+      const userRole = roleCookie ? roleCookie[2] : null;
 
-    const nameCookie = document.cookie.match(new RegExp('(^| )user_name=([^;]+)'));
-    const userName = nameCookie ? decodeURIComponent(nameCookie[2]) : null;
+      const nameCookie = document.cookie.match(new RegExp('(^| )user_name=([^;]+)'));
+      const userName = nameCookie ? decodeURIComponent(nameCookie[2]) : null;
 
-    if (userRole) {
-      setIsLoggedIn(true);
-      const displayName = userName || (userRole === 'customer' ? 'Malindu' : userRole.charAt(0).toUpperCase() + userRole.slice(1));
-      setUserProfile({
-        name: displayName,
-        initials: displayName.charAt(0).toUpperCase()
-      });
-    } else {
-      setIsLoggedIn(false);
-      setUserProfile(null);
-    }
+      if (userRole) {
+        setIsLoggedIn(true);
+        const displayName = userName || (userRole === 'customer' ? 'Malindu' : userRole.charAt(0).toUpperCase() + userRole.slice(1));
+        setUserProfile({
+          name: displayName,
+          initials: displayName.charAt(0).toUpperCase()
+        });
+      } else {
+        setIsLoggedIn(false);
+        setUserProfile(null);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const toggleTheme = () => {
