@@ -208,15 +208,9 @@ export default function WebsiteHomePage() {
         <div className="max-w-7xl mx-auto px-6 relative">
 
           <ScrollReveal direction="down">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-12 md:mb-20 gap-6">
-              <div>
-                <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Curated Menu</h3>
-                <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors">Signature <span className="font-serif italic font-light text-zinc-500">Services</span></h2>
-              </div>
-              {/* Desktop Full Menu link */}
-              <Link href="/services" className="hidden md:inline-flex border-b border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500 pb-1 text-xs font-bold tracking-[0.2em] uppercase transition-all hover:text-zinc-900 dark:hover:text-white hover:border-zinc-900 dark:hover:border-white">
-                View Full Menu
-              </Link>
+            <div className="text-center mb-12 md:mb-20">
+              <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Curated Menu</h3>
+              <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors">Signature <span className="font-serif italic font-light text-zinc-500">Services</span></h2>
             </div>
           </ScrollReveal>
 
@@ -248,7 +242,7 @@ export default function WebsiteHomePage() {
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
               {/* Service Card 1 */}
-              <ScrollReveal direction="down" delay={0.1} className="w-[85vw] max-w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+              <ScrollReveal direction="down" delay={0.1} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
                 <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relative">
                   <div className="h-72 overflow-hidden relative">
                     <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
@@ -277,7 +271,7 @@ export default function WebsiteHomePage() {
               </ScrollReveal>
 
               {/* Service Card 2 */}
-              <ScrollReveal direction="down" delay={0.25} className="w-[85vw] max-w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+              <ScrollReveal direction="down" delay={0.25} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
                 <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relatives">
                   <div className="h-72 overflow-hidden relative">
                     <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
@@ -306,7 +300,7 @@ export default function WebsiteHomePage() {
               </ScrollReveal>
 
               {/* Service Card 3 */}
-              <ScrollReveal direction="down" delay={0.4} className="w-[85vw] max-w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+              <ScrollReveal direction="down" delay={0.4} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
                 <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relations">
                   <div className="h-72 overflow-hidden relative">
                     <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
@@ -336,9 +330,9 @@ export default function WebsiteHomePage() {
             </div>
           </div>
 
-          {/* ✅ Mobile-Only View Full Menu link (Separated & centered) */}
-          <div className="flex justify-center md:hidden mt-4">
-            <Link href="/services" className="border-b border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500 pb-1 text-xs font-bold tracking-[0.2em] uppercase transition-all active:scale-95">
+          {/* ✅ View Full Menu link (Centered for all screens) */}
+          <div className="flex justify-center mt-12 md:mt-16">
+            <Link href="/services" className="border-b border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500 pb-1 text-xs font-bold tracking-[0.2em] uppercase transition-all hover:text-zinc-900 dark:hover:text-white hover:border-zinc-900 dark:hover:border-white">
               View Full Menu
             </Link>
           </div>
