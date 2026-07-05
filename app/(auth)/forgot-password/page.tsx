@@ -330,7 +330,7 @@ function ForgotPasswordContent() {
                     <input
                       type="tel"
                       required
-                      placeholder="+94 71 330 7710"
+                      placeholder="+94 77 123 4567"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none"

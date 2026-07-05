@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 const CUSTOMERS = [
-  { email: 'customer@salon.com', password: 'password123', role: 'customer', name: 'Malindu Geethsara', phone: '+94 71 330 7710' }
+  { email: 'customer@salon.com', password: 'password123', role: 'customer', name: 'Malindu Geethsara', phone: '+94 77 123 4567' }
 ];
 
 function normalizePhone(phone: string): string {
