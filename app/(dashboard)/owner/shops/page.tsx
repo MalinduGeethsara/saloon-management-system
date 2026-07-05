@@ -34,29 +34,29 @@ const { Title, Text } = Typography;
 const INITIAL_SHOPS = [
   { 
     key: "S-01", 
-    name: "Colombo City Cuts", 
-    manager: "Kamal Perera", 
-    phone: "+94 77 123 4567", 
+    name: "Mr Polaa - Walasmulla", 
+    manager: "Sampath Madusanka", 
+    phone: "+94 71 256 8071", 
     status: "Open", 
-    address: "Union Place, Colombo 02",
+    address: "New Road, Walasmulla",
     staff: 8,
     revenue: 450000,
     image: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&q=80&w=800"
   },
   { 
     key: "S-02", 
-    name: "Kandy Kings Barber", 
-    manager: "Nuwan Silva", 
-    phone: "+94 71 987 6543", 
+    name: "Mr Polaa - Colombo", 
+    manager: "Saman Kumara", 
+    phone: "+94 77 123 4567", 
     status: "Open", 
-    address: "Peradeniya Rd, Kandy",
+    address: "Union Place, Colombo 02",
     staff: 5,
     revenue: 280000,
     image: "https://images.unsplash.com/photo-1503951914875-befea74701c5?auto=format&fit=crop&q=80&w=800"
   },
   { 
     key: "S-03", 
-    name: "Galle Fort Grooming", 
+    name: "Mr Polaa - Galle", 
     manager: "Lahiru Fernando", 
     phone: "+94 76 555 1234", 
     status: "Closed", 

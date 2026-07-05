@@ -16,9 +16,9 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 const { Title, Text } = Typography;
 
 const INITIAL_DATA = [
-  { key: '1', name: "Mahesh Madushanka", shop: "Colombo 07", status: "Present", clockIn: "08:50 AM", clockOut: "05:30 PM" },
-  { key: '2', name: "Malith Sandaruwan", shop: "Colombo 07", status: "On Leave", clockIn: "-", clockOut: "-" },
-  { key: '3', name: "Vindana Lakmal", shop: "Nugegoda", status: "Present", clockIn: "09:05 AM", clockOut: "06:15 PM" },
+  { key: '1', name: "Mahesh Madushanka", shop: "Walasmulla", status: "Present", clockIn: "08:50 AM", clockOut: "05:30 PM" },
+  { key: '2', name: "Malith Sandaruwan", shop: "Walasmulla", status: "On Leave", clockIn: "-", clockOut: "-" },
+  { key: '3', name: "Vindana Lakmal", shop: "Colombo", status: "Present", clockIn: "09:05 AM", clockOut: "06:15 PM" },
 ];
 
 const STAFF_NAMES = ["Mahesh Madushanka", "Malith Sandaruwan", "Vindana Lakmal"];

@@ -61,12 +61,12 @@ const SL_REGIONS = [
 const INITIAL_SHOPS: Shop[] = [
   { 
     key: '1', 
-    name: 'Salon Ruchira', 
-    owner: 'Ruchira Perera', 
-    location: 'Flower Rd', 
-    region: 'Colombo',
-    contact: '0771234567', 
-    br: 'BR-WC-2024-001', 
+    name: 'Mr Polaa Barber Shop', 
+    owner: 'Nimesh Haththasingha', 
+    location: 'New Road', 
+    region: 'Hambantota',
+    contact: '0712568071', 
+    br: 'BR-SP-2021-001', 
     status: 'Active',
     image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=150&q=80'
   },
@@ -294,8 +294,8 @@ export default function ShopDataPage() {
             </Upload>
           </Form.Item>
           <Row gutter={16}>
-            <Col xs={24} sm={12}><Form.Item name="name" label={<span className="font-bold text-slate-700 text-[11px] uppercase">Shop Name</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="Salon Ruchira" /></Form.Item></Col>
-            <Col xs={24} sm={12}><Form.Item name="owner" label={<span className="font-bold text-slate-700 text-[11px] uppercase">Owner Name</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="Ruchira Perera" /></Form.Item></Col>
+            <Col xs={24} sm={12}><Form.Item name="name" label={<span className="font-bold text-slate-700 text-[11px] uppercase">Shop Name</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="Mr Polaa Barber Shop" /></Form.Item></Col>
+            <Col xs={24} sm={12}><Form.Item name="owner" label={<span className="font-bold text-slate-700 text-[11px] uppercase">Owner Name</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="Nimesh Haththasingha" /></Form.Item></Col>
           </Row>
           <Row gutter={16}>
             <Col xs={24} sm={12}>
@@ -303,7 +303,7 @@ export default function ShopDataPage() {
                 <Select size="large" className="rounded-xl" showSearch options={SL_REGIONS.map(r => ({ label: r, value: r }))} />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}><Form.Item name="location" label={<span className="font-bold text-slate-700 text-[11px] uppercase">City</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="Colombo 07" /></Form.Item></Col>
+            <Col xs={24} sm={12}><Form.Item name="location" label={<span className="font-bold text-slate-700 text-[11px] uppercase">City</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="Walasmulla" /></Form.Item></Col>
           </Row>
           <Row gutter={16}>
             <Col xs={24} sm={12}><Form.Item name="contact" label={<span className="font-bold text-slate-700 text-[11px] uppercase">Contact</span>} rules={[{ required: true }]}><Input size="large" className="rounded-xl" placeholder="077xxxxxxx" /></Form.Item></Col>

@@ -4,9 +4,9 @@ export function Receipt({ data }: { data: any }) {
   return (
     <div className="hidden print:block w-[80mm] mx-auto p-4 text-black font-mono text-sm leading-tight">
       <div className="text-center mb-4">
-        <h2 className="text-xl font-bold uppercase">LuxeBarber</h2>
-        <p>123 Saloon Street, Downtown</p>
-        <p>Tel: +1 234 567 890</p>
+        <h2 className="text-xl font-bold uppercase">MR POLAA</h2>
+        <p>New Road, Walasmulla</p>
+        <p>Tel: +94 71 256 8071</p>
       </div>
       
       <div className="border-t border-b border-dashed py-2 my-2">

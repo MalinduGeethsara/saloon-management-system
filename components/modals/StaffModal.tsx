@@ -69,9 +69,9 @@ export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
                 </Form.Item>
                 <Form.Item name="branch" label="Assigned Branch">
                   <Select placeholder="Select Branch" size="large">
-                    <Option value="Downtown">Downtown Studio</Option>
-                    <Option value="Westside">Westside Barbering</Option>
-                    <Option value="East">East Gate</Option>
+                    <Option value="Walasmulla">Walasmulla Studio</Option>
+                    <Option value="Colombo">Colombo Branch</Option>
+                    <Option value="Galle">Galle Branch</Option>
                   </Select>
                 </Form.Item>
               </div>
