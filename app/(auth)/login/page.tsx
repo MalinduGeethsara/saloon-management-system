@@ -206,7 +206,7 @@ function LoginFormContent() {
   };
 
   const fillDemoCredentials = (usePhone = false) => {
-    setEmail(usePhone ? '+94 71 330 7710' : 'customer@salon.com');
+    setEmail(usePhone ? '+94 77 123 4567' : 'customer@salon.com');
     setPassword('password123');
     setActiveTab('login');
   };
@@ -382,7 +382,7 @@ function LoginFormContent() {
                   <input
                     type="text"
                     required
-                    placeholder="customer@salon.com or +94 71 330 7710"
+                    placeholder="customer@salon.com or +94 77 123 4567"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none"
@@ -490,7 +490,7 @@ function LoginFormContent() {
                     <input
                       type="tel"
                       required
-                      placeholder="+94 71 330 7710"
+                      placeholder="+94 77 123 4567"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none"
@@ -613,7 +613,7 @@ function LoginFormContent() {
           <div className="mt-8 p-5 bg-zinc-950/60 border border-zinc-800/60 text-[11px] text-zinc-500 leading-relaxed font-light">
             <span className="font-bold text-amber-500 uppercase tracking-widest block mb-2">Demo Credentials</span>
             <span className="font-bold text-zinc-400">Email:</span> customer@salon.com <br />
-            <span className="font-bold text-zinc-400">Phone:</span> +94 71 330 7710 <br />
+            <span className="font-bold text-zinc-400">Phone:</span> +94 77 123 4567 <br />
             <span className="font-bold text-zinc-400">Password:</span> password123 <br />
             <span className="block mt-3 text-[10px] text-zinc-600 border-t border-zinc-900 pt-2">
               Are you a staff member? <Link href="/staff-login" className="text-amber-500/80 hover:text-amber-500 underline font-bold uppercase tracking-wider text-[9px] ml-1">Staff Portal</Link>
