@@ -11,6 +11,7 @@ import {
   CreditCardOutlined,
   LockOutlined
 } from '@ant-design/icons';
+import ScrollReveal from "@/components/ui/ScrollReveal";
 
 const barbers = [
   { id: 4, name: "Nimesh Haththasingha", role: "Master Stylist", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop" },
@@ -115,25 +116,27 @@ export default function BookingPage() {
       <div className="relative z-10 max-w-5xl mx-auto w-full py-24 px-6 md:px-12 flex-grow flex flex-col">
         
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
-          <div>
-            <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Reservation</h3>
-            <h1 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors">
-              Book Your <span className="font-serif italic font-light text-zinc-500">Session</span>
-            </h1>
+        <ScrollReveal direction="down">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
+            <div>
+              <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Reservation</h3>
+              <h1 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white transition-colors">
+                Book Your <span className="font-serif italic font-light text-zinc-500">Session</span>
+              </h1>
+            </div>
+            
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className={`w-6 md:w-8 h-1 rounded-full ${step >= 1 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
+              <div className={`w-6 md:w-8 h-1 rounded-full ${step >= 2 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
+              <div className={`w-6 md:w-8 h-1 rounded-full ${step >= 3 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
+              <div className={`w-6 md:w-8 h-1 rounded-full ${step >= 4 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
+              <span className="text-[10px] md:text-xs font-bold tracking-widest text-zinc-500 uppercase ml-2">Step {step} of 4</span>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className={`w-6 md:w-8 h-1 rounded-full ${step >= 1 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
-            <div className={`w-6 md:w-8 h-1 rounded-full ${step >= 2 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
-            <div className={`w-6 md:w-8 h-1 rounded-full ${step >= 3 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
-            <div className={`w-6 md:w-8 h-1 rounded-full ${step >= 4 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
-            <span className="text-[10px] md:text-xs font-bold tracking-widest text-zinc-500 uppercase ml-2">Step {step} of 4</span>
-          </div>
-        </div>
+        </ScrollReveal>
 
         {/* Content Area */}
-        <div className="flex-grow flex flex-col">
+        <ScrollReveal direction="down" delay={0.2} className="flex-grow flex flex-col">
           
           {/* Step 1: Barber Selection */}
           {step === 1 && (
@@ -410,7 +413,7 @@ export default function BookingPage() {
             </div>
           )}
 
-        </div>
+        </ScrollReveal>
       </div>
     </div>
   );
