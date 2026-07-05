@@ -45,7 +45,7 @@ export default function TermsConditionsPage() {
                 <strong>Appointment Guarantee:</strong> To reserve a time slot, we require booking confirmation via our online system or phone.
               </li>
               <li>
-                <strong>Late Arrivals:</strong> We value your time and our barbers' schedules. If you are more than 15 minutes late, your appointment may be canceled or rescheduled, and cancellation fees may apply.
+                <strong>Late Arrivals:</strong> We value your time and our barbers&apos; schedules. If you are more than 15 minutes late, your appointment may be canceled or rescheduled, and cancellation fees may apply.
               </li>
               <li>
                 <strong>Cancellation & No-Show:</strong> Cancellations must be made at least 12 hours prior to the scheduled appointment. Repeated no-shows may lead to suspension of online booking privileges.
