@@ -7,6 +7,7 @@ import {
   LogoutOutlined,
   EyeOutlined
 } from '@ant-design/icons';
+import ScrollReveal from "@/components/ui/ScrollReveal";
 
 interface Appointment {
   id: string;
@@ -146,7 +147,8 @@ export default function ProfileDashboard() {
 
   return (
     <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24 pb-32">
-      <div className="max-w-7xl mx-auto px-6 w-full mt-10">
+      <ScrollReveal direction="down">
+        <div className="max-w-7xl mx-auto px-6 w-full mt-10">
         
         <div className="flex flex-col lg:flex-row gap-8">
           
@@ -286,6 +288,7 @@ export default function ProfileDashboard() {
         </div>
 
       </div>
+      </ScrollReveal>
 
       {/* Detail Modal Overlay */}
       {isModalOpen && selectedAppointment && (
