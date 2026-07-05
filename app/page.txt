@@ -27,6 +27,7 @@ export default function PortalSelection() {
       if (response.ok) {
         // Clear local UI cookie 
         document.cookie = "user_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "user_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         message.success('Signed out successfully');
         router.push('/login');
         router.refresh();

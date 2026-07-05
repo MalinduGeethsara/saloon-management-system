@@ -3,9 +3,9 @@ import { cookies } from 'next/headers';
 
 const USERS = [
   { email: 'admin@salon.com', password: 'password123', role: 'admin', name: 'System Admin' },
-  { email: 'owner@salon.com', password: 'password123', role: 'owner', name: 'Nimesh' },
-  { email: 'manager@salon.com', password: 'password123', role: 'manager', name: 'Sarah' },  
-  { email: 'barber@salon.com', password: 'password123', role: 'barber', name: 'Mahesh' }     
+  { email: 'owner@salon.com', password: 'password123', role: 'owner', name: 'Nimesh Haththasingha' },
+  { email: 'manager@salon.com', password: 'password123', role: 'manager', name: 'Sampath Madusanka' },  
+  { email: 'barber@salon.com', password: 'password123', role: 'barber', name: 'Barber' }     
 ];
 
 export async function POST(request: Request) {
@@ -31,6 +31,14 @@ export async function POST(request: Request) {
         name: 'user_role',
         value: user.role,
         httpOnly: false, 
+        path: '/',
+        maxAge: 60 * 60 * 24, // 1 day
+      });
+
+      cookieStore.set({
+        name: 'user_name',
+        value: user.name,
+        httpOnly: false,
         path: '/',
         maxAge: 60 * 60 * 24, // 1 day
       });

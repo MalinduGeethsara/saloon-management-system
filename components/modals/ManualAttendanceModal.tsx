@@ -56,7 +56,7 @@ export function ManualAttendanceModal({
       // Preserve ID if editing, otherwise allow parent to generate one
       key: recordToEdit?.key, 
       name: values.name,
-      shop: "Downtown", 
+      shop: "Walasmulla", 
       status: values.status,
       clockIn: values.clockIn ? values.clockIn.format('h:mm A') : '-',
       clockOut: values.clockOut ? values.clockOut.format('h:mm A') : '-',

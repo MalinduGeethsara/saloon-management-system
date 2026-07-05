@@ -47,6 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       if (response.ok) {
         document.cookie = "user_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "user_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         
         messageApi.success('Signed out successfully');
         setIsLogoutModalOpen(false); 
@@ -74,11 +75,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div style={{ width: 260, background: '#FFFFFF', borderRight: '1px solid #E2E8F0', height: '100%' }} />
   );
 
+  const [profileName, setProfileName] = useState('System User');
+  const [profileRole, setProfileRole] = useState('Staff');
+
   useEffect(() => {
     setMounted(true);
     const timer = setInterval(() => setTime(new Date()), 1000);
+
+    const nameMatch = document.cookie.match(new RegExp('(^| )user_name=([^;]+)'));
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+
+    const currentName = nameMatch ? decodeURIComponent(nameMatch[2]) : null;
+    const currentRole = roleMatch ? roleMatch[2] : null;
+
+    if (currentName) {
+      setProfileName(currentName);
+    } else {
+      if (currentRole === 'barber') setProfileName('Barber');
+      else if (isOwnerRoute) setProfileName('Nimesh Haththasingha');
+      else if (isAdminRoute) setProfileName('System Admin');
+    }
+
+    if (currentRole) {
+      const roleStr = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      setProfileRole(`${roleStr} Profile`);
+    } else {
+      if (isOwnerRoute) setProfileRole('Owner Profile');
+      else if (isAdminRoute) setProfileRole('Super Admin');
+    }
+
     return () => clearInterval(timer);
-  }, []);
+  }, [isOwnerRoute, isAdminRoute]);
 
   const currentHour = time.getHours();
   let greeting = "Good evening";
@@ -183,10 +210,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
               <NotificationBell />
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ textAlign: 'right', lineHeight: '1.2' }} className="hidden sm:block">
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: '#2D3748' }}>{isOwnerRoute ? 'Karenath Smith' : 'System Admin'}</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#718096' }}>{isOwnerRoute ? 'Owner Profile' : 'Super Admin'}</p>
-                </div>
+                {mounted && (
+                  <div style={{ textAlign: 'right', lineHeight: '1.2' }} className="hidden sm:block">
+                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: '#2D3748' }}>{profileName}</p>
+                    <p style={{ margin: 0, fontSize: '11px', color: '#718096' }}>{profileRole}</p>
+                  </div>
+                )}
                 
                 <Button 
                   type="text" 
