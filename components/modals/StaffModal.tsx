@@ -15,9 +15,15 @@ interface StaffModalProps {
 
 export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
   const [form] = Form.useForm();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Reset or Set form values when modal opens
   React.useEffect(() => {
+    if (!mounted) return;
     if (isOpen && staff && mode === 'edit') {
       form.setFieldsValue(staff);
     } else {
@@ -30,11 +36,14 @@ export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
     onClose();
   };
 
+  if (!mounted) return null;
+
   return (
     <Modal
       open={isOpen}
       onCancel={onClose}
       footer={null}
+      forceRender
       centered
       width={650}
       title={

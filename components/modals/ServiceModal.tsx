@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Form, Input, InputNumber, Select, Button, Row, Col, Divider, Switch, Typography } from 'antd';
 import { 
   ScissorOutlined, 
@@ -25,9 +25,15 @@ export function ServiceModal({
   serviceToEdit 
 }: ServiceModalProps) {
   const [form] = Form.useForm();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Reset or Populate form
   useEffect(() => {
+    if (!mounted) return;
     if (isOpen) {
       if (serviceToEdit) {
         form.setFieldsValue({
@@ -53,11 +59,14 @@ export function ServiceModal({
     onClose();
   };
 
+  if (!mounted) return null;
+
   return (
     <Modal
       open={isOpen}
       onCancel={onClose}
       footer={null}
+      forceRender
       centered
       width={600}
       title={

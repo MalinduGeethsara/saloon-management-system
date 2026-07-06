@@ -51,8 +51,17 @@ export function NewBookingModal({
 }: NewBookingModalProps) {
   const [form] = Form.useForm();
   const [duration, setDuration] = useState(60);
+  const [mounted, setMounted] = useState(false);
+  const [userRole, setUserRole] = useState<string>('owner');
 
   useEffect(() => {
+    setMounted(true);
+    const match = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (match) setUserRole(match[2]);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (isOpen) {
       form.resetFields();
       const initialDate = defaultDate ? dayjs(defaultDate) : dayjs();
@@ -99,6 +108,8 @@ export function NewBookingModal({
     onClose();
   };
 
+  if (!mounted) return null;
+
   return (
     <ConfigProvider
       theme={{
@@ -113,6 +124,7 @@ export function NewBookingModal({
         open={isOpen}
         onCancel={onClose}
         footer={null}
+        forceRender
         destroyOnHidden // FIX: Replaced destroyOnClose with destroyOnHidden
         centered
         width={480}
@@ -133,7 +145,7 @@ export function NewBookingModal({
               </Select>
             </Form.Item>
             <Form.Item name="barberId" label="Specialist" rules={[{ required: true }]}>
-              <Select size="large">
+              <Select size="large" disabled={userRole === 'barber'}>
                 {barbers.map(b => (
                   <Option key={b.id} value={b.id}>{b.name}</Option>
                 ))}

@@ -30,10 +30,15 @@ const CATALOG = [
 
 export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: PaymentModalProps) => {
   const [form] = Form.useForm();
+  const [mounted, setMounted] = useState(false);
   
   // --- New States for Confirmation Modal ---
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Watch the items array to calculate the total amount and filter dropdowns in real-time
   const items = Form.useWatch('items', form) || [];
@@ -43,6 +48,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
   }, [items]);
 
   useEffect(() => {
+    if (!mounted) return;
     if (isOpen) {
       if (paymentToEdit) {
         form.setFieldsValue({
@@ -112,6 +118,8 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <>
       <Modal
@@ -123,6 +131,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
         okText="Confirm & Print Bill"
         okButtonProps={{ style: { backgroundColor: '#7C4DFF', height: '40px' } }}
         centered
+        forceRender
         destroyOnHidden // FIX: Changed from destroyOnClose to destroyOnHidden
       >
         <Form form={form} layout="vertical" className="mt-4">

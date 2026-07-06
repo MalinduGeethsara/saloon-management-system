@@ -31,8 +31,14 @@ export function LocationModal({ isOpen, onClose, onSave, shopToEdit }: LocationM
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (isOpen) {
       if (shopToEdit) {
         form.setFieldsValue(shopToEdit);
@@ -77,11 +83,14 @@ export function LocationModal({ isOpen, onClose, onSave, shopToEdit }: LocationM
     </div>
   );
 
+  if (!mounted) return null;
+
   return (
     <Modal
       open={isOpen}
       onCancel={onClose}
       footer={null}
+      forceRender
       centered
       title={shopToEdit ? "Edit Location Details" : "Add New Location"}
     >

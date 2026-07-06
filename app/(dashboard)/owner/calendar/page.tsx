@@ -105,11 +105,30 @@ function ScheduleContent() {
   const [activeBarberId, setActiveBarberId] = useState<number | undefined>(undefined);
   const [currentView, setCurrentView] = useState('timeGridDay');
   const [viewTitle, setViewTitle] = useState("");
+  const [userRole, setUserRole] = useState<string>('owner');
 
-  // --- Initialize Title ---
+  // --- Initialize Title & Cookies ---
   useEffect(() => {
     if (calendarRef.current) {
       setViewTitle(calendarRef.current.getApi().view.title);
+    }
+
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    const barberMatch = document.cookie.match(new RegExp('(^| )barber_id=([^;]+)'));
+    
+    let currentRole = 'owner';
+    let currentBarberId: number | undefined = undefined;
+
+    if (roleMatch) {
+      currentRole = roleMatch[2];
+      setUserRole(currentRole);
+    }
+    if (barberMatch) {
+      currentBarberId = parseInt(barberMatch[2], 10);
+    }
+
+    if (currentRole === 'barber' && currentBarberId) {
+      setActiveBarberId(currentBarberId);
     }
   }, []);
 
@@ -240,36 +259,38 @@ function ScheduleContent() {
         </Card>
 
         {/* Staff Filter */}
-        <Card title={<span className="text-sm font-bold">Specialists</span>} variant="borderless" className="shadow-sm rounded-2xl" size="small">
-          <div className="flex flex-col gap-2">
-            <div 
-              className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${!activeBarberId ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
-              onClick={() => setActiveBarberId(undefined)}
-            >
-              <Avatar icon={<UserOutlined />} className="bg-slate-300" />
-              <div className="flex-1">
-                <div className="text-sm font-bold text-slate-700">All Specialists</div>
-                <div className="text-xs text-slate-400">View entire team</div>
-              </div>
-              {!activeBarberId && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
-            </div>
-
-            {BARBERS.map(b => (
+        {userRole !== 'barber' && (
+          <Card title={<span className="text-sm font-bold">Specialists</span>} variant="borderless" className="shadow-sm rounded-2xl" size="small">
+            <div className="flex flex-col gap-2">
               <div 
-                key={b.id}
-                className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${activeBarberId === b.id ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
-                onClick={() => setActiveBarberId(b.id)}
+                className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${!activeBarberId ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
+                onClick={() => setActiveBarberId(undefined)}
               >
-                <Avatar style={{ backgroundColor: b.color }}>{b.name[0]}</Avatar>
+                <Avatar icon={<UserOutlined />} className="bg-slate-300" />
                 <div className="flex-1">
-                  <div className="text-sm font-bold text-slate-700">{b.name}</div>
-                  <div className="text-xs text-slate-400">{b.role}</div>
+                  <div className="text-sm font-bold text-slate-700">All Specialists</div>
+                  <div className="text-xs text-slate-400">View entire team</div>
                 </div>
-                {activeBarberId === b.id && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
+                {!activeBarberId && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
               </div>
-            ))}
-          </div>
-        </Card>
+
+              {BARBERS.map(b => (
+                <div 
+                  key={b.id}
+                  className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${activeBarberId === b.id ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
+                  onClick={() => setActiveBarberId(b.id)}
+                >
+                  <Avatar style={{ backgroundColor: b.color }}>{b.name[0]}</Avatar>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-slate-700">{b.name}</div>
+                    <div className="text-xs text-slate-400">{b.role}</div>
+                  </div>
+                  {activeBarberId === b.id && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Upcoming Feed */}
         <Card title={<span className="text-sm font-bold">Up Next</span>} variant="borderless" className="shadow-sm rounded-2xl flex-1" size="small">
