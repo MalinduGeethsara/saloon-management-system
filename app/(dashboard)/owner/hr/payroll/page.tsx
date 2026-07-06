@@ -252,7 +252,7 @@ function PayrollContent() {
             <Progress 
               percent={progress} 
               strokeColor="#7C4DFF" 
-              trailColor="#F3E8FF"
+              railColor="#F3E8FF"
               status="active" 
               strokeWidth={12}
               showInfo={false}

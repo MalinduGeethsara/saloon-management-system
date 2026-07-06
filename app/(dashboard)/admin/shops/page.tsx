@@ -94,6 +94,7 @@ export default function ShopDataPage() {
   
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [form] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     setMounted(true);
@@ -109,7 +110,7 @@ export default function ShopDataPage() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      message.success("QR Code downloaded!");
+      messageApi.success("QR Code downloaded!");
     }
   };
 
@@ -117,7 +118,7 @@ export default function ShopDataPage() {
     setShops(prev => prev.map(item => 
       item.key === key ? { ...item, status: checked ? 'Active' : 'Inactive' } : item
     ));
-    message.info(`Shop status set to ${checked ? 'Active' : 'Inactive'}`);
+    messageApi.info(`Shop status set to ${checked ? 'Active' : 'Inactive'}`);
   };
 
   const handleAddNew = () => {
@@ -140,7 +141,7 @@ export default function ShopDataPage() {
       setShops(prev => prev.map(item => 
         item.key === editingShop.key ? { ...item, ...values, image: imageUrl } : item
       ));
-      message.success('Shop details updated');
+      messageApi.success('Shop details updated');
     } else {
       setShops(prev => [{
         key: `shop-${Date.now()}`,
@@ -148,7 +149,7 @@ export default function ShopDataPage() {
         ...values,
         image: imageUrl
       }, ...prev]);
-      message.success('Shop registered successfully');
+      messageApi.success('Shop registered successfully');
     }
     setIsModalOpen(false);
   };
@@ -226,7 +227,7 @@ export default function ShopDataPage() {
           </Tooltip>
           <Popconfirm title="Remove this shop permanently?" onConfirm={() => {
             setShops(prev => prev.filter(i => i.key !== record.key));
-            message.success('Shop deleted');
+            messageApi.success('Shop deleted');
           }} okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }}>
             <Button type="text" shape="circle" danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -237,6 +238,7 @@ export default function ShopDataPage() {
 
   return (
     <div className="max-w-[1600px] mx-auto pb-10 px-4">
+      {contextHolder}
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>

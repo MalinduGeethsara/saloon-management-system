@@ -25,16 +25,23 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [userRole, setUserRole] = useState<string>('owner');
+  const [attendanceId, setAttendanceId] = useState<string>('1');
+  const [empId, setEmpId] = useState<string>('EMP-001');
 
   useEffect(() => {
-    const match = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (match) setUserRole(match[2]);
+    const matchRole = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (matchRole) setUserRole(matchRole[2]);
+
+    const matchAttendance = document.cookie.match(new RegExp('(^| )attendance_id=([^;]+)'));
+    if (matchAttendance) setAttendanceId(matchAttendance[2]);
+
+    const matchEmp = document.cookie.match(new RegExp('(^| )emp_id=([^;]+)'));
+    if (matchEmp) setEmpId(matchEmp[2]);
   }, []);
 
- 
   const hrChildrenLinks = userRole === 'barber' ? [
-    { key: '/owner/hr/attendance/1', label: 'My Attendance' },
-    { key: '/owner/hr/payroll/EMP-001', label: 'My Payroll' },
+    { key: `/owner/hr/attendance/${attendanceId}`, label: 'My Attendance' },
+    { key: `/owner/hr/payroll/${empId}`, label: 'My Payroll' },
   ] : [
     { key: '/owner/hr/attendance', label: 'Attendance' },
     { key: '/owner/hr/payroll', label: 'Payroll' },

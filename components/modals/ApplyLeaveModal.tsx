@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Form, DatePicker, Input, Select, Alert } from 'antd';
 
 const { RangePicker } = DatePicker;
@@ -18,9 +18,15 @@ export const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
   remainingLeaves 
 }) => {
   const [form] = Form.useForm();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Reset the form every time the modal opens
   useEffect(() => {
+    if (!mounted) return;
     if (isOpen) {
       form.resetFields();
     }
@@ -34,6 +40,8 @@ export const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
     });
   };
 
+  if (!mounted) return null;
+
   return (
     <Modal
       title={<span className="font-bold text-xl">Apply for Leave</span>}
@@ -43,6 +51,7 @@ export const ApplyLeaveModal: React.FC<ApplyLeaveModalProps> = ({
       okText="Submit Application"
       okButtonProps={{ className: "bg-[#7C4DFF] rounded-lg font-bold h-10 shadow-md border-none" }}
       cancelButtonProps={{ className: "rounded-lg font-bold h-10" }}
+      forceRender
       destroyOnHidden 
     >
       {remainingLeaves <= 0 && (

@@ -45,9 +45,15 @@ export function ProductModal({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Reset or Populate form
   useEffect(() => {
+    if (!mounted) return;
     if (isOpen) {
       if (productToEdit) {
         form.setFieldsValue(productToEdit);
@@ -103,11 +109,14 @@ export function ProductModal({
     </div>
   );
 
+  if (!mounted) return null;
+
   return (
     <Modal
       open={isOpen}
       onCancel={onClose}
       footer={null}
+      forceRender
       centered
       width={800} // Increased width for better layout
       title={

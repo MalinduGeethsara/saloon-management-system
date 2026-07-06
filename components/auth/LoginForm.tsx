@@ -133,16 +133,32 @@ export const LoginForm = () => {
           padding: '12px 16px', 
           borderRadius: '8px', 
           marginBottom: '24px', 
-          fontSize: '12px', 
+          fontSize: '11px', 
           color: '#64748B', 
           border: '1px solid #E2E8F0',
           lineHeight: '1.6'
         }}>
-          <strong style={{ color: token.colorPrimary }}>Demo Logins (Pass: password123)</strong><br />
-          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Admin:</span> admin@salon.com<br />
-          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Owner:</span> owner@salon.com<br />
-          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Manager:</span> manager@salon.com<br />
-          <span style={{ display: 'inline-block', width: '65px', fontWeight: 600 }}>Barber:</span> barber@salon.com
+          <strong style={{ color: token.colorPrimary, display: 'block', marginBottom: '6px' }}>Demo Logins (Pass: password123)</strong>
+          <div style={{ display: 'flex', marginBottom: '4px' }}>
+            <span style={{ width: '70px', fontWeight: 600, flexShrink: 0 }}>Admin:</span>
+            <span>admin@salon.com</span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '4px' }}>
+            <span style={{ width: '70px', fontWeight: 600, flexShrink: 0 }}>Owner:</span>
+            <span>owner@salon.com</span>
+          </div>
+          <div style={{ display: 'flex', marginBottom: '4px' }}>
+            <span style={{ width: '70px', fontWeight: 600, flexShrink: 0 }}>Manager:</span>
+            <span>manager@salon.com</span>
+          </div>
+          <div style={{ display: 'flex' }}>
+            <span style={{ width: '70px', fontWeight: 600, flexShrink: 0 }}>Barbers:</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span>mahesh@salon.com</span>
+              <span>malith@salon.com</span>
+              <span>vindana@salon.com</span>
+            </div>
+          </div>
         </div>
 
         <Form.Item style={{ marginBottom: 0 }}>

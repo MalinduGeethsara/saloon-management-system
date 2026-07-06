@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Form, Select, DatePicker, TimePicker, Button, Input } from 'antd';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
@@ -27,9 +27,15 @@ export function ManualAttendanceModal({
   recordToEdit 
 }: ManualAttendanceModalProps) {
   const [form] = Form.useForm();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Populate form when modal opens or recordToEdit changes
   useEffect(() => {
+    if (!mounted) return;
     if (isOpen) {
       if (recordToEdit) {
         // Parse the existing data into Dayjs objects for Ant Design inputs
@@ -67,11 +73,14 @@ export function ManualAttendanceModal({
     onClose();
   };
 
+  if (!mounted) return null;
+
   return (
     <Modal
       open={isOpen}
       onCancel={onClose}
       footer={null}
+      forceRender
       centered
       title={recordToEdit ? "Edit Attendance Record" : "Manual Attendance Entry"}
     >

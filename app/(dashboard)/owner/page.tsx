@@ -19,6 +19,7 @@ import {
   RightOutlined,
   ArrowUpOutlined
 } from '@ant-design/icons';
+import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 
 const { Title, Text } = Typography;
 
@@ -44,7 +45,8 @@ const POPULAR_SERVICES = [
   { name: 'Facial Treatment', percent: 20, color: '#EC4899' },
 ];
 
-export default function BusinessIntelligence() {
+function BusinessIntelligenceContent() {
+  const { showAlert } = useAlert();
   const [timeRange, setTimeRange] = useState('This Month');
 
   // --- Table Columns with Mobile-Optimized Alignments ---
@@ -102,6 +104,50 @@ export default function BusinessIntelligence() {
     },
   ];
 
+  const handleExportReport = () => {
+    const csvRows = [];
+    
+    csvRows.push(`Business Intelligence Report (${timeRange})`);
+    csvRows.push(`Generated: ${new Date().toLocaleString()}`);
+    csvRows.push('');
+    
+    csvRows.push('KPI Summary');
+    csvRows.push('Revenue,Bookings,Customers,Staff');
+    csvRows.push('Rs. 458000,142,+28,8');
+    csvRows.push('');
+    
+    csvRows.push('Top Specialists');
+    csvRows.push('Name,Role,Bookings,Sales');
+    TOP_STAFF.forEach(staff => {
+      csvRows.push(`"${staff.name}","${staff.role}",${staff.bookings},Rs. ${staff.sales}`);
+    });
+    csvRows.push('');
+    
+    csvRows.push('Popular Services');
+    csvRows.push('Service Name,Popularity Percentage');
+    POPULAR_SERVICES.forEach(service => {
+      csvRows.push(`"${service.name}",${service.percent}%`);
+    });
+    csvRows.push('');
+    
+    csvRows.push('Recent Transactions');
+    csvRows.push('Invoice ID,Client,Service,Time,Amount,Status');
+    RECENT_TRANSACTIONS.forEach(tx => {
+      csvRows.push(`"${tx.id}","${tx.client}","${tx.service}","${tx.time}",Rs. ${tx.amount},"${tx.status}"`);
+    });
+    
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `business_intelligence_report_${timeRange.toLowerCase().replace(' ', '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showAlert('success', 'Report downloading started...');
+  };
+
   return (
     <div className="max-w-[1600px] mx-auto pb-10 px-4 space-y-6">
       
@@ -130,6 +176,7 @@ export default function BusinessIntelligence() {
              size="large"
              icon={<CalendarOutlined />} 
              className="h-12 w-full sm:w-auto bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl border-none font-bold shadow-md shadow-purple-100"
+             onClick={handleExportReport}
            >
              Report
            </Button>
@@ -255,5 +302,13 @@ export default function BusinessIntelligence() {
       </Card>
 
     </div>
+  );
+}
+
+export default function BusinessIntelligence() {
+  return (
+    <AlertProvider>
+      <BusinessIntelligenceContent />
+    </AlertProvider>
   );
 }
