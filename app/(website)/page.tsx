@@ -222,7 +222,24 @@ export default function WebsiteHomePage() {
             <button
               onClick={() => {
                 const el = document.getElementById('mobile-services-carousel');
-                el?.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
+                if (el) {
+                  const children = Array.from(el.children) as HTMLElement[];
+                  const viewportCenter = el.scrollLeft + el.clientWidth / 2;
+                  let activeIndex = 0;
+                  let minDistance = Infinity;
+                  children.forEach((child, index) => {
+                    const childCenter = child.offsetLeft + child.offsetWidth / 2;
+                    const distance = Math.abs(viewportCenter - childCenter);
+                    if (distance < minDistance) {
+                      minDistance = distance;
+                      activeIndex = index;
+                    }
+                  });
+                  const targetIndex = Math.max(activeIndex - 1, 0);
+                  const targetChild = children[targetIndex];
+                  const targetScrollLeft = (targetChild.offsetLeft + targetChild.offsetWidth / 2) - el.clientWidth / 2;
+                  el.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+                }
               }}
               className="absolute left-2 top-[144px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Left"
@@ -234,7 +251,24 @@ export default function WebsiteHomePage() {
             <button
               onClick={() => {
                 const el = document.getElementById('mobile-services-carousel');
-                el?.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
+                if (el) {
+                  const children = Array.from(el.children) as HTMLElement[];
+                  const viewportCenter = el.scrollLeft + el.clientWidth / 2;
+                  let activeIndex = 0;
+                  let minDistance = Infinity;
+                  children.forEach((child, index) => {
+                    const childCenter = child.offsetLeft + child.offsetWidth / 2;
+                    const distance = Math.abs(viewportCenter - childCenter);
+                    if (distance < minDistance) {
+                      minDistance = distance;
+                      activeIndex = index;
+                    }
+                  });
+                  const targetIndex = Math.min(activeIndex + 1, children.length - 1);
+                  const targetChild = children[targetIndex];
+                  const targetScrollLeft = (targetChild.offsetLeft + targetChild.offsetWidth / 2) - el.clientWidth / 2;
+                  el.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+                }
               }}
               className="absolute right-2 top-[144px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Right"
@@ -245,7 +279,7 @@ export default function WebsiteHomePage() {
             {/* ✅ Main Carousel Track */}
             <div
               id="mobile-services-carousel"
-              className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
+              className="relative flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
               {/* Service Card 1 */}
               <ScrollReveal direction="down" delay={0.1} className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
@@ -362,7 +396,24 @@ export default function WebsiteHomePage() {
             <button
               onClick={() => {
                 const el = document.getElementById('mobile-artisans-carousel');
-                el?.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
+                if (el) {
+                  const children = Array.from(el.children) as HTMLElement[];
+                  const viewportCenter = el.scrollLeft + el.clientWidth / 2;
+                  let activeIndex = 0;
+                  let minDistance = Infinity;
+                  children.forEach((child, index) => {
+                    const childCenter = child.offsetLeft + child.offsetWidth / 2;
+                    const distance = Math.abs(viewportCenter - childCenter);
+                    if (distance < minDistance) {
+                      minDistance = distance;
+                      activeIndex = index;
+                    }
+                  });
+                  const targetIndex = Math.max(activeIndex - 1, 0);
+                  const targetChild = children[targetIndex];
+                  const targetScrollLeft = (targetChild.offsetLeft + targetChild.offsetWidth / 2) - el.clientWidth / 2;
+                  el.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+                }
               }}
               className="absolute left-2 top-[160px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Left"
@@ -374,7 +425,24 @@ export default function WebsiteHomePage() {
             <button
               onClick={() => {
                 const el = document.getElementById('mobile-artisans-carousel');
-                el?.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
+                if (el) {
+                  const children = Array.from(el.children) as HTMLElement[];
+                  const viewportCenter = el.scrollLeft + el.clientWidth / 2;
+                  let activeIndex = 0;
+                  let minDistance = Infinity;
+                  children.forEach((child, index) => {
+                    const childCenter = child.offsetLeft + child.offsetWidth / 2;
+                    const distance = Math.abs(viewportCenter - childCenter);
+                    if (distance < minDistance) {
+                      minDistance = distance;
+                      activeIndex = index;
+                    }
+                  });
+                  const targetIndex = Math.min(activeIndex + 1, children.length - 1);
+                  const targetChild = children[targetIndex];
+                  const targetScrollLeft = (targetChild.offsetLeft + targetChild.offsetWidth / 2) - el.clientWidth / 2;
+                  el.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+                }
               }}
               className="absolute right-2 top-[160px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Right"
@@ -385,7 +453,7 @@ export default function WebsiteHomePage() {
             {/* ✅ Main Carousel Track (Flex on mobile for swipe, Grid on desktop) */}
             <div
               id="mobile-artisans-carousel"
-              className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-4 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
+              className="relative flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-4 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
               {/* Artisan 1 - Owner */}
               <ScrollReveal direction="down" className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
@@ -464,7 +532,24 @@ export default function WebsiteHomePage() {
             <button
               onClick={() => {
                 const el = document.getElementById('mobile-reviews-carousel');
-                el?.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
+                if (el) {
+                  const children = Array.from(el.children) as HTMLElement[];
+                  const viewportCenter = el.scrollLeft + el.clientWidth / 2;
+                  let activeIndex = 0;
+                  let minDistance = Infinity;
+                  children.forEach((child, index) => {
+                    const childCenter = child.offsetLeft + child.offsetWidth / 2;
+                    const distance = Math.abs(viewportCenter - childCenter);
+                    if (distance < minDistance) {
+                      minDistance = distance;
+                      activeIndex = index;
+                    }
+                  });
+                  const targetIndex = Math.max(activeIndex - 1, 0);
+                  const targetChild = children[targetIndex];
+                  const targetScrollLeft = (targetChild.offsetLeft + targetChild.offsetWidth / 2) - el.clientWidth / 2;
+                  el.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+                }
               }}
               className="absolute left-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Left"
@@ -476,7 +561,24 @@ export default function WebsiteHomePage() {
             <button
               onClick={() => {
                 const el = document.getElementById('mobile-reviews-carousel');
-                el?.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
+                if (el) {
+                  const children = Array.from(el.children) as HTMLElement[];
+                  const viewportCenter = el.scrollLeft + el.clientWidth / 2;
+                  let activeIndex = 0;
+                  let minDistance = Infinity;
+                  children.forEach((child, index) => {
+                    const childCenter = child.offsetLeft + child.offsetWidth / 2;
+                    const distance = Math.abs(viewportCenter - childCenter);
+                    if (distance < minDistance) {
+                      minDistance = distance;
+                      activeIndex = index;
+                    }
+                  });
+                  const targetIndex = Math.min(activeIndex + 1, children.length - 1);
+                  const targetChild = children[targetIndex];
+                  const targetScrollLeft = (targetChild.offsetLeft + targetChild.offsetWidth / 2) - el.clientWidth / 2;
+                  el.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+                }
               }}
               className="absolute right-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Right"
