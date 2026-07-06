@@ -3,9 +3,9 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  UserOutlined, 
-  LockOutlined, 
+import {
+  UserOutlined,
+  LockOutlined,
   MailOutlined,
   PhoneOutlined,
   ArrowLeftOutlined,
@@ -107,8 +107,8 @@ function LoginFormContent() {
           show: true,
           type: data.type,
           title: data.type === 'sms' ? 'New Message from MR POLAA' : 'Verification Code Inbox',
-          message: data.type === 'sms' 
-            ? `Your verification OTP for MR POLAA Premium Grooming is: ${data.code}` 
+          message: data.type === 'sms'
+            ? `Your verification OTP for MR POLAA Premium Grooming is: ${data.code}`
             : `Please verify your email address to complete registration. Your verification code is: ${data.code}`,
           code: data.code
         });
@@ -159,7 +159,7 @@ function LoginFormContent() {
           type: 'success',
           text: 'Account verified & created successfully! Logging you in...'
         });
-        
+
         setTimeout(() => {
           router.push(callbackUrl);
           router.refresh();
@@ -198,7 +198,7 @@ function LoginFormContent() {
           type: 'success',
           text: `Welcome back, ${data.name}!`
         });
-        
+
         setTimeout(() => {
           router.push(callbackUrl);
           router.refresh();
@@ -227,7 +227,7 @@ function LoginFormContent() {
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
-      
+
       {/* Slide-down Notification Bubble */}
       {showNotification && showNotification.show && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-100 w-full max-w-sm mx-auto p-4 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl animate-in slide-in-from-top-12 duration-500 text-zinc-100">
@@ -242,19 +242,19 @@ function LoginFormContent() {
                 <span className="text-[10px] bg-zinc-950 px-2.5 py-1 font-mono font-bold text-white border border-zinc-800/80 rounded">
                   Code: {showNotification.code}
                 </span>
-                <button 
+                <button
                   type="button"
                   onClick={() => {
                     setEnteredCode(showNotification.code);
                     setShowNotification(null);
-                  }} 
+                  }}
                   className="text-[9px] text-amber-500 hover:text-amber-400 font-bold uppercase tracking-wider underline cursor-pointer ml-auto"
                 >
                   Auto-fill
                 </button>
               </div>
             </div>
-            <button 
+            <button
               type="button"
               onClick={() => setShowNotification(null)}
               className="text-zinc-500 hover:text-zinc-300 text-xs shrink-0 self-start p-1"
@@ -267,12 +267,12 @@ function LoginFormContent() {
 
       {/* Left Column: Ambient branding (hidden on mobile/tablet) */}
       <div className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-16 overflow-hidden">
-        
+
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0 bg-zinc-900">
-          <img 
-            src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop" 
-            alt="Salon Background" 
+          <img
+            src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop"
+            alt="Salon Background"
             className="w-full h-full object-cover opacity-30 grayscale"
           />
           <div className="absolute inset-0 bg-linear-to-tr from-zinc-950 via-zinc-950/80 to-transparent"></div>
@@ -311,7 +311,7 @@ function LoginFormContent() {
 
       {/* Right Column: Authentication Card */}
       <div className="col-span-1 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-12 md:p-16 relative bg-zinc-900 border-l border-zinc-800/50">
-        
+
         {/* Mobile Logo Branding (visible only on mobile) */}
         <div className="lg:hidden mb-8 text-center flex flex-col items-center">
           <Link href="/" className="flex flex-col items-center gap-1 group">
@@ -325,8 +325,8 @@ function LoginFormContent() {
         </div>
 
         {/* Back Link */}
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="absolute top-6 left-6 text-xs font-bold text-zinc-500 hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors duration-300"
         >
           <ArrowLeftOutlined /> Back to home
@@ -339,8 +339,8 @@ function LoginFormContent() {
               {activeTab === 'login' ? 'Welcome Back' : 'Create Account'}
             </h2>
             <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed">
-              {activeTab === 'login' 
-                ? 'Sign in to access your grooming history & details.' 
+              {activeTab === 'login'
+                ? 'Sign in to access your grooming history & details.'
                 : 'Join MR POLAA to secure premium slots instantly.'}
             </p>
           </div>
@@ -349,21 +349,19 @@ function LoginFormContent() {
           <div className="grid grid-cols-2 bg-zinc-950/80 p-1 mb-8 border border-zinc-800/80">
             <button
               onClick={() => setActiveTab('login')}
-              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${
-                activeTab === 'login' 
-                  ? 'bg-amber-600 text-white shadow-lg' 
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
+              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${activeTab === 'login'
+                ? 'bg-amber-600 text-white shadow-lg'
+                : 'text-zinc-500 hover:text-zinc-300'
+                }`}
             >
               Sign In
             </button>
             <button
               onClick={() => setActiveTab('signup')}
-              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${
-                activeTab === 'signup' 
-                  ? 'bg-amber-600 text-white shadow-lg' 
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
+              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${activeTab === 'signup'
+                ? 'bg-amber-600 text-white shadow-lg'
+                : 'text-zinc-500 hover:text-zinc-300'
+                }`}
             >
               Sign Up
             </button>
@@ -371,11 +369,10 @@ function LoginFormContent() {
 
           {/* Message Alert */}
           {message && (
-            <div className={`p-4 mb-6 text-xs font-bold tracking-wide border ${
-              message.type === 'success' 
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' 
-                : 'bg-red-500/10 border-red-500/30 text-red-500'
-            }`}>
+            <div className={`p-4 mb-6 text-xs font-bold tracking-wide border ${message.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+              : 'bg-red-500/10 border-red-500/30 text-red-500'
+              }`}>
               {message.text}
             </div>
           )}
@@ -407,8 +404,8 @@ function LoginFormContent() {
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Password</label>
-                  <Link 
-                    href="/forgot-password" 
+                  <Link
+                    href="/forgot-password"
                     className="text-[10px] font-bold uppercase tracking-widest text-amber-500/85 hover:text-amber-500 underline transition-colors"
                   >
                     Forgot Password?
@@ -459,22 +456,20 @@ function LoginFormContent() {
                   <button
                     type="button"
                     onClick={() => setSignupMethod('email')}
-                    className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${
-                      signupMethod === 'email' 
-                        ? 'bg-zinc-800 text-white shadow' 
-                        : 'text-zinc-500 hover:text-zinc-300'
-                    }`}
+                    className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${signupMethod === 'email'
+                      ? 'bg-zinc-800 text-white shadow'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                      }`}
                   >
                     Email Address
                   </button>
                   <button
                     type="button"
                     onClick={() => setSignupMethod('phone')}
-                    className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${
-                      signupMethod === 'phone' 
-                        ? 'bg-zinc-800 text-white shadow' 
-                        : 'text-zinc-500 hover:text-zinc-300'
-                    }`}
+                    className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${signupMethod === 'phone'
+                      ? 'bg-zinc-800 text-white shadow'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                      }`}
                   >
                     Phone Number
                   </button>
@@ -594,7 +589,7 @@ function LoginFormContent() {
           {/* Social Logins */}
           <div className="mt-8 pt-8 border-t border-zinc-800/50 space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <button 
+              <button
                 type="button"
                 onClick={() => fillDemoCredentials(false)}
                 className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
@@ -603,7 +598,7 @@ function LoginFormContent() {
                 Demo Email
               </button>
 
-              <button 
+              <button
                 type="button"
                 onClick={() => fillDemoCredentials(true)}
                 className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
@@ -613,8 +608,8 @@ function LoginFormContent() {
               </button>
             </div>
 
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white py-3.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 cursor-not-allowed opacity-50"
               disabled
             >
