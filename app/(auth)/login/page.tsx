@@ -216,7 +216,7 @@ function LoginFormContent() {
       
       {/* Slide-down Notification Bubble */}
       {showNotification && showNotification.show && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-full max-w-sm mx-auto p-4 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl animate-in slide-in-from-top-12 duration-500 text-zinc-100">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-100 w-full max-w-sm mx-auto p-4 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl animate-in slide-in-from-top-12 duration-500 text-zinc-100">
           <div className="flex gap-3">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${showNotification.type === 'sms' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
               {showNotification.type === 'sms' ? <PhoneOutlined className="text-sm" /> : <MailOutlined className="text-sm" />}
@@ -261,7 +261,7 @@ function LoginFormContent() {
             alt="Salon Background" 
             className="w-full h-full object-cover opacity-30 grayscale"
           />
-          <div className="absolute inset-0 bg-gradient-to-tr from-zinc-950 via-zinc-950/80 to-transparent"></div>
+          <div className="absolute inset-0 bg-linear-to-tr from-zinc-950 via-zinc-950/80 to-transparent"></div>
         </div>
 
         {/* Brand Logo & Name */}
@@ -543,7 +543,7 @@ function LoginFormContent() {
                     placeholder="••••••"
                     value={enteredCode}
                     onChange={(e) => setEnteredCode(e.target.value.replace(/\D/g, ''))}
-                    className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white text-sm pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none tracking-widest font-mono text-center text-lg animate-pulse"
+                    className="w-full bg-zinc-950 border border-zinc-800/80 focus:border-amber-500 text-white pl-11 pr-4 py-3.5 outline-none transition-colors duration-300 rounded-none tracking-widest font-mono text-center text-lg animate-pulse"
                   />
                 </div>
               </div>
