@@ -220,7 +220,10 @@ export default function WebsiteHomePage() {
             {/* ✅ Stylish Mobile Absolute Overlay Buttons in Amber Theme */}
             {/* Previous Button (Perfectly centered over the image part) */}
             <button
-              onClick={() => document.getElementById('mobile-services-carousel')?.scrollBy({ left: -350, behavior: 'smooth' })}
+              onClick={() => {
+                const el = document.getElementById('mobile-services-carousel');
+                el?.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
+              }}
               className="absolute left-2 top-[144px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Left"
             >
@@ -229,7 +232,10 @@ export default function WebsiteHomePage() {
 
             {/* Next Button (Perfectly centered over the image part) */}
             <button
-              onClick={() => document.getElementById('mobile-services-carousel')?.scrollBy({ left: 350, behavior: 'smooth' })}
+              onClick={() => {
+                const el = document.getElementById('mobile-services-carousel');
+                el?.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
+              }}
               className="absolute right-2 top-[144px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Right"
             >
@@ -242,7 +248,7 @@ export default function WebsiteHomePage() {
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
               {/* Service Card 1 */}
-              <ScrollReveal direction="down" delay={0.1} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+              <ScrollReveal direction="down" delay={0.1} className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
                 <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relative">
                   <div className="h-72 overflow-hidden relative">
                     <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
@@ -271,7 +277,7 @@ export default function WebsiteHomePage() {
               </ScrollReveal>
 
               {/* Service Card 2 */}
-              <ScrollReveal direction="down" delay={0.25} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+              <ScrollReveal direction="down" delay={0.25} className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
                 <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relatives">
                   <div className="h-72 overflow-hidden relative">
                     <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
@@ -300,7 +306,7 @@ export default function WebsiteHomePage() {
               </ScrollReveal>
 
               {/* Service Card 3 */}
-              <ScrollReveal direction="down" delay={0.4} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+              <ScrollReveal direction="down" delay={0.4} className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
                 <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relations">
                   <div className="h-72 overflow-hidden relative">
                     <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
@@ -354,7 +360,10 @@ export default function WebsiteHomePage() {
             {/* ✅ Stylish Mobile Absolute Overlay Buttons in Amber Theme (Hidden on Desktop) */}
             {/* Previous Button (Over Left Side) */}
             <button
-              onClick={() => document.getElementById('mobile-artisans-carousel')?.scrollBy({ left: -320, behavior: 'smooth' })}
+              onClick={() => {
+                const el = document.getElementById('mobile-artisans-carousel');
+                el?.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
+              }}
               className="absolute left-2 top-[160px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Left"
             >
@@ -363,7 +372,10 @@ export default function WebsiteHomePage() {
 
             {/* Next Button (Over Right Side) */}
             <button
-              onClick={() => document.getElementById('mobile-artisans-carousel')?.scrollBy({ left: 320, behavior: 'smooth' })}
+              onClick={() => {
+                const el = document.getElementById('mobile-artisans-carousel');
+                el?.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
+              }}
               className="absolute right-2 top-[160px] -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Right"
             >
@@ -376,7 +388,7 @@ export default function WebsiteHomePage() {
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-4 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
               {/* Artisan 1 - Owner */}
-              <ScrollReveal direction="down" className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
+              <ScrollReveal direction="down" className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
                 <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
                   <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
                     <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
@@ -387,7 +399,7 @@ export default function WebsiteHomePage() {
               </ScrollReveal>
 
               {/* Artisan 2 */}
-              <ScrollReveal direction="down" delay={0.15} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
+              <ScrollReveal direction="down" delay={0.15} className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
                 <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
                   <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
                     <img src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
@@ -398,7 +410,7 @@ export default function WebsiteHomePage() {
               </ScrollReveal>
 
               {/* Artisan 3 */}
-              <ScrollReveal direction="down" delay={0.3} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
+              <ScrollReveal direction="down" delay={0.3} className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
                 <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
                   <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
                     <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
@@ -409,7 +421,7 @@ export default function WebsiteHomePage() {
               </ScrollReveal>
 
               {/* Artisan 4 */}
-              <ScrollReveal direction="down" delay={0.45} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
+              <ScrollReveal direction="down" delay={0.45} className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
                 <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
                   <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
@@ -450,7 +462,10 @@ export default function WebsiteHomePage() {
             {/* ✅ Stylish Mobile Absolute Overlay Buttons in Amber Theme (Hidden on Desktop) */}
             {/* Previous Button */}
             <button
-              onClick={() => document.getElementById('mobile-reviews-carousel')?.scrollBy({ left: -320, behavior: 'smooth' })}
+              onClick={() => {
+                const el = document.getElementById('mobile-reviews-carousel');
+                el?.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
+              }}
               className="absolute left-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Left"
             >
@@ -459,7 +474,10 @@ export default function WebsiteHomePage() {
 
             {/* Next Button */}
             <button
-              onClick={() => document.getElementById('mobile-reviews-carousel')?.scrollBy({ left: 320, behavior: 'smooth' })}
+              onClick={() => {
+                const el = document.getElementById('mobile-reviews-carousel');
+                el?.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
+              }}
               className="absolute right-2 top-1/2 -translate-y-1/2 z-30 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-amber-500/50 text-amber-600 dark:text-amber-500 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-500 dark:hover:text-zinc-900 active:bg-amber-600 active:text-white dark:active:bg-amber-500 dark:active:text-zinc-900 transition-all opacity-100 active:scale-95 shadow-xl"
               aria-label="Scroll Right"
             >
@@ -472,7 +490,7 @@ export default function WebsiteHomePage() {
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth relative z-10"
             >
               {/* Review Card 1 */}
-              <ScrollReveal direction="down" className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex">
+              <ScrollReveal direction="down" className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex">
                 <div className="review-card flex flex-col h-full bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300 w-full">
                   <div className="flex gap-1 text-amber-500 text-sm mb-6">
                     <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
@@ -492,7 +510,7 @@ export default function WebsiteHomePage() {
               </ScrollReveal>
 
               {/* Review Card 2 */}
-              <ScrollReveal direction="down" delay={0.15} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex">
+              <ScrollReveal direction="down" delay={0.15} className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex">
                 <div className="review-card flex flex-col h-full bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300 w-full">
                   <div className="flex gap-1 text-amber-500 text-sm mb-6">
                     <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
@@ -511,7 +529,7 @@ export default function WebsiteHomePage() {
               </ScrollReveal>
 
               {/* Review Card 3 */}
-              <ScrollReveal direction="down" delay={0.3} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex">
+              <ScrollReveal direction="down" delay={0.3} className="w-[calc(100vw-3rem)] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex">
                 <div className="review-card flex flex-col h-full bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-white/60 dark:border-zinc-800/60 p-8 shadow-lg dark:shadow-none hover:border-amber-500/50 transition-colors duration-300 w-full">
                   <div className="flex gap-1 text-amber-500 text-sm mb-6">
                     <StarFilled /><StarFilled /><StarFilled /><StarFilled /><StarFilled />
