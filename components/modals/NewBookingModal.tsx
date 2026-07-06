@@ -67,7 +67,7 @@ export function NewBookingModal({
       const initialDate = defaultDate ? dayjs(defaultDate) : dayjs();
       form.setFieldsValue({
         clientName: '',
-        service: 'Haircut',
+        service: undefined,
         barberId: defaultBarberId || barbers[0]?.id,
         date: initialDate,
         time: initialDate,
@@ -77,6 +77,35 @@ export function NewBookingModal({
     }
   }, [isOpen, defaultDate, defaultBarberId, barbers, form]);
 
+  const [services, setServices] = useState<any[]>([]);
+  const [dynamicBarbers, setDynamicBarbers] = useState<Barber[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetch('/api/v1/services')
+        .then(res => res.json())
+        .then(data => {
+          if (data.services) setServices(data.services);
+        })
+        .catch(console.error);
+
+      fetch('/api/v1/staff')
+        .then(res => res.json())
+        .then(data => {
+          if (data.staff) {
+            setDynamicBarbers(data.staff.map((s: any) => ({
+              id: s.id,
+              name: s.name,
+              color: '#1A1A1B' // default color or add color field to DB
+            })));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isOpen]);
+
+  const activeBarbers = dynamicBarbers.length > 0 ? dynamicBarbers : barbers;
+
   const handleFinish = (values: any) => {
     const startDateTime = values.date
       .hour(values.time.hour())
@@ -85,7 +114,7 @@ export function NewBookingModal({
       .toDate();
     
     const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
-    const selectedBarber = barbers.find(b => b.id === values.barberId);
+    const selectedBarber = activeBarbers.find(b => b.id === values.barberId);
 
     const newBooking = {
       id: String(Date.now()),
@@ -104,7 +133,6 @@ export function NewBookingModal({
     };
 
     onSave(newBooking);
-    message.success('Appointment scheduled successfully');
     onClose();
   };
 
@@ -139,14 +167,15 @@ export function NewBookingModal({
 
           <div className="grid grid-cols-2 gap-4">
             <Form.Item name="service" label="Service" rules={[{ required: true }]}>
-              <Select size="large" suffixIcon={<ScissorOutlined />}>
-                <Option value="Haircut">Haircut</Option>
-                <Option value="Beard Trim">Beard Trim</Option>
+              <Select size="large" suffixIcon={<ScissorOutlined />} placeholder="Select Service">
+                {services.map(s => (
+                  <Option key={s.id} value={s.id}>{s.name}</Option>
+                ))}
               </Select>
             </Form.Item>
             <Form.Item name="barberId" label="Specialist" rules={[{ required: true }]}>
               <Select size="large" disabled={userRole === 'barber'}>
-                {barbers.map(b => (
+                {activeBarbers.map(b => (
                   <Option key={b.id} value={b.id}>{b.name}</Option>
                 ))}
               </Select>

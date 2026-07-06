@@ -86,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
 
     const currentName = nameMatch ? decodeURIComponent(nameMatch[2]) : null;
-    const currentRole = roleMatch ? roleMatch[2] : null;
+    const currentRole = roleMatch ? roleMatch[2].toLowerCase() : null;
 
     if (currentName) {
       setProfileName(currentName);
@@ -126,6 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <ConfigProvider
       theme={{
+        cssVar: { key: 'app-theme' },
         token: {
           colorPrimary: '#7C4DFF',
           borderRadius: 14,

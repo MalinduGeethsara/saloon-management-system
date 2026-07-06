@@ -54,7 +54,9 @@ const BARBERS_LIST = [
 ];
 
 function ManageBookingsContent() {
-  const [bookings, setBookings] = useState(INITIAL_BOOKINGS);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [isModalOpen, setIsModalOpen] = useState(false); 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
   const [modalType, setModalType] = useState<'accept' | 'decline' | null>(null);
@@ -68,7 +70,32 @@ function ManageBookingsContent() {
   const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
-  // --- Column Search Logic ---
+  const fetchBookings = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/v1/bookings');
+      const data = await res.json();
+      if (data.bookings) {
+        setBookings(data.bookings.map((b: any) => ({
+          key: b.id,
+          id: b.id,
+          client: b.customer?.name || 'Unknown',
+          barber: b.barber?.name || 'Unknown',
+          status: b.status === 'CONFIRMED' ? 'Confirmed' : b.status === 'COMPLETED' ? 'Paid' : b.status === 'CANCELLED' ? 'Cancelled' : 'Pending',
+          total: b.totalAmount,
+          date: dayjs(b.date).format("YYYY-MM-DD")
+        })));
+      }
+    } catch (e) {
+      showAlert('error', 'Failed to load bookings');
+    }
+    setLoading(false);
+  };
+
+  React.useEffect(() => {
+    fetchBookings();
+  }, []);
+
   const getColumnSearchProps = (dataIndex: string, title: string): TableColumnType<any> => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
@@ -81,32 +108,16 @@ function ManageBookingsContent() {
           style={{ marginBottom: 8, display: 'block' }}
         />
         <Space>
-          <Button
-            type="primary"
-            onClick={() => confirm()}
-            icon={<SearchOutlined />}
-            size="small"
-            style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}
-          >
-            Search
-          </Button>
-          <Button onClick={() => { clearFilters && clearFilters(); confirm(); }} size="small" style={{ width: 90 }}>
-            Reset
-          </Button>
+          <Button type="primary" onClick={() => confirm()} icon={<SearchOutlined />} size="small" style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}>Search</Button>
+          <Button onClick={() => { clearFilters && clearFilters(); confirm(); }} size="small" style={{ width: 90 }}>Reset</Button>
         </Space>
       </div>
     ),
-    filterIcon: (filtered: boolean) => (
-      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '14px' }} />
-    ),
-    onFilter: (value, record) =>
-      record[dataIndex].toString().toLowerCase().includes((value as string).toLowerCase()),
-    // ✅ FIXED: Modern API for filter dropdown open changes
+    filterIcon: (filtered: boolean) => <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '14px' }} />,
+    onFilter: (value, record) => record[dataIndex].toString().toLowerCase().includes((value as string).toLowerCase()),
     filterDropdownProps: {
       onOpenChange: (visible) => {
-        if (visible) {
-          setTimeout(() => searchInput.current?.select(), 100);
-        }
+        if (visible) setTimeout(() => searchInput.current?.select(), 100);
       },
     },
   });
@@ -117,35 +128,53 @@ function ManageBookingsContent() {
     setIsModalOpen(true);
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     if (!selectedBookingId || !modalType) return;
-    if (modalType === 'accept') {
-      setBookings((prev) =>
-        prev.map((b) => (b.id === selectedBookingId ? { ...b, status: "Confirmed" } : b))
-      );
-      showAlert("success", `Booking ${selectedBookingId} confirmed successfully.`);
-    } else if (modalType === 'decline') {
-      setBookings((prev) => prev.filter((b) => b.id !== selectedBookingId));
-      showAlert("error", `Booking ${selectedBookingId} was declined.`);
+    try {
+      const status = modalType === 'accept' ? 'CONFIRMED' : 'CANCELLED';
+      const res = await fetch('/api/v1/bookings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedBookingId, status })
+      });
+      if (res.ok) {
+        showAlert("success", `Booking ${modalType === 'accept' ? 'confirmed' : 'declined'} successfully.`);
+        fetchBookings();
+      } else {
+        showAlert("error", "Failed to update booking status.");
+      }
+    } catch (e) {
+      showAlert("error", "An error occurred.");
     }
     setIsModalOpen(false);
     setSelectedBookingId(null);
     setModalType(null);
   };
 
-  const handleSaveNewBooking = (newBookingData: any) => {
-    const newEntry = {
-      key: String(Date.now()),
-      id: `B-${Math.floor(1000 + Math.random() * 9000)}`,
-      client: newBookingData.title,
-      barber: newBookingData.extendedProps.barberName,
-      status: "Confirmed", 
-      total: 2000, 
-      date: dayjs(newBookingData.start).format("YYYY-MM-DD")
-    };
-    setBookings(prev => [newEntry, ...prev]);
-    setIsAddModalOpen(false);
-    showAlert("success", "Manual booking created.");
+  const handleSaveNewBooking = async (newBookingData: any) => {
+    try {
+      const res = await fetch('/api/v1/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceId: newBookingData.extendedProps.service,
+          barberId: newBookingData.extendedProps.barberId,
+          shopId: null, // Optional in backend
+          date: newBookingData.start,
+          amount: 0, // Should be fetched from service, backend can handle or update later
+          clientName: newBookingData.title, // Pass the client name for walk-in creation
+        })
+      });
+      if (res.ok) {
+        showAlert("success", "Manual booking created.");
+        fetchBookings();
+        setIsAddModalOpen(false);
+      } else {
+        showAlert("error", "Failed to create booking.");
+      }
+    } catch (e) {
+      showAlert("error", "An error occurred.");
+    }
   };
 
   const handleGenerateBill = (record: any) => {

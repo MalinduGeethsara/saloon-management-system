@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Table, 
   Card, 
@@ -26,7 +26,8 @@ import {
   ScissorOutlined,
   EditOutlined,
   DeleteOutlined,
-  SearchOutlined
+  SearchOutlined,
+  SafetyCertificateOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { StaffModal } from "@/components/modals/StaffModal";
@@ -41,15 +42,46 @@ const STAFF_DATA = [
   { key: '4', name: "Nimesh Haththasingha", role: "Master Stylist", branch: "Walasmulla", earnings: "Rs. 98,500", status: "Active", email: "mrpolaa.biz@gmail.com", phone: "0702223333" },
 ];
 
+import { useRouter } from 'next/navigation';
+
 function StaffContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [staffData, setStaffData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
+  const router = useRouter();
 
-  // --- Handlers ---
+  const fetchStaff = () => {
+    setLoading(true);
+    fetch('/api/v1/staff')
+      .then(res => res.json())
+      .then(data => {
+        if (data.staff) {
+          setStaffData(data.staff.map((u: any) => ({
+            key: u.id,
+            name: u.name,
+            role: u.role,
+            email: u.email,
+            phone: u.phone || 'N/A',
+            imageUrl: u.imageUrl,
+            status: 'Active',
+            branch: 'Main Branch',
+            earnings: 'Rs. 0'
+          })));
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchStaff();
+  }, []);
+
   const handleAdd = () => {
     setModalMode('add');
     setSelectedStaff(null);
@@ -58,12 +90,57 @@ function StaffContent() {
 
   const handleEdit = (record: any) => {
     setModalMode('edit');
-    setSelectedStaff(record);
+    setSelectedStaff({
+      id: record.key,
+      name: record.name,
+      email: record.email,
+      phone: record.phone !== 'N/A' ? record.phone : '',
+      role: record.role,
+      imageUrl: record.imageUrl
+    });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (key: string) => {
-    showAlert('success', 'Staff member deactivated.');
+  const handleManagePermissions = (userId: string) => {
+    router.push(`/owner/staff/${userId}/permissions`);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/v1/staff?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showAlert('success', 'Staff member deleted.');
+        fetchStaff();
+      } else {
+        showAlert('error', 'Failed to delete staff member.');
+      }
+    } catch (e) {
+      showAlert('error', 'An error occurred.');
+    }
+  };
+
+  const handleSaveStaff = async (values: any) => {
+    try {
+      const isEdit = modalMode === 'edit';
+      const payload = isEdit ? { ...values, id: selectedStaff.id } : values;
+      
+      const res = await fetch('/api/v1/staff', {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        showAlert('success', `Staff member ${isEdit ? 'updated' : 'added'} successfully.`);
+        fetchStaff();
+        setIsModalOpen(false);
+      } else {
+        const errorData = await res.json();
+        showAlert('error', errorData.error || 'Failed to save staff member.');
+      }
+    } catch (e) {
+      showAlert('error', 'An error occurred.');
+    }
   };
 
   // --- Column Search Setup ---
@@ -104,7 +181,12 @@ function StaffContent() {
       ...getColumnSearchProps('name', 'Name'),
       render: (text: string, record: any) => (
         <Space size="middle">
-          <Avatar style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} icon={<UserOutlined />} />
+          <Avatar 
+            size={40}
+            src={record.imageUrl}
+            style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} 
+            icon={!record.imageUrl ? <UserOutlined /> : undefined} 
+          />
           <div className="flex flex-col">
             <Text strong className="text-slate-800">{text}</Text>
             <Text type="secondary" className="text-[11px]">{record.email}</Text>
@@ -119,7 +201,7 @@ function StaffContent() {
       width: 180,
       align: 'center' as const,
       render: (text: string) => (
-        <Tag icon={text === 'Manager' ? <DollarOutlined /> : <ScissorOutlined />} color="default" className="border-slate-200 text-slate-600 px-3 py-0.5 rounded-md">
+        <Tag icon={text === 'MANAGER' ? <DollarOutlined /> : <ScissorOutlined />} color="default" className="border-slate-200 text-slate-600 px-3 py-0.5 rounded-md">
           {text}
         </Tag>
       ),
@@ -157,10 +239,10 @@ function StaffContent() {
       align: 'right' as const,
       render: (_: any, record: any) => {
         const items: MenuProps['items'] = [
-          { key: '1', label: 'Edit', icon: <EditOutlined />, onClick: () => handleEdit(record) },
-          { key: '2', label: 'Stats', icon: <DollarOutlined /> },
+          { key: '1', label: 'Edit Staff', icon: <EditOutlined />, onClick: () => handleEdit(record) },
+          { key: '2', label: 'Manage Permissions', icon: <SafetyCertificateOutlined />, onClick: () => handleManagePermissions(record.key) },
           { type: 'divider' },
-          { key: '3', label: 'Remove', icon: <DeleteOutlined />, danger: true },
+          { key: '3', label: 'Remove', icon: <DeleteOutlined />, danger: true, onClick: () => handleDelete(record.key) },
         ];
         return (
           <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
@@ -181,19 +263,18 @@ function StaffContent() {
         <Button 
           type="primary" size="large" icon={<PlusOutlined />} 
           className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold h-12 w-full md:w-auto border-none shadow-md shadow-purple-100"
-          onClick={() => { setModalMode('add'); setSelectedStaff(null); setIsModalOpen(true); }}
+          onClick={handleAdd}
         >
           Add New Staff
         </Button>
       </div>
 
-      {/* KPI Cards - Improved Alignment */}
       <Row gutter={[16, 16]} className="mb-8">
         <Col xs={24} sm={8}>
           <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
               title={<Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Team</Text>} 
-              value={STAFF_DATA.length} 
+              value={staffData.length} 
               prefix={<TeamOutlined style={{ color: '#7C4DFF', fontSize: '20px' }} />} 
               styles={{ content: { fontWeight: 800, fontSize: '24px' } }} 
             />
@@ -203,7 +284,7 @@ function StaffContent() {
           <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
               title={<Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active</Text>} 
-              value={STAFF_DATA.filter(s => s.status === 'Active').length} 
+              value={staffData.filter(s => s.status === 'Active').length} 
               prefix={<ScissorOutlined style={{ color: '#059669', fontSize: '20px' }} />} 
               styles={{ content: { fontWeight: 800, fontSize: '24px' } }} 
             />
@@ -213,7 +294,7 @@ function StaffContent() {
           <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
               title={<Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payroll</Text>} 
-              value="653k" 
+              value="0" 
               prefix={<span style={{ color: '#F59E0B', fontSize: '14px', fontWeight: 700, marginRight: 4 }}>Rs.</span>} 
               styles={{ content: { fontWeight: 800, fontSize: '24px' } }} 
             />
@@ -221,18 +302,24 @@ function StaffContent() {
         </Col>
       </Row>
 
-      {/* Table - FULL SWIPE */}
       <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden" styles={{ body: { padding: 0 } }}>
         <Table 
           columns={columns} 
-          dataSource={STAFF_DATA} 
+          dataSource={staffData} 
           pagination={{ pageSize: 8 }}
           rowKey="key"
+          loading={loading}
           scroll={{ x: 1000 }} 
         />
       </Card>
 
-      <StaffModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} staff={selectedStaff} mode={modalMode} />
+      <StaffModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        staff={selectedStaff} 
+        mode={modalMode} 
+        onSave={handleSaveStaff}
+      />
     </div>
   );
 }

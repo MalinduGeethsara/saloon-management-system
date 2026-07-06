@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  OWNER
+  MANAGER
+  BARBER
+  CUSTOMER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  phone     String?  @unique
+  password  String
+  name      String
+  imageUrl  String?
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  bookingsAsCustomer Booking[]    @relation("CustomerBookings")
+  bookingsAsBarber   Booking[]    @relation("BarberBookings")
+  attendance         Attendance[]
+  payroll            Payroll[]
+  payments           Payment[]
+  permissions        StaffPermission[]
+}
+
+model Shop {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  bookings  Booking[]
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  duration    Int      // Duration in minutes
+  imageUrl    String?
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  bookings    Booking[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  brand       String?
+  category    String?
+  sku         String?  @unique
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  imageUrl    String?
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  date        DateTime
+  status      BookingStatus @default(PENDING)
+  totalAmount Float
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Foreign Keys
+  customerId  String
+  barberId    String?
+  serviceId   String
+  shopId      String?
+
+  // Relations
+  customer    User     @relation("CustomerBookings", fields: [customerId], references: [id])
+  barber      User?    @relation("BarberBookings", fields: [barberId], references: [id])
+  service     Service  @relation(fields: [serviceId], references: [id])
+  shop        Shop?    @relation(fields: [shopId], references: [id])
+  payment     Payment?
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  amount      Float
+  status      PaymentStatus @default(PENDING)
+  method      String?       // e.g., STRIPE, PAYHERE, CASH
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Foreign Keys
+  bookingId   String   @unique
+  customerId  String
+
+  // Relations
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  customer    User     @relation(fields: [customerId], references: [id])
+}
+
+model Attendance {
+  id          String   @id @default(uuid())
+  date        DateTime
+  checkIn     DateTime
+  checkOut    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Keys
+  userId      String
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Payroll {
+  id          String   @id @default(uuid())
+  month       Int
+  year        Int
+  baseSalary  Float
+  bonus       Float?   @default(0)
+  totalAmount Float
+  status      String   @default("PENDING") // PENDING, PAID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Keys
+  userId      String
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model StaffPermission {
+  id        String   @id @default(uuid())
+  userId    String
+  pageKey   String   @db.VarChar(50)
+  canView   Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, pageKey])
+}

@@ -56,44 +56,12 @@ const getRelativeDate = (days: number, hours: number, minutes: number) => {
   return d;
 };
 
-// --- Mock Events ---
-const INITIAL_EVENTS = [
-  {
-    id: '1',
-    title: 'Amila Bandara',
-    start: getRelativeDate(0, 10, 0), 
-    end: getRelativeDate(0, 11, 0),
-    backgroundColor: '#18181b',
-    borderColor: '#18181b',
-    extendedProps: { barberId: 1, service: 'Haircut', status: 'Confirmed', client: 'Amila Bandara' }
-  },
-  {
-    id: '2',
-    title: 'Ruwan Kumara',
-    start: getRelativeDate(0, 14, 30), 
-    end: getRelativeDate(0, 15, 15),
-    backgroundColor: '#7C4DFF',
-    borderColor: '#7C4DFF',
-    textColor: '#ffffff',
-    extendedProps: { barberId: 2, service: 'Beard Trim', status: 'Confirmed', client: 'Ruwan Kumara' }
-  },
-  {
-    id: '3',
-    title: 'Sanjeewa Perera',
-    start: getRelativeDate(-1, 9, 0), 
-    end: getRelativeDate(-1, 10, 0),
-    backgroundColor: '#059669',
-    borderColor: '#059669',
-    extendedProps: { barberId: 4, service: 'Full Service', status: 'Completed', client: 'Sanjeewa Perera' }
-  }
-];
-
 function ScheduleContent() {
   const { token } = useToken();
   const calendarRef = useRef<FullCalendar>(null);
-  const [events, setEvents] = useState(INITIAL_EVENTS);
+  const [events, setEvents] = useState<any[]>([]);
   const { showAlert } = useAlert();
-
+  
   // --- States ---
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -102,10 +70,42 @@ function ScheduleContent() {
   const [editingBooking, setEditingBooking] = useState<any>(null);
   
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [activeBarberId, setActiveBarberId] = useState<number | undefined>(undefined);
+  const [activeBarberId, setActiveBarberId] = useState<string | undefined>(undefined);
   const [currentView, setCurrentView] = useState('timeGridDay');
   const [viewTitle, setViewTitle] = useState("");
   const [userRole, setUserRole] = useState<string>('owner');
+  
+  const fetchBookings = async () => {
+    try {
+      const res = await fetch('/api/v1/bookings');
+      const data = await res.json();
+      if (data.bookings) {
+        setEvents(data.bookings.map((b: any) => {
+          const endDate = new Date(new Date(b.date).getTime() + (b.service?.duration || 60) * 60000);
+          return {
+            id: b.id,
+            title: b.customer?.name || 'Walk-in Client',
+            start: new Date(b.date),
+            end: endDate,
+            backgroundColor: '#7C4DFF',
+            borderColor: '#7C4DFF',
+            textColor: '#ffffff',
+            extendedProps: {
+              barberId: b.barberId,
+              service: b.service?.name,
+              status: b.status,
+            }
+          };
+        }));
+      }
+    } catch (e) {
+      showAlert('error', 'Failed to load calendar events');
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
 
   // --- Initialize Title & Cookies ---
   useEffect(() => {
@@ -117,14 +117,14 @@ function ScheduleContent() {
     const barberMatch = document.cookie.match(new RegExp('(^| )barber_id=([^;]+)'));
     
     let currentRole = 'owner';
-    let currentBarberId: number | undefined = undefined;
+    let currentBarberId: string | undefined = undefined;
 
     if (roleMatch) {
       currentRole = roleMatch[2];
       setUserRole(currentRole);
     }
     if (barberMatch) {
-      currentBarberId = parseInt(barberMatch[2], 10);
+      currentBarberId = barberMatch[2];
     }
 
     if (currentRole === 'barber' && currentBarberId) {
@@ -202,10 +202,30 @@ function ScheduleContent() {
     setIsDetailsModalOpen(true);
   };
 
-  const handleSaveBooking = (newBooking: any) => {
-    setEvents(prev => [...prev, newBooking]);
-    setIsNewModalOpen(false);
-    showAlert('success', 'Appointment booked successfully!');
+  const handleSaveBooking = async (newBookingData: any) => {
+    try {
+      const res = await fetch('/api/v1/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceId: newBookingData.extendedProps.service,
+          barberId: newBookingData.extendedProps.barberId,
+          shopId: null,
+          date: newBookingData.start,
+          amount: 0, 
+          clientName: newBookingData.title, 
+        })
+      });
+      if (res.ok) {
+        showAlert('success', 'Appointment booked successfully!');
+        fetchBookings();
+        setIsNewModalOpen(false);
+      } else {
+        showAlert('error', 'Failed to save booking');
+      }
+    } catch(e) {
+      showAlert('error', 'Error creating booking');
+    }
   };
 
   // 6. Trigger Edit from Details Modal
@@ -277,15 +297,15 @@ function ScheduleContent() {
               {BARBERS.map(b => (
                 <div 
                   key={b.id}
-                  className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${activeBarberId === b.id ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
-                  onClick={() => setActiveBarberId(b.id)}
+                  className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${activeBarberId === String(b.id) ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
+                  onClick={() => setActiveBarberId(String(b.id))}
                 >
                   <Avatar style={{ backgroundColor: b.color }}>{b.name[0]}</Avatar>
                   <div className="flex-1">
                     <div className="text-sm font-bold text-slate-700">{b.name}</div>
                     <div className="text-xs text-slate-400">{b.role}</div>
                   </div>
-                  {activeBarberId === b.id && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
+                  {activeBarberId === String(b.id) && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
                 </div>
               ))}
             </div>

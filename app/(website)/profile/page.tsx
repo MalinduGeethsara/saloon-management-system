@@ -37,7 +37,7 @@ export default function ProfileDashboard() {
   useEffect(() => {
     // Check if user role is present, otherwise redirect immediately to login
     const roleCookie = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    const userRole = roleCookie ? roleCookie[2] : null;
+    const userRole = roleCookie ? roleCookie[2].toLowerCase() : null;
     
     if (!userRole) {
       window.location.href = '/login?callbackUrl=/profile';

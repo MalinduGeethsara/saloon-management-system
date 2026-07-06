@@ -38,11 +38,11 @@ export const LoginForm = () => {
         
         let destination = callbackUrl;
         
-        // ✅ If they came directly to the staff login, route them to their specific dashboard
         if (destination === '/staff-login' || destination === '/' || destination === '/login') {
-          if (data.role === 'admin') destination = '/admin';
-          else if (data.role === 'manager') destination = '/owner/bookings/manage';
-          else if (data.role === 'barber') destination = '/owner/calendar';
+          const userRole = (data.role || '').toLowerCase();
+          if (userRole === 'admin') destination = '/admin';
+          else if (userRole === 'manager') destination = '/owner/bookings/manage';
+          else if (userRole === 'barber') destination = '/owner/calendar';
           else destination = '/owner'; 
         }
 

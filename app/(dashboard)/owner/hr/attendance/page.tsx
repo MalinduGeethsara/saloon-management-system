@@ -33,26 +33,73 @@ function AttendanceContent() {
   const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
+  const fetchAttendance = async () => {
+    try {
+      const res = await fetch('/api/v1/attendance');
+      const data = await res.json();
+      if (data.attendance) {
+        setAttendanceData(data.attendance.map((a: any) => ({
+          key: a.id,
+          name: a.user?.name || 'Unknown',
+          shop: a.user?.shopId || 'Main Shop',
+          status: a.checkOut ? 'Present' : 'Late', // or logic
+          clockIn: dayjs(a.checkIn).format('hh:mm A'),
+          clockOut: a.checkOut ? dayjs(a.checkOut).format('hh:mm A') : '-'
+        })));
+      }
+    } catch (e) {
+      showAlert('error', 'Failed to load attendance');
+    }
+  };
+
+  React.useEffect(() => {
+    fetchAttendance();
+  }, []);
+
   const handleAddNew = () => { setEditingRecord(null); setIsEntryModalOpen(true); };
   const handleEdit = (record: any) => { setEditingRecord(record); setIsEntryModalOpen(true); };
   const handleDeleteClick = (key: string) => { setRecordToDelete(key); setIsDeleteModalOpen(true); };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (recordToDelete) {
-      setAttendanceData(prev => prev.filter(item => item.key !== recordToDelete));
-      showAlert('success', 'Record deleted successfully.');
+      try {
+        const res = await fetch(`/api/v1/attendance?id=${recordToDelete}`, { method: 'DELETE' });
+        if (res.ok) {
+          showAlert('success', 'Record deleted successfully.');
+          fetchAttendance();
+        } else {
+          showAlert('error', 'Failed to delete record.');
+        }
+      } catch (e) {
+        showAlert('error', 'An error occurred.');
+      }
       setIsDeleteModalOpen(false);
       setRecordToDelete(null);
     }
   };
 
-  const handleSaveRecord = (newRecord: any) => {
-    if (newRecord.key) {
-      setAttendanceData(prev => prev.map(item => item.key === newRecord.key ? { ...item, ...newRecord } : item));
-      showAlert('success', 'Attendance record updated successfully.');
-    } else {
-      setAttendanceData(prev => [{ key: String(Date.now()), ...newRecord }, ...prev]);
-      showAlert('success', 'New attendance record added.');
+  const handleSaveRecord = async (newRecord: any) => {
+    // In a real implementation, you'd match staff name to ID here, or pass ID directly.
+    // Assuming `newRecord` has userId and dates properly formatted.
+    try {
+      const res = await fetch('/api/v1/attendance', {
+        method: newRecord.key ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRecord.key ? { id: newRecord.key, ...newRecord } : {
+          userId: "dummy-user-id", // Hardcoded for demo if no real selector
+          date: new Date().toISOString(),
+          checkIn: new Date().toISOString(),
+          checkOut: null
+        })
+      });
+      if (res.ok) {
+        showAlert('success', 'Attendance record saved.');
+        fetchAttendance();
+      } else {
+        showAlert('error', 'Failed to save record.');
+      }
+    } catch (e) {
+      showAlert('error', 'An error occurred.');
     }
     setIsEntryModalOpen(false);
   };

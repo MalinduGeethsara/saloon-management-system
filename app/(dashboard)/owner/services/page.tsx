@@ -43,16 +43,37 @@ const INITIAL_SERVICES = [
 ];
 
 function ServicesContent() {
-  const [services, setServices] = useState(INITIAL_SERVICES);
+  const [services, setServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Modal States
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
-  const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
+  const [serviceToDelete, setServiceToDelete] = useState<any>(null);
 
   const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
+
+  const fetchCatalog = async () => {
+    setLoading(true);
+    try {
+      const [resSvc, resProd] = await Promise.all([
+        fetch('/api/v1/services').then(r => r.json()),
+        fetch('/api/v1/products').then(r => r.json())
+      ]);
+      const formattedServices = (resSvc.services || []).map((s: any) => ({ ...s, key: s.id, category: 'Service' }));
+      const formattedProducts = (resProd.products || []).map((p: any) => ({ ...p, key: p.id, category: 'Product' }));
+      setServices([...formattedServices, ...formattedProducts]);
+    } catch (e) {
+      showAlert('error', 'Failed to load catalog');
+    }
+    setLoading(false);
+  };
+
+  React.useEffect(() => {
+    fetchCatalog();
+  }, []);
 
   const handleAdd = () => {
     setEditingService(null);
@@ -64,43 +85,71 @@ function ServicesContent() {
     setIsServiceModalOpen(true);
   };
 
-  const handleDeleteClick = (key: string) => {
-    setServiceToDelete(key);
+  const handleDeleteClick = (record: any) => {
+    setServiceToDelete(record);
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (serviceToDelete) {
-      setServices(prev => prev.filter(s => s.key !== serviceToDelete));
-      showAlert('success', 'Item removed successfully.');
+      const endpoint = serviceToDelete.category === 'Service' ? '/api/v1/services' : '/api/v1/products';
+      try {
+        const res = await fetch(`${endpoint}?id=${serviceToDelete.key}`, { method: 'DELETE' });
+        if (res.ok) {
+          showAlert('success', 'Item removed successfully.');
+          fetchCatalog();
+        } else {
+          showAlert('error', 'Failed to delete item.');
+        }
+      } catch (e) {
+        showAlert('error', 'An error occurred.');
+      }
       setIsDeleteModalOpen(false);
       setServiceToDelete(null);
     }
   };
 
-  const handleSaveService = (serviceData: any) => {
-    if (serviceData.key) {
-      setServices(prev => 
-        prev.map(s => s.key === serviceData.key ? { ...s, ...serviceData } : s)
-      );
-      showAlert('success', `${serviceData.name} updated successfully.`);
-    } else {
-      const newService = {
-        ...serviceData,
-        key: String(Date.now()), 
-      };
-      setServices(prev => [newService, ...prev]);
-      showAlert('success', 'New item added to catalog.');
+  const handleSaveService = async (serviceData: any) => {
+    const isEdit = !!serviceData.key;
+    const endpoint = serviceData.category === 'Service' ? '/api/v1/services' : '/api/v1/products';
+    const payload = isEdit ? { ...serviceData, id: serviceData.key } : serviceData;
+    
+    try {
+      const res = await fetch(endpoint, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        showAlert('success', `${serviceData.name} saved successfully.`);
+        fetchCatalog();
+        setIsServiceModalOpen(false);
+      } else {
+        const err = await res.json();
+        showAlert('error', err.message || 'Failed to save item.');
+      }
+    } catch (e) {
+      showAlert('error', 'An error occurred.');
     }
-    setIsServiceModalOpen(false);
   };
 
-  const handleToggleStatus = (key: string, checked: boolean) => {
-    setServices(prev => 
-      prev.map(s => s.key === key ? { ...s, status: checked ? "Active" : "Inactive" } : s)
-    );
-    // FIX: Changed 'info' to 'success' to match your AlertType
-    showAlert('success', `Status updated successfully.`);
+  const handleToggleStatus = async (record: any, checked: boolean) => {
+    const endpoint = record.category === 'Service' ? '/api/v1/services' : '/api/v1/products';
+    try {
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: record.key, status: checked ? "Active" : "Inactive" })
+      });
+      if (res.ok) {
+        showAlert('success', `Status updated successfully.`);
+        fetchCatalog();
+      } else {
+        showAlert('error', 'Failed to update status.');
+      }
+    } catch (e) {
+      showAlert('error', 'An error occurred.');
+    }
   };
 
   // --- Column Search Setup ---
@@ -159,9 +208,25 @@ function ServicesContent() {
       align: 'left' as const, // Anchor to left
       ...getColumnSearchProps('name', 'Name'), 
       render: (text: string, record: any) => (
-        <div className="flex flex-col">
-          <span className="font-bold text-slate-800 text-[14px]">{text}</span>
-          <span className="text-[11px] text-slate-500 truncate max-w-[240px]">{record.description}</span>
+        <div className="flex items-center gap-3">
+          {record.imageUrl ? (
+            <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-50 relative">
+              {/* Using standard img for simplicity in the table to avoid next/image layout issues */}
+              <img src={record.imageUrl} alt={text} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center flex-shrink-0">
+              {record.category === 'Service' ? (
+                <ScissorOutlined className="text-slate-400 text-lg" />
+              ) : (
+                <ShoppingOutlined className="text-slate-400 text-lg" />
+              )}
+            </div>
+          )}
+          <div className="flex flex-col">
+            <span className="font-bold text-slate-800 text-[14px]">{text}</span>
+            <span className="text-[11px] text-slate-500 truncate max-w-[200px]">{record.description}</span>
+          </div>
         </div>
       ),
     },
@@ -202,14 +267,12 @@ function ServicesContent() {
       ],
       onFilter: (value: any, record: any) => record.status === value,
       render: (status: string, record: any) => (
-        // FIX: Added whitespace-nowrap to prevent text dropping to next line
         <div className="flex items-center justify-center gap-2 whitespace-nowrap">
           <Switch 
             size="small" 
             checked={status === 'Active'} 
-            onChange={(checked) => handleToggleStatus(record.key, checked)} 
+            onChange={(checked) => handleToggleStatus(record, checked)} 
           />
-          {/* FIX: Replaced w-12 with min-w-[65px] to fit "INACTIVE" perfectly */}
           <Text type={status === 'Active' ? 'success' : 'secondary'} className="text-[10px] font-bold uppercase inline-block min-w-[65px] text-left">
             {status}
           </Text>
@@ -219,13 +282,13 @@ function ServicesContent() {
     {
       title: 'Action',
       key: 'action',
-      align: 'right' as const, // Push actions to the far right edge
+      align: 'right' as const,
       width: 80,
       render: (_: any, record: any) => {
         const items: MenuProps['items'] = [
           { key: '1', label: 'Edit Item', icon: <EditOutlined />, onClick: () => handleEdit(record) },
           { type: 'divider' },
-          { key: '2', label: 'Remove Item', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) },
+          { key: '2', label: 'Remove Item', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record) },
         ];
         return (
           <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">

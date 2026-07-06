@@ -6,6 +6,7 @@ import {
   ScissorOutlined, 
   TagOutlined 
 } from '@ant-design/icons';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -23,50 +24,47 @@ export function ServiceModal({
   onClose, 
   onSave, 
   serviceToEdit 
-}: ServiceModalProps) {
+}: ServiceModalProps & { onSave: (service: any) => Promise<void> }) {
   const [form] = Form.useForm();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
 
   // Reset or Populate form
   useEffect(() => {
-    if (!mounted) return;
     if (isOpen) {
       if (serviceToEdit) {
         form.setFieldsValue({
           ...serviceToEdit,
           isActive: serviceToEdit.status === 'Active'
         });
+        setImageUrl(serviceToEdit.imageUrl || serviceToEdit.image || '');
       } else {
         form.resetFields();
         form.setFieldsValue({ isActive: true, category: 'Service' }); // Default values
+        setImageUrl('');
       }
     }
   }, [isOpen, serviceToEdit, form]);
 
-  const handleFinish = (values: any) => {
+  const handleFinish = async (values: any) => {
+    setLoading(true);
     const serviceData = {
       ...values,
       status: values.isActive ? 'Active' : 'Inactive',
       key: serviceToEdit?.key, 
+      imageUrl: imageUrl
     };
     delete serviceData.isActive;
     
-    onSave(serviceData);
-    onClose();
+    await onSave(serviceData);
+    setLoading(false);
   };
-
-  if (!mounted) return null;
 
   return (
     <Modal
       open={isOpen}
       onCancel={onClose}
       footer={null}
-      forceRender
       centered
       width={600}
       title={
@@ -82,35 +80,67 @@ export function ServiceModal({
         onFinish={handleFinish}
         style={{ marginTop: 24 }}
       >
-        <Form.Item 
-          name="name" 
-          label="Item Name" 
-          rules={[{ required: true, message: 'Please enter name' }]}
-        >
-          <Input prefix={<TagOutlined className="text-gray-400" />} placeholder="e.g. Premium Haircut or Hair Gel" size="large" />
-        </Form.Item>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            {/* UPDATED CATEGORIES: Only Service and Product */}
-            <Form.Item name="category" label="Category" rules={[{ required: true }]}>
-              <Select placeholder="Select Category" size="large">
-                <Option value="Service">Service</Option>
-                <Option value="Product">Product</Option>
-              </Select>
+        <Row gutter={32}>
+          <Col span={10}>
+            <Form.Item label="Item Image" style={{ marginBottom: 0 }}>
+              <div className="flex justify-center p-4 border-2 border-dashed border-gray-200 bg-slate-50 rounded-xl">
+                <ImageUpload 
+                  value={imageUrl} 
+                  onChange={(url) => {
+                    setImageUrl(url);
+                    form.setFieldValue('imageUrl', url);
+                  }}
+                  folder="salon/services"
+                />
+              </div>
+            </Form.Item>
+            <Form.Item name="imageUrl" hidden>
+              <Input />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={14}>
             <Form.Item 
-              name="price" 
-              label="Price (LKR)" 
-              rules={[{ required: true, message: 'Enter price' }]}
+              name="name" 
+              label="Item Name" 
+              rules={[{ required: true, message: 'Please enter name' }]}
+            >
+              <Input prefix={<TagOutlined className="text-gray-400" />} placeholder="e.g. Premium Haircut or Hair Gel" size="large" />
+            </Form.Item>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="category" label="Category" rules={[{ required: true }]}>
+                  <Select placeholder="Select Category" size="large">
+                    <Option value="Service">Service</Option>
+                    <Option value="Product">Product</Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item 
+                  name="price" 
+                  label="Price (LKR)" 
+                  rules={[{ required: true, message: 'Enter price' }]}
+                >
+                  <InputNumber 
+                    prefix="Rs." 
+                    style={{ width: '100%' }} 
+                    size="large" 
+                    min={0}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item 
+              name="duration" 
+              label="Duration (Minutes) - Services Only"
             >
               <InputNumber 
-                prefix="Rs." 
                 style={{ width: '100%' }} 
                 size="large" 
                 min={0}
+                placeholder="e.g. 30"
               />
             </Form.Item>
           </Col>
@@ -140,6 +170,7 @@ export function ServiceModal({
             type="primary" 
             htmlType="submit" 
             size="large" 
+            loading={loading}
             className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold border-none"
           >
             {serviceToEdit ? "Update Item" : "Add Item"}
