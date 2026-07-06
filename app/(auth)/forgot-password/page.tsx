@@ -14,6 +14,20 @@ import {
 function ForgotPasswordContent() {
   const router = useRouter();
 
+  // Force dark mode on forgot password page to ensure the background/overscroll matches the dark theme of the page
+  useEffect(() => {
+    const html = document.documentElement;
+    const hadDark = html.classList.contains('dark');
+    if (!hadDark) {
+      html.classList.add('dark');
+    }
+    return () => {
+      if (!hadDark) {
+        html.classList.remove('dark');
+      }
+    };
+  }, []);
+
   const [step, setStep] = useState<'request' | 'verify' | 'reset'>('request');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
