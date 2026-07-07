@@ -48,16 +48,17 @@ const INITIAL_BOOKINGS = [
 ];
 
 const BARBERS_LIST = [
-  { id: 1, name: 'Malith Sandaruwan', color: '#18181b' },
-  { id: 2, name: 'Mahesh Madushanka', color: '#7C4DFF' },
-  { id: 3, name: 'Vindana Lakmal', color: '#2563eb' },
+  { id: '1', name: 'Malith Sandaruwan', color: '#18181b' },
+  { id: '2', name: 'Mahesh Madushanka', color: '#7C4DFF' },
+  { id: '3', name: 'Vindana Lakmal', color: '#2563eb' },
 ];
 
 function ManageBookingsContent() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState('owner');
   
-  const [isModalOpen, setIsModalOpen] = useState(false); 
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
   const [modalType, setModalType] = useState<'accept' | 'decline' | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
@@ -95,6 +96,11 @@ function ManageBookingsContent() {
 
   React.useEffect(() => {
     fetchBookings();
+    
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      setUserRole(roleMatch[2].toLowerCase());
+    }
   }, []);
 
   const getColumnSearchProps = (dataIndex: string, title: string): TableColumnType<any> => ({
@@ -302,6 +308,10 @@ function ManageBookingsContent() {
     },
   ];
 
+  const visibleColumns = userRole === 'barber' 
+    ? columns.filter((col: any) => col.key !== 'barber')
+    : columns;
+
   return (
     <div className="max-w-[1600px] mx-auto pb-10 px-4">
       
@@ -357,7 +367,7 @@ function ManageBookingsContent() {
         styles={{ body: { padding: 0 } }}
       >
         <Table 
-          columns={columns} 
+          columns={visibleColumns} 
           dataSource={bookings} 
           pagination={{ pageSize: 8 }}
           rowKey="key"

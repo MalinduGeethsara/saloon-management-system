@@ -94,12 +94,7 @@ export function NotificationBell() {
   };
 
   const handleNotificationClick = (item: any) => {
-    // Navigate to the appropriate booking view
-    if (pathname.startsWith('/owner')) {
-      router.push('/owner/bookings/manage');
-    } else if (pathname.startsWith('/barber')) {
-      router.push('/barber');
-    }
+    router.push('/owner/bookings/manage');
     setOpen(false); // Close popover
   };
 
