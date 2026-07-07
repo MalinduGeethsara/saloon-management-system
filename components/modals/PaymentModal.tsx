@@ -82,6 +82,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
     if (!pendingValues) return;
 
     const formattedData = {
+      ...paymentToEdit, // Keep original hidden fields like bookingId
       ...pendingValues,
       amount: totalAmount, 
       date: pendingValues.date ? pendingValues.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
@@ -160,7 +161,10 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
             <Col xs={24} sm={12}>
               <Form.Item name="barber" label="Select Barber" rules={[{ required: true, message: 'Required' }]}>
                 <Select placeholder="Choose specialist" size="large">
-                  {BARBERS.map(b => <Select.Option key={b} value={b}>{b}</Select.Option>)}
+                  {/* Ensure the assigned barber is always an option even if not in the default mock list */}
+                  {Array.from(new Set([...BARBERS, paymentToEdit?.barber].filter(Boolean))).map(b => (
+                    <Select.Option key={b} value={b}>{b}</Select.Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>

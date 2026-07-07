@@ -31,6 +31,13 @@ export default function BarberDashboard() {
 
   useEffect(() => {
     fetchBookings();
+    
+    // Add real-time polling every 5 seconds
+    const interval = setInterval(() => {
+      fetchBookings();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const upcomingBookings = bookings
@@ -67,19 +74,34 @@ export default function BarberDashboard() {
     },
     {
       title: 'Service',
-      dataIndex: 'service',
+      dataIndex: 'services',
       key: 'service',
-      render: (service: any) => <span className="font-medium text-slate-600">{service?.name}</span>
+      render: (services: any[]) => <span className="font-medium text-slate-600">{services?.map(s => s.service?.name).filter(Boolean).join(', ') || 'No Service'}</span>
+    },
+    {
+      title: 'Specialist',
+      dataIndex: 'barber',
+      key: 'barber',
+      render: (barber: any) => <span className="font-bold text-[#7C4DFF]">{barber?.name || 'Unassigned'}</span>
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => (
-        <Tag color={status === 'CONFIRMED' ? 'blue' : 'gold'} className="rounded-full font-bold px-3">
-          {status}
-        </Tag>
-      )
+      render: (status: string) => {
+        let color = 'default';
+        let customClass = "rounded-full font-bold px-3 border-0";
+        if (status === 'CONFIRMED') color = 'blue';
+        if (status === 'PENDING') {
+          color = 'orange';
+          customClass += " animate-pulse shadow-sm shadow-orange-200";
+        }
+        return (
+          <Tag color={color} className={customClass}>
+            {status}
+          </Tag>
+        );
+      }
     }
   ];
 
@@ -104,9 +126,15 @@ export default function BarberDashboard() {
     },
     {
       title: 'Service',
-      dataIndex: 'service',
+      dataIndex: 'services',
       key: 'service',
-      render: (service: any) => <span className="text-slate-500">{service?.name}</span>
+      render: (services: any[]) => <span className="text-slate-500">{services?.map(s => s.service?.name).filter(Boolean).join(', ') || 'No Service'}</span>
+    },
+    {
+      title: 'Specialist',
+      dataIndex: 'barber',
+      key: 'barber',
+      render: (barber: any) => <span className="font-bold text-[#7C4DFF]">{barber?.name || 'Unassigned'}</span>
     }
   ];
 
@@ -156,6 +184,7 @@ export default function BarberDashboard() {
               pagination={false}
               loading={loading}
               className="custom-table"
+              rowClassName={(record) => record.status === 'PENDING' ? 'bg-amber-50/50' : ''}
             />
           ) : (
             <div className="p-10 flex justify-center">

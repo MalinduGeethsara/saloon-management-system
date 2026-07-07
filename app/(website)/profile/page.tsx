@@ -8,6 +8,7 @@ import {
   EyeOutlined
 } from '@ant-design/icons';
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import { getCustomerBookings, cancelBooking } from "@/lib/actions/booking";
 
 interface Appointment {
   id: string;
@@ -20,10 +21,12 @@ interface Appointment {
   paymentStatus: string;
   barberName?: string;
   barberRole?: string;
+  serviceName?: string;
 }
 
 export default function ProfileDashboard() {
   const [activeTab, setActiveTab] = useState("appointments");
+  const [appointmentFilter, setAppointmentFilter] = useState<"upcoming" | "past">("upcoming");
   const [mounted, setMounted] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -44,34 +47,13 @@ export default function ProfileDashboard() {
       return;
     }
 
-    setMounted(true);
+    const loadData = async () => {
+      const data = await getCustomerBookings();
+      setAppointments(data);
+      setMounted(true);
+    };
 
-    // Load or initialize appointments from localStorage
-    const existing = localStorage.getItem("appointments");
-    if (existing) {
-      try {
-        setAppointments(JSON.parse(existing));
-      } catch (err) {
-        console.error("Failed to parse appointments:", err);
-      }
-    } else {
-      const initial = [
-        {
-          id: "1",
-          code: "SLAD70507",
-          date: "2026-09-24",
-          time: "4:00 PM",
-          status: "Pending",
-          amount: "LKR 4,000.00",
-          paymentMethod: "Card",
-          paymentStatus: "Paid",
-          barberName: "Mahesh Madushanka",
-          barberRole: "Senior Barber"
-        }
-      ];
-      localStorage.setItem("appointments", JSON.stringify(initial));
-      setAppointments(initial);
-    }
+    loadData();
 
     // Load logged in user's role/name if available
     if (roleCookie) {
@@ -99,16 +81,16 @@ export default function ProfileDashboard() {
     }
   }, []);
 
-  const handleCancelAppointment = (id: string) => {
+  const handleCancelAppointment = async (id: string) => {
     if (window.confirm("Are you sure you want to cancel this appointment?")) {
-      const updated = appointments.map(app => {
-        if (app.id === id) {
-          return { ...app, status: "Cancelled", paymentStatus: "Refunded" };
-        }
-        return app;
-      });
-      localStorage.setItem("appointments", JSON.stringify(updated));
-      setAppointments(updated);
+      const result = await cancelBooking(id);
+      if (result.success) {
+        setAppointments(appointments.map(app => 
+          app.id === id ? { ...app, status: "Cancelled", paymentStatus: "Refunded" } : app
+        ));
+      } else {
+        alert(result.message || "Failed to cancel booking.");
+      }
       setIsModalOpen(false);
     }
   };
@@ -143,7 +125,10 @@ export default function ProfileDashboard() {
     );
   }
 
-  const upcomingCount = appointments.filter(app => app.status === "Pending" || app.status === "Confirmed").length;
+  const upcomingAppointments = appointments.filter(app => app.status === "Pending" || app.status === "Confirmed");
+  const pastAppointments = appointments.filter(app => app.status === "Completed" || app.status === "Cancelled");
+  
+  const displayedAppointments = appointmentFilter === "upcoming" ? upcomingAppointments : pastAppointments;
 
   return (
     <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24 pb-32">
@@ -206,12 +191,34 @@ export default function ProfileDashboard() {
                     <CalendarOutlined className="text-amber-600 dark:text-amber-500" />
                     Appointments History
                   </h2>
+                  <div className="flex bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1">
+                    <button 
+                      onClick={() => setAppointmentFilter("upcoming")}
+                      className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
+                        appointmentFilter === "upcoming" 
+                          ? "bg-white dark:bg-zinc-700 text-amber-600 dark:text-amber-500 shadow-sm" 
+                          : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                      }`}
+                    >
+                      Upcoming ({upcomingAppointments.length})
+                    </button>
+                    <button 
+                      onClick={() => setAppointmentFilter("past")}
+                      className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
+                        appointmentFilter === "past" 
+                          ? "bg-white dark:bg-zinc-700 text-amber-600 dark:text-amber-500 shadow-sm" 
+                          : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                      }`}
+                    >
+                      Past ({pastAppointments.length})
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="p-0 overflow-x-auto">
-                  {appointments.length === 0 ? (
-                    <div className="p-12 text-center text-zinc-500 dark:text-zinc-400">
-                      No appointments found.
+                  {displayedAppointments.length === 0 ? (
+                    <div className="p-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">
+                      No {appointmentFilter} appointments found.
                     </div>
                   ) : (
                     <table className="w-full text-left border-collapse min-w-[800px]">
@@ -220,7 +227,8 @@ export default function ProfileDashboard() {
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">#</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Code</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Date/Time</th>
-                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Status</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Service</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Artisan</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Amount</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Payment Method</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Payment Status</th>
@@ -228,20 +236,13 @@ export default function ProfileDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {appointments.map((app, index) => (
+                        {displayedAppointments.map((app, index) => (
                           <tr key={app.id || index} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
                             <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400">{index + 1}</td>
                             <td className="py-5 px-6 text-sm font-bold text-zinc-900 dark:text-white">{app.code}</td>
                             <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400">{app.date} / {app.time}</td>
-                            <td className="py-5 px-6">
-                              <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
-                                app.status === "Pending" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500" :
-                                app.status === "Cancelled" ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500" :
-                                "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500"
-                              }`}>
-                                {app.status}
-                              </span>
-                            </td>
+                            <td className="py-5 px-6 text-sm font-medium text-zinc-800 dark:text-zinc-200">{app.serviceName}</td>
+                            <td className="py-5 px-6 text-sm font-bold text-amber-600 dark:text-amber-500">{app.barberName}</td>
                             <td className="py-5 px-6 text-sm font-medium text-zinc-600 dark:text-zinc-400">{app.amount}</td>
                             <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400">{app.paymentMethod}</td>
                             <td className="py-5 px-6">
@@ -279,7 +280,7 @@ export default function ProfileDashboard() {
                   <CalendarOutlined className="text-3xl" />
                 </div>
                 <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2 tracking-wide">Welcome back, <span className="capitalize font-bold text-amber-600 dark:text-amber-500">{user.name}</span></h3>
-                <p className="text-lg">You have <span className="font-bold text-amber-600 dark:text-amber-500">{upcomingCount}</span> upcoming {upcomingCount === 1 ? "appointment" : "appointments"}.</p>
+                <p className="text-lg">You have <span className="font-bold text-amber-600 dark:text-amber-500">{upcomingAppointments.length}</span> upcoming {upcomingAppointments.length === 1 ? "appointment" : "appointments"}.</p>
               </div>
             )}
 
@@ -317,6 +318,13 @@ export default function ProfileDashboard() {
                     <p className="font-bold text-zinc-900 dark:text-white">{selectedAppointment.barberName}</p>
                     <p className="text-xs text-amber-600 dark:text-amber-500 tracking-wide uppercase font-semibold">{selectedAppointment.barberRole}</p>
                   </div>
+                </div>
+              )}
+
+              {selectedAppointment.serviceName && (
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500 text-sm">Service</span>
+                  <span className="font-bold text-zinc-900 dark:text-white text-right max-w-[200px] truncate" title={selectedAppointment.serviceName}>{selectedAppointment.serviceName}</span>
                 </div>
               )}
 

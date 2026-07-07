@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     fs.appendFileSync('booking_debug.log', JSON.stringify(body) + '\n');
 
     // Validate body
-    if (!body.serviceId || !body.date) {
+    if ((!body.serviceIds && !body.serviceId) || !body.date) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
 
@@ -52,17 +52,20 @@ export async function POST(request: Request) {
       customerId = session.id;
     }
 
+    // Handle backward compatibility: if serviceId is passed instead of array
+    const serviceIds = body.serviceIds || (body.serviceId ? [body.serviceId] : []);
+
     // Fetch service to get the proper amount if amount is 0 or missing
     let finalAmount = body.amount;
-    if (!finalAmount) {
+    if (!finalAmount && serviceIds.length > 0) {
       const { db } = await import('@/lib/db');
-      const service = await db.service.findUnique({ where: { id: body.serviceId } });
-      finalAmount = service?.price || 0;
+      const services = await db.service.findMany({ where: { id: { in: serviceIds } } });
+      finalAmount = services.reduce((sum: number, s: any) => sum + s.price, 0);
     }
 
     const booking = await createBooking({
       customerId: session.role === 'CUSTOMER' ? session.id : customerId, 
-      serviceId: body.serviceId,
+      serviceIds: serviceIds,
       shopId: body.shopId,
       barberId: body.barberId,
       date: body.date,
@@ -75,21 +78,29 @@ export async function POST(request: Request) {
   }
 }
 
-import { updateBookingStatus, deleteBooking } from '@/lib/controllers/booking.controller';
+import { updateBookingStatus, deleteBooking, completePayment } from '@/lib/controllers/booking.controller';
 
 export async function PUT(request: Request) {
   try {
     const session = await verifySession();
-    if (!session || !['ADMIN', 'OWNER', 'MANAGER'].includes(session.role)) {
+    if (!session || !['ADMIN', 'OWNER', 'MANAGER', 'BARBER'].includes(session.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
     const body = await request.json();
-    if (!body.id || !body.status) {
-      return NextResponse.json({ message: 'ID and status are required' }, { status: 400 });
+    if (!body.id) {
+      return NextResponse.json({ message: 'ID is required' }, { status: 400 });
     }
 
-    const booking = await updateBookingStatus(body.id, body.status);
+    let booking;
+    if (body.action === 'PAYMENT_COMPLETE') {
+      booking = await completePayment(body.id, body.paymentMethod?.toUpperCase() || 'CASH');
+    } else if (body.status) {
+      booking = await updateBookingStatus(body.id, body.status);
+    } else {
+      return NextResponse.json({ message: 'Status or action is required' }, { status: 400 });
+    }
+
     return NextResponse.json({ booking, message: 'Booking updated successfully' }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ message: 'Error updating booking', error: error.message }, { status: 500 });

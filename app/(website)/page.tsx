@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getPublicBarbers, getPublicServices } from '@/lib/actions/public';
 import {
   CalendarOutlined,
   ScissorOutlined,
@@ -19,6 +20,20 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 export default function WebsiteHomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const reviewsRef = useRef<HTMLDivElement>(null);
+  const [barbers, setBarbers] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [barbersData, servicesData] = await Promise.all([
+        getPublicBarbers(),
+        getPublicServices()
+      ]);
+      setBarbers(barbersData);
+      setServices(servicesData);
+    };
+    fetchData();
+  }, []);
 
   // --- Premium GSAP Studio Reveal Animations ---
   useEffect(() => {
@@ -245,92 +260,47 @@ export default function WebsiteHomePage() {
               id="mobile-services-carousel"
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-3 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
-              {/* Service Card 1 */}
-              <ScrollReveal direction="down" delay={0.1} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
-                <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relative">
-                  <div className="h-72 overflow-hidden relative">
-                    <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                    <Image
-                      src="/images/website/services/1.jpg"
-                      alt="Hair Cutting"
-                      width={500}
-                      height={350}
-                      className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
-                      loading="lazy"
-                    />
-                    <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
-                      <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 500</div>
-                      <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">Hair Cutting</h4>
+              {services.length > 0 ? (
+                services.map((service, index) => (
+                  <ScrollReveal key={service.id} direction="down" delay={index * 0.15 + 0.1} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
+                    <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relative">
+                      <div className="h-72 overflow-hidden relative bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                        {service.imageUrl ? (
+                          <Image
+                            src={service.imageUrl}
+                            alt={service.name}
+                            width={500}
+                            height={350}
+                            className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="text-zinc-400 z-0">No Image</span>
+                        )}
+                        <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
+                          <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR {service.price}</div>
+                          <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">{service.name}</h4>
+                        </div>
+                      </div>
+                      <div className="p-6 pt-2 flex flex-col justify-between h-[calc(100%-18rem)]">
+                        <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors line-clamp-3">
+                          {service.description || "Premium service tailored to your preferences."}
+                        </p>
+                        <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
+                          <Link href="/booking" className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors pointer-events-auto">
+                            Reserve <ArrowRightOutlined />
+                          </Link>
+                        </Magnetic>
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-6 pt-2 flex flex-col justify-between h-[calc(100%-18rem)]">
-                    <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">A precision haircut tailored to your preferences, complete with styling.</p>
-                    <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
-                      <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors pointer-events-auto">
-                        Reserve <ArrowRightOutlined />
-                      </span>
-                    </Magnetic>
-                  </div>
+                  </ScrollReveal>
+                ))
+              ) : (
+                <div className="col-span-3 text-center text-zinc-500 py-12 w-full flex justify-center items-center">
+                  <div className="animate-pulse">Loading Services...</div>
                 </div>
-              </ScrollReveal>
-
-              {/* Service Card 2 */}
-              <ScrollReveal direction="down" delay={0.25} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
-                <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relatives">
-                  <div className="h-72 overflow-hidden relative">
-                    <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                    <Image
-                      src="/images/website/services/2.jpg"
-                      alt="Beard Cutting"
-                      width={500}
-                      height={350}
-                      className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
-                      loading="lazy"
-                    />
-                    <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
-                      <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 400</div>
-                      <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">Beard Cutting</h4>
-                    </div>
-                  </div>
-                  <div className="p-6 pt-2 flex flex-col justify-between h-[calc(100%-18rem)]">
-                    <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">Expert beard shaping, trimming, and lineup to compliment your face structure.</p>
-                    <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
-                      <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors pointer-events-auto">
-                        Reserve <ArrowRightOutlined />
-                      </span>
-                    </Magnetic>
-                  </div>
-                </div>
-              </ScrollReveal>
-
-              {/* Service Card 3 */}
-              <ScrollReveal direction="down" delay={0.4} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink">
-                <div className="group relative bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-md dark:shadow-none h-full relations">
-                  <div className="h-72 overflow-hidden relative">
-                    <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                    <Image
-                      src="/images/website/services/3.jpg"
-                      alt="Quick Head Massage"
-                      width={500}
-                      height={350}
-                      className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
-                      loading="lazy"
-                    />
-                    <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-gradient-to-t from-zinc-50 dark:from-zinc-950 to-transparent">
-                      <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR 400</div>
-                      <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">Quick Head Massage</h4>
-                    </div>
-                  </div>
-                  <div className="p-6 pt-2 flex flex-col justify-between h-[calc(100%-18rem)]">
-                    <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors">A relaxing head massage to ease tension, soothe stress, and improve circulation.</p>
-                    <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
-                      <span className="text-xs font-bold text-zinc-400 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors pointer-events-auto">
-                        Reserve <ArrowRightOutlined />
-                      </span>
-                    </Magnetic>
-                  </div>
-                </div>
-              </ScrollReveal>
+              )}
             </div>
           </div>
 
@@ -379,52 +349,44 @@ export default function WebsiteHomePage() {
               id="mobile-artisans-carousel"
               className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none md:grid-cols-4 gap-6 md:gap-8 hide-scrollbar pb-8 md:pb-0 px-6 md:px-0 scroll-smooth"
             >
-              {/* Artisan 1 - Owner */}
-              <ScrollReveal direction="down" className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
-                <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
-                  <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                    <Image width={400} height={500} src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
-                  </div>
-                  <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Nimesh Haththasingha</h4>
-                  <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Master Stylist</p>
+              {barbers.length > 0 ? (
+                barbers.map((barber, index) => (
+                  <ScrollReveal key={barber.id} direction="down" delay={index * 0.15} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
+                    <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
+                      <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center relative">
+                        {barber.imageUrl ? (
+                          <Image fill src={barber.imageUrl} alt={barber.name} className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                        ) : (
+                          <span className="text-zinc-300 dark:text-zinc-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap text-center px-2">{barber.name}</h4>
+                      <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">
+                        {barber.role === 'OWNER' ? 'Master Stylist' : barber.role === 'MANAGER' ? 'Senior Barber' : 'Barber'}
+                      </p>
+                    </div>
+                  </ScrollReveal>
+                ))
+              ) : (
+                <div className="col-span-4 text-center text-zinc-500 py-12 w-full flex justify-center items-center">
+                  <div className="animate-pulse">Loading Artisans...</div>
                 </div>
-              </ScrollReveal>
-
-              {/* Artisan 2 */}
-              <ScrollReveal direction="down" delay={0.15} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
-                <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
-                  <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                    <Image width={400} height={500} src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
-                  </div>
-                  <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Mahesh Madushanka</h4>
-                  <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
-                </div>
-              </ScrollReveal>
-
-              {/* Artisan 3 */}
-              <ScrollReveal direction="down" delay={0.3} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
-                <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
-                  <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                    <Image width={400} height={500} src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
-                  </div>
-                  <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Malith Sandaruwan</h4>
-                  <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
-                </div>
-              </ScrollReveal>
-
-              {/* Artisan 4 */}
-              <ScrollReveal direction="down" delay={0.45} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
-                <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
-                  <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                    <Image width={400} height={500} src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
-                  </div>
-                  <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Vindana Lakmal</h4>
-                  <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
-                </div>
-              </ScrollReveal>
+              )}
             </div>
 
           </div>
+
+          {/* ✅ View All Artisans link (Centered for all screens) */}
+          <div className="flex justify-center mt-12 md:mt-16">
+            <Link href="/barbers" className="border-b border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500 pb-1 text-xs font-bold tracking-[0.2em] uppercase transition-all hover:text-zinc-900 dark:hover:text-white hover:border-zinc-900 dark:hover:border-white">
+              View All Artisans
+            </Link>
+          </div>
+
         </div>
       </section>
       {/* =========================================

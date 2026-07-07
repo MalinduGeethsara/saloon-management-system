@@ -2,18 +2,18 @@ import { db, withTransaction } from '../db';
 import { sendSms } from '../services/sms.service';
 import { processPayment } from '../services/payment.service';
 
-export async function createBooking(data: { customerId: string; serviceId: string; shopId: string; barberId: string; date: string; amount: number; paymentMethod?: string }) {
+export async function createBooking(data: { customerId: string; serviceIds: string[]; shopId: string; barberId: string; date: string; amount: number; paymentMethod?: string }) {
   // Use ACID transaction to ensure booking creation and related logic are atomic
   const result = await withTransaction(async (tx) => {
-    // 1. Verify service exists and price matches (business logic validation)
-    const service = await tx.service.findUnique({ where: { id: data.serviceId } });
-    if (!service) throw new Error('Service not found');
+    // 1. Verify services exist
+    const services = await tx.service.findMany({ where: { id: { in: data.serviceIds } } });
+    if (services.length === 0) throw new Error('Services not found');
     
     // 1.5. ACID Rule: Prevent Double Booking Overlaps for the same barber
     if (data.barberId) {
       const newBookingStart = new Date(data.date);
-      // Ensure service duration exists, default to 30 mins
-      const durationMinutes = service.duration || 30; 
+      // Sum up duration for all services, default to 30 mins if none found
+      const durationMinutes = services.reduce((sum, s) => sum + (s.duration || 30), 0) || 30;
       const newBookingEnd = new Date(newBookingStart.getTime() + (durationMinutes * 60000));
 
       // Fetch bookings for that day to check for overlapping times
@@ -28,12 +28,12 @@ export async function createBooking(data: { customerId: string; serviceId: strin
           status: { in: ['CONFIRMED', 'PENDING'] },
           date: { gte: startOfDay, lte: endOfDay }
         },
-        include: { service: true }
+        include: { services: { include: { service: true } } }
       });
 
       for (const existing of existingBookings) {
         const existingStart = new Date(existing.date);
-        const existingDuration = existing.service?.duration || 30;
+        const existingDuration = existing.services?.reduce((sum, bs) => sum + (bs.service?.duration || 30), 0) || 30;
         const existingEnd = new Date(existingStart.getTime() + (existingDuration * 60000));
 
         // Overlap Condition: A starts before B ends AND A ends after B starts
@@ -50,11 +50,15 @@ export async function createBooking(data: { customerId: string; serviceId: strin
         status: 'CONFIRMED',
         totalAmount: data.amount,
         customerId: data.customerId,
-        serviceId: data.serviceId,
+        services: {
+          create: data.serviceIds.map(id => ({
+            service: { connect: { id } }
+          }))
+        },
         shopId: data.shopId,
         barberId: data.barberId,
       },
-      include: { customer: true, barber: true }
+      include: { customer: true, barber: true, services: { include: { service: true } } }
     });
 
     // 3. Create initial pending payment record
@@ -114,19 +118,19 @@ export async function getBookingsForUser(userId: string, role: string) {
   if (role === 'CUSTOMER') {
     return await db.booking.findMany({
       where: { customerId: userId },
-      include: { service: true, barber: true, shop: true, payment: true },
+      include: { services: { include: { service: true } }, barber: true, shop: true, payment: true },
       orderBy: { date: 'desc' }
     });
   } else if (role === 'BARBER') {
     return await db.booking.findMany({
       where: { barberId: userId },
-      include: { service: true, customer: true, shop: true, payment: true },
+      include: { services: { include: { service: true } }, customer: true, barber: true, shop: true, payment: true },
       orderBy: { date: 'desc' }
     });
   } else {
     // Admin, Manager, Owner see all
     return await db.booking.findMany({
-      include: { service: true, customer: true, barber: true, shop: true, payment: true },
+      include: { services: { include: { service: true } }, customer: true, barber: true, shop: true, payment: true },
       orderBy: { date: 'desc' }
     });
   }
@@ -135,7 +139,7 @@ export async function getBookingsForUser(userId: string, role: string) {
 export async function getBookingById(id: string) {
   return await db.booking.findUnique({
     where: { id },
-    include: { service: true, customer: true, barber: true, shop: true, payment: true }
+    include: { services: { include: { service: true } }, customer: true, barber: true, shop: true, payment: true }
   });
 }
 
@@ -151,5 +155,21 @@ export async function deleteBooking(id: string) {
   return await withTransaction(async (tx) => {
     await tx.payment.deleteMany({ where: { bookingId: id } });
     return await tx.booking.delete({ where: { id } });
+  });
+}
+
+export async function completePayment(bookingId: string, paymentMethod: string = 'CARD') {
+  return await withTransaction(async (tx) => {
+    const booking = await tx.booking.update({
+      where: { id: bookingId },
+      data: { status: 'COMPLETED' }
+    });
+
+    await tx.payment.updateMany({
+      where: { bookingId },
+      data: { status: 'COMPLETED', method: paymentMethod as any }
+    });
+
+    return booking;
   });
 }

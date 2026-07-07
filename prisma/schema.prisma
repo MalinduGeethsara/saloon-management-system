@@ -66,7 +66,7 @@ model Service {
 
   // Relations
   shop        Shop?    @relation(fields: [shopId], references: [id])
-  bookings    Booking[]
+  bookings    BookingService[]
 }
 
 model Product {
@@ -102,15 +102,23 @@ model Booking {
   // Foreign Keys
   customerId  String
   barberId    String?
-  serviceId   String
   shopId      String?
 
   // Relations
-  customer    User     @relation("CustomerBookings", fields: [customerId], references: [id])
-  barber      User?    @relation("BarberBookings", fields: [barberId], references: [id])
-  service     Service  @relation(fields: [serviceId], references: [id])
-  shop        Shop?    @relation(fields: [shopId], references: [id])
+  customer    User             @relation("CustomerBookings", fields: [customerId], references: [id])
+  barber      User?            @relation("BarberBookings", fields: [barberId], references: [id])
+  services    BookingService[]
+  shop        Shop?            @relation(fields: [shopId], references: [id])
   payment     Payment?
+}
+
+model BookingService {
+  id        String  @id @default(uuid())
+  bookingId String
+  serviceId String
+  
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
 enum PaymentStatus {

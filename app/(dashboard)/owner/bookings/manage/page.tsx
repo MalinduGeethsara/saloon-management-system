@@ -102,6 +102,11 @@ function ManageBookingsContent() {
   React.useEffect(() => {
     fetchBookings();
     
+    // Set up real-time polling every 5 seconds
+    const intervalId = setInterval(() => {
+      fetchBookings();
+    }, 5000);
+    
     const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
     if (roleMatch) {
       setUserRole(roleMatch[2].toLowerCase());
@@ -124,6 +129,8 @@ function ManageBookingsContent() {
         }
       }
     }
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const getColumnSearchProps = (dataIndex: string, title: string): TableColumnType<any> => ({
@@ -210,18 +217,40 @@ function ManageBookingsContent() {
 
   const handleGenerateBill = (record: any) => {
     setPaymentData({
-      bookingId: record.id, client: record.client, barber: record.barber, date: record.date,
+      bookingId: record.id, 
+      client: record.client === 'Unknown' ? '' : record.client, 
+      barber: record.barber, 
+      date: record.date,
       items: [{ type: 'Service', name: 'Salon Service Booking', price: record.total }] 
     });
     setIsPaymentModalOpen(true);
   };
 
-  const handleSavePayment = (finalData: any) => {
+  const handleSavePayment = async (finalData: any) => {
     setIsPaymentModalOpen(false);
-    setBookings(prev => prev.map(b => b.id === finalData.bookingId ? { ...b, status: "Paid" } : b));
-    setInvoiceData(finalData);
-    setTimeout(() => setIsInvoiceModalOpen(true), 300); 
-    showAlert("success", "Payment recorded successfully.");
+    try {
+      const res = await fetch('/api/v1/bookings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id: finalData.bookingId, 
+          action: 'PAYMENT_COMPLETE',
+          paymentMethod: finalData.method 
+        })
+      });
+      
+      if (res.ok) {
+        setInvoiceData(finalData);
+        setTimeout(() => setIsInvoiceModalOpen(true), 300); 
+        showAlert("success", "Payment recorded successfully.");
+        fetchBookings(); // Fetch new status to ensure dashboard is real-time
+      } else {
+        const error = await res.json();
+        showAlert("error", error.message || "Failed to record payment.");
+      }
+    } catch (e) {
+      showAlert("error", "An error occurred while processing payment.");
+    }
   };
 
   const columns = [
@@ -282,11 +311,15 @@ function ManageBookingsContent() {
       width: 150,
       render: (status: string) => {
         let color = 'default';
+        let customClass = "rounded-full px-3 font-semibold border-0";
         if (status === 'Confirmed') color = 'blue';
         if (status === 'Paid') color = 'green';
-        if (status === 'Pending') color = 'gold';
+        if (status === 'Pending') {
+          color = 'orange';
+          customClass += " animate-pulse shadow-sm shadow-orange-200";
+        }
         if (status === 'Cancelled') color = 'red';
-        return <Tag color={color} className="rounded-full px-3 font-semibold border-0">{status.toUpperCase()}</Tag>;
+        return <Tag color={color} className={customClass}>{status.toUpperCase()}</Tag>;
       },
     },
     {
@@ -399,6 +432,7 @@ function ManageBookingsContent() {
           // x: 1200 ensures it is wider than mobile screens to force swiping
           scroll={{ x: 1200 }} 
           className="booking-swipe-table"
+          rowClassName={(record) => record.status === 'Pending' ? 'bg-amber-50/50' : ''}
         />
       </Card>
 

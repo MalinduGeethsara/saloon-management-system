@@ -23,8 +23,13 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: false, message: 'Invalid customer credentials' }, { status: 401 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login Error:', error);
+    
+    if (error.code === 'P2002') {
+      return NextResponse.json({ success: false, message: 'An account with this email or phone number already exists.' }, { status: 400 });
+    }
+
     return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
   }
 }

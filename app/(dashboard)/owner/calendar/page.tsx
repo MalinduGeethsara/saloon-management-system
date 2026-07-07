@@ -100,7 +100,8 @@ function ScheduleContent() {
       const data = await res.json();
       if (data.bookings) {
         setEvents(data.bookings.map((b: any) => {
-          const endDate = new Date(new Date(b.date).getTime() + (b.service?.duration || 60) * 60000);
+          const mainDuration = b.services?.[0]?.service?.duration || 60;
+          const endDate = new Date(new Date(b.date).getTime() + mainDuration * 60000);
           const assignedBarber = staffList.find(s => s.id === String(b.barberId));
           const eventColor = assignedBarber?.color || '#7C4DFF';
           
@@ -109,12 +110,13 @@ function ScheduleContent() {
             title: b.customer?.name || 'Walk-in Client',
             start: new Date(b.date),
             end: endDate,
-            backgroundColor: eventColor,
-            borderColor: eventColor,
+            backgroundColor: b.status === 'PENDING' ? '#f97316' : eventColor,
+            borderColor: b.status === 'PENDING' ? '#ea580c' : eventColor,
             textColor: '#ffffff',
+            classNames: b.status === 'PENDING' ? ['animate-pulse', 'shadow-md', 'shadow-orange-400/50'] : [],
             extendedProps: {
               barberId: String(b.barberId),
-              service: b.service?.name,
+              service: b.services?.map((s: any) => s.service?.name).filter(Boolean).join(', ') || 'Service',
               status: b.status,
               shop: b.shop?.name,
               color: eventColor
@@ -129,6 +131,13 @@ function ScheduleContent() {
 
   useEffect(() => {
     fetchBookingsAndStaff();
+    
+    // Add real-time polling every 5 seconds
+    const interval = setInterval(() => {
+      fetchBookingsAndStaff();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // --- Initialize Title & Cookies ---

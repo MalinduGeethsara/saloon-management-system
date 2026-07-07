@@ -44,8 +44,8 @@ export async function registerCustomer(data: { email?: string, phone?: string, p
   
   const user = await db.user.create({
     data: {
-      email: data.email || `${Date.now()}@temp.com`, // temporary fallback if phone only
-      phone: data.phone,
+      email: data.email && data.email.trim() !== '' ? data.email : `${Date.now()}@temp.com`, 
+      phone: data.phone && data.phone.trim() !== '' ? data.phone : null,
       password: hashedPassword,
       name: data.name,
       role: 'CUSTOMER',
