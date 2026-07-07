@@ -30,10 +30,11 @@ import {
   DownOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
-import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
-import { NewBookingModal } from "@/components/modals/NewBookingModal";
-import { PaymentModal } from "@/components/modals/PaymentModal";
-import { InvoiceModal } from "@/components/modals/InvoiceModal";
+import { ConfirmationModal } from '@/components/modals/ConfirmationModal';
+import { NewBookingModal } from '@/components/modals/NewBookingModal';
+import { PaymentModal } from '@/components/modals/PaymentModal';
+import { InvoiceModal } from '@/components/modals/InvoiceModal';
+import BookingActionModal from '@/components/modals/BookingActionModal';
 
 import dayjs from 'dayjs';
 
@@ -67,7 +68,11 @@ function ManageBookingsContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
   const [modalType, setModalType] = useState<'accept' | 'decline' | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
-
+  
+  // Row click actions modal
+  const [selectedRow, setSelectedRow] = useState<any>(null);
+  const [isRowModalOpen, setIsRowModalOpen] = useState(false);
+  
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [paymentData, setPaymentData] = useState<any>(null);
@@ -253,6 +258,22 @@ function ManageBookingsContent() {
     }
   };
 
+  const handleViewInvoice = (record: any) => {
+    // Construct invoice data for already paid bookings
+    const amount = record.payment?.amount || record.total || 0;
+    const paymentMethod = record.payment?.method || 'CASH';
+    setInvoiceData({
+      bookingId: record.id,
+      client: record.client === 'Unknown' ? '' : record.client,
+      barber: record.barber,
+      date: record.date,
+      method: paymentMethod,
+      amount: amount,
+      items: [{ type: 'Service', name: 'Salon Service Booking', price: amount }]
+    });
+    setIsInvoiceModalOpen(true);
+  };
+
   const columns = [
     {
       title: 'Booking ID',
@@ -321,46 +342,6 @@ function ManageBookingsContent() {
         if (status === 'Cancelled') color = 'red';
         return <Tag color={color} className={customClass}>{status.toUpperCase()}</Tag>;
       },
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      align: 'right' as const,
-      width: 180,
-      render: (_: any, record: any) => (
-        <div className="flex justify-end gap-2">
-          {record.status === "Pending" && canEdit && (
-            <>
-              <Tooltip title="Accept">
-                <Button 
-                  type="text" shape="circle" 
-                  icon={<CheckCircleOutlined className="text-emerald-500" />} 
-                  onClick={() => handleActionClick(record.id, 'accept')}
-                  className="bg-emerald-50 hover:bg-emerald-100"
-                />
-              </Tooltip>
-              <Tooltip title="Decline">
-                <Button 
-                  type="text" shape="circle" 
-                  icon={<CloseCircleOutlined className="text-red-500" />} 
-                  onClick={() => handleActionClick(record.id, 'decline')}
-                  className="bg-red-50 hover:bg-red-100"
-                />
-              </Tooltip>
-            </>
-          )}
-          {record.status === "Confirmed" && canEdit && (
-            <Tooltip title="Process Payment & Invoice">
-              <Button 
-                type="text" shape="circle" 
-                icon={<PrinterOutlined className="text-[#7C4DFF]" />} 
-                onClick={() => handleGenerateBill(record)}
-                className="bg-[#F3E8FF] hover:bg-[#E9D5FF]"
-              />
-            </Tooltip>
-          )}
-        </div>
-      ),
     },
   ];
 
@@ -431,8 +412,14 @@ function ManageBookingsContent() {
           rowKey="key"
           // x: 1200 ensures it is wider than mobile screens to force swiping
           scroll={{ x: 1200 }} 
-          className="booking-swipe-table"
-          rowClassName={(record) => record.status === 'Pending' ? 'bg-amber-50/50' : ''}
+          className="booking-swipe-table cursor-pointer"
+          rowClassName={(record) => record.status === 'Pending' ? 'bg-amber-50/50 hover:bg-amber-100/50' : 'hover:bg-slate-50 transition-colors'}
+          onRow={(record) => ({
+            onClick: () => {
+              setSelectedRow(record);
+              setIsRowModalOpen(true);
+            }
+          })}
         />
       </Card>
 
@@ -446,6 +433,17 @@ function ManageBookingsContent() {
         description={modalType === 'accept' ? "Confirm and notify client?" : "Decline and remove this request?"}
         confirmText={modalType === 'accept' ? "Confirm" : "Decline"} 
         isDanger={modalType === 'decline'} 
+      />
+
+      <BookingActionModal 
+        isOpen={isRowModalOpen}
+        onClose={() => setIsRowModalOpen(false)}
+        booking={selectedRow}
+        onAccept={(id) => handleActionClick(id, 'accept')}
+        onDecline={(id) => handleActionClick(id, 'decline')}
+        onGenerateBill={(record) => { setIsRowModalOpen(false); handleGenerateBill(record); }}
+        onViewInvoice={(record) => { setIsRowModalOpen(false); handleViewInvoice(record); }}
+        canEdit={canEdit}
       />
 
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={handleSavePayment} paymentToEdit={paymentData} />
