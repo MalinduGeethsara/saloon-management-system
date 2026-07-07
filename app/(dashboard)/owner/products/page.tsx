@@ -78,25 +78,26 @@ function ProductsContent() {
   React.useEffect(() => {
     fetchProducts();
     
-    // Check Permissions
     const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (roleMatch && roleMatch[2] !== 'owner' && roleMatch[2] !== 'admin') {
-      const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-      if (permMatch) {
-        try {
-          const perms = JSON.parse(decodeURIComponent(permMatch[2]));
-          const pagePerms = perms.find((p: any) => p.pageKey === '/owner/products');
-          if (pagePerms) {
-            setCanAdd(pagePerms.canAdd);
-            setCanEdit(pagePerms.canEdit);
-            setCanDelete(pagePerms.canDelete);
-          } else {
-            // No permissions entry means no access at all
-            setCanAdd(false);
-            setCanEdit(false);
-            setCanDelete(false);
-          }
-        } catch (e) {}
+    if (roleMatch) {
+      const role = roleMatch[2].toLowerCase();
+      if (role !== 'owner' && role !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/products');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
       }
     }
   }, []);

@@ -33,18 +33,15 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-// --- Mock Initial Data Updated for Service/Product ---
-const INITIAL_SERVICES = [
-  { key: '1', name: "Classic Haircut", category: "Service", price: 2500, status: "Active", description: "Standard haircut with wash and styling." },
-  { key: '2', name: "Beard Trim & Shape", category: "Service", price: 1500, status: "Active", description: "Professional beard grooming." },
-  { key: '3', name: "Hair Coloring", category: "Service", price: 5000, status: "Active", description: "Full head coloring or highlights." },
-  { key: '4', name: "Matte Clay Wax", category: "Product", price: 1800, status: "Active", description: "Premium styling wax." },
-  { key: '5', name: "Beard Oil", category: "Product", price: 1200, status: "Inactive", description: "Nourishing oil for beard growth." },
-];
+// No initial mock data, loaded dynamically from DB
 
 function ServicesContent() {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState('owner');
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
   
   // Modal States
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
@@ -73,6 +70,31 @@ function ServicesContent() {
 
   React.useEffect(() => {
     fetchCatalog();
+    
+    // Check Permissions
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      setUserRole(roleMatch[2].toLowerCase());
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            // Check permissions for the catalog page
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/services');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
   }, []);
 
   const handleAdd = () => {
@@ -283,6 +305,7 @@ function ServicesContent() {
             size="small" 
             checked={status === 'Active'} 
             onChange={(checked) => handleToggleStatus(record, checked)} 
+            disabled={!canEdit}
           />
           <Text type={status === 'Active' ? 'success' : 'secondary'} className="text-[10px] font-bold uppercase inline-block min-w-[65px] text-left">
             {status}
@@ -296,11 +319,19 @@ function ServicesContent() {
       align: 'right' as const,
       width: 80,
       render: (_: any, record: any) => {
-        const items: MenuProps['items'] = [
-          { key: '1', label: 'Edit Item', icon: <EditOutlined />, onClick: () => handleEdit(record) },
-          { type: 'divider' },
-          { key: '2', label: 'Remove Item', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record) },
-        ];
+        const items: MenuProps['items'] = [];
+        if (canEdit) {
+          items.push({ key: '1', label: 'Edit Item', icon: <EditOutlined />, onClick: () => handleEdit(record) });
+        }
+        if (canEdit && canDelete) {
+          items.push({ type: 'divider' });
+        }
+        if (canDelete) {
+          items.push({ key: '2', label: 'Remove Item', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record) });
+        }
+        
+        if (items.length === 0) return null;
+
         return (
           <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
             <Button type="text" shape="circle" icon={<MoreOutlined className="text-lg" />} />
@@ -323,15 +354,31 @@ function ServicesContent() {
           <Text type="secondary">Manage services and products. Swipe table to see all details.</Text>
         </div>
         
-        <Button 
-          type="primary" 
-          size="large" 
-          icon={<PlusOutlined />} 
-          onClick={handleAdd}
-          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold shadow-md shadow-purple-100 border-none w-full md:w-auto h-12"
-        >
-          Add Item
-        </Button>
+        {canAdd && (
+            <div className="flex gap-3">
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={() => {
+                  setEditingService(null);
+                  setIsServiceModalOpen(true);
+                  // We can optionally set a default category in the modal state if needed, 
+                  // but currently ServiceModal uses an internal state or the record
+                }}
+                className="bg-purple-600 hover:bg-purple-700 shadow-md h-10 px-6 rounded-lg font-semibold tracking-wide border-0 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+              >
+                Add Product
+              </Button>
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={handleAdd}
+                className="bg-zinc-900 hover:bg-zinc-800 shadow-md h-10 px-6 rounded-lg font-semibold tracking-wide border-0 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+              >
+                Add Service
+              </Button>
+            </div>
+          )}
       </div>
 
       {/* KPI Stats - Centered layout for mobile */}

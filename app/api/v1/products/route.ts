@@ -15,8 +15,19 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await verifySession();
-    if (!session || !['ADMIN', 'OWNER', 'MANAGER'].includes(session.role)) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    if (!session) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const isOwnerOrAdmin = ['ADMIN', 'OWNER'].includes(session.role.toUpperCase());
+    let canModify = isOwnerOrAdmin;
+    if (!isOwnerOrAdmin && session.permissions) {
+      const perm = session.permissions.find((p: any) => p.pageKey === '/owner/products' || p.pageKey === '/owner/services');
+      if (perm && perm.canAdd) canModify = true;
+    }
+
+    if (!canModify) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -44,8 +55,19 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const session = await verifySession();
-    if (!session || !['ADMIN', 'OWNER', 'MANAGER'].includes(session.role)) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    if (!session) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const isOwnerOrAdmin = ['ADMIN', 'OWNER'].includes(session.role.toUpperCase());
+    let canModify = isOwnerOrAdmin;
+    if (!isOwnerOrAdmin && session.permissions) {
+      const perm = session.permissions.find((p: any) => p.pageKey === '/owner/products' || p.pageKey === '/owner/services');
+      if (perm && perm.canEdit) canModify = true;
+    }
+
+    if (!canModify) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -73,8 +95,19 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const session = await verifySession();
-    if (!session || !['ADMIN', 'OWNER', 'MANAGER'].includes(session.role)) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    if (!session) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const isOwnerOrAdmin = ['ADMIN', 'OWNER'].includes(session.role.toUpperCase());
+    let canModify = isOwnerOrAdmin;
+    if (!isOwnerOrAdmin && session.permissions) {
+      const perm = session.permissions.find((p: any) => p.pageKey === '/owner/products' || p.pageKey === '/owner/services');
+      if (perm && perm.canDelete) canModify = true;
+    }
+
+    if (!canModify) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
