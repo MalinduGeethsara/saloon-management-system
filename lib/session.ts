@@ -4,12 +4,20 @@ import { cookies } from 'next/headers';
 const secretKey = process.env.SESSION_SECRET || 'a-very-secret-default-key-for-dev';
 const encodedKey = new TextEncoder().encode(secretKey);
 
-interface SessionPayload extends JWTPayload {
+export interface Permission {
+  pageKey: string;
+  canView: boolean;
+  canAdd: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+}
+
+export interface SessionPayload extends JWTPayload {
   id: string;
   email: string;
   role: string;
   name: string;
-  permissions?: string[];
+  permissions?: Permission[];
   [key: string]: any;
 };
 

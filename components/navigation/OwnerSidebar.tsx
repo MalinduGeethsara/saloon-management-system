@@ -87,10 +87,13 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
     // Dynamic permission check for Manager and Barber
     if (userRole === 'manager' || userRole === 'barber') {
       // If it's the 'hr' group, check if any child is allowed
-      if (item.key === 'hr') return userPermissions.some(p => p.startsWith('/owner/hr'));
+      if (item.key === 'hr') {
+        return userPermissions.some((p: any) => p.pageKey?.startsWith('/owner/hr') && p.canView);
+      }
       
       // Exact check
-      return userPermissions.includes(item.key);
+      const perm = userPermissions.find((p: any) => p.pageKey === item.key);
+      return perm ? perm.canView : false;
     }
     return false;
   })

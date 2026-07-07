@@ -43,6 +43,11 @@ function ProductsContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   
+  // Permissions State
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
+  
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -72,6 +77,28 @@ function ProductsContent() {
 
   React.useEffect(() => {
     fetchProducts();
+    
+    // Check Permissions
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch && roleMatch[2] !== 'owner' && roleMatch[2] !== 'admin') {
+      const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+      if (permMatch) {
+        try {
+          const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+          const pagePerms = perms.find((p: any) => p.pageKey === '/owner/products');
+          if (pagePerms) {
+            setCanAdd(pagePerms.canAdd);
+            setCanEdit(pagePerms.canEdit);
+            setCanDelete(pagePerms.canDelete);
+          } else {
+            // No permissions entry means no access at all
+            setCanAdd(false);
+            setCanEdit(false);
+            setCanDelete(false);
+          }
+        } catch (e) {}
+      }
+    }
   }, []);
 
   // --- Handlers ---
@@ -168,19 +195,23 @@ function ProductsContent() {
                 style={{ backgroundImage: `url(${product.imageUrl || product.image || 'https://via.placeholder.com/300'})`, opacity: 0.95 }}
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
-                <Button 
-                  shape="circle" 
-                  icon={<EditOutlined />} 
-                  onClick={() => handleEdit(product)}
-                  className="border-none bg-white/90 text-slate-800 hover:bg-white hover:text-[#7C4DFF]"
-                />
-                <Button 
-                  shape="circle" 
-                  icon={<DeleteOutlined />} 
-                  danger
-                  onClick={() => handleDeleteClick(product.key)}
-                  className="border-none bg-white/90 hover:bg-white"
-                />
+                {canEdit && (
+                  <Button 
+                    shape="circle" 
+                    icon={<EditOutlined />} 
+                    onClick={() => handleEdit(product)}
+                    className="border-none bg-white/90 text-slate-800 hover:bg-white hover:text-[#7C4DFF]"
+                  />
+                )}
+                {canDelete && (
+                  <Button 
+                    shape="circle" 
+                    icon={<DeleteOutlined />} 
+                    danger
+                    onClick={() => handleDeleteClick(product.key)}
+                    className="border-none bg-white/90 hover:bg-white"
+                  />
+                )}
               </div>
               <div className="absolute top-3 right-3 flex gap-2">
                 {product.status === 'Inactive' && (
@@ -253,14 +284,19 @@ function ProductsContent() {
         title: 'Action',
         key: 'action',
         align: 'right',
-        render: (_: any, record: any) => (
-          <Dropdown menu={{ items: [
-            { key: '1', label: 'Edit', icon: <EditOutlined />, onClick: () => handleEdit(record) },
-            { key: '2', label: 'Delete', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) },
-          ] }} trigger={['click']}>
-            <Button type="text" shape="circle" icon={<MoreOutlined />} />
-          </Dropdown>
-        ),
+        render: (_: any, record: any) => {
+          const items: MenuProps['items'] = [];
+          if (canEdit) items.push({ key: '1', label: 'Edit', icon: <EditOutlined />, onClick: () => handleEdit(record) });
+          if (canDelete) items.push({ key: '2', label: 'Delete', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) });
+          
+          if (items.length === 0) return <span className="text-xs text-slate-400">No Access</span>;
+
+          return (
+            <Dropdown menu={{ items }} trigger={['click']}>
+              <Button type="text" shape="circle" icon={<MoreOutlined />} />
+            </Dropdown>
+          );
+        },
       },
     ];
 
@@ -303,16 +339,18 @@ function ProductsContent() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<PlusOutlined />} 
-            onClick={handleAdd}
-            style={{ backgroundColor: '#7C4DFF', borderRadius: '12px', fontWeight: 600 }}
-            className="shrink-0"
-          >
-            Add Product
-          </Button>
+          {canAdd && (
+            <Button 
+              type="primary" 
+              size="large" 
+              icon={<PlusOutlined />} 
+              onClick={handleAdd}
+              style={{ backgroundColor: '#7C4DFF', borderRadius: '12px', fontWeight: 600 }}
+              className="shrink-0"
+            >
+              Add Product
+            </Button>
+          )}
         </div>
       </div>
 

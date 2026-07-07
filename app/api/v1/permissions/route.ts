@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     }
 
     // Wrap in transaction for ACID safety
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: any) => {
       // Clear existing permissions for this user
       await tx.staffPermission.deleteMany({
         where: { userId }
@@ -48,10 +48,13 @@ export async function POST(request: Request) {
       // Insert new permissions
       if (permissions.length > 0) {
         await tx.staffPermission.createMany({
-          data: permissions.map(pageKey => ({
+          data: permissions.map((p: any) => ({
             userId,
-            pageKey,
-            canView: true
+            pageKey: p.pageKey,
+            canView: p.canView,
+            canAdd: p.canAdd,
+            canEdit: p.canEdit,
+            canDelete: p.canDelete
           }))
         });
       }

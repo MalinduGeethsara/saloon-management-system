@@ -62,10 +62,10 @@ export async function middleware(request: NextRequest) {
       
       // Dynamic permissions for Manager and Barber
       if (userRole === 'MANAGER' || userRole === 'BARBER') {
-        const allowed = (session.permissions as string[]) || [];
+        const allowed = (session.permissions as any[]) || [];
         
         // Allow base /owner path just in case, otherwise check if they are trying to access a specific page
-        if (path !== '/owner' && !allowed.some(route => path.startsWith(route))) {
+        if (path !== '/owner' && !allowed.some(perm => path.startsWith(perm.pageKey) && perm.canView)) {
           url.pathname = '/owner'; 
           return NextResponse.redirect(url);
         }

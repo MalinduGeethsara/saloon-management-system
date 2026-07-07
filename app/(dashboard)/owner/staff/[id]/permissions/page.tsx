@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Card, Switch, Button, Typography, Space, message, Spin } from 'antd';
+import { Card, Checkbox, Button, Typography, Space, message, Spin, Table } from 'antd';
 import { 
   SaveOutlined, 
   SafetyCertificateOutlined,
@@ -27,10 +27,27 @@ const AVAILABLE_PERMISSIONS = [
   { key: '/owner/hr/attendance', label: 'HR & Attendance', icon: <SolutionOutlined /> },
 ];
 
+interface PermissionState {
+  pageKey: string;
+  canView: boolean;
+  canAdd: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+}
+
 export default function PermissionsPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = React.use(params);
   const userId = unwrappedParams.id;
-  const [permissions, setPermissions] = useState<string[]>([]);
+  const [permissions, setPermissions] = useState<PermissionState[]>(
+    AVAILABLE_PERMISSIONS.map(p => ({
+      pageKey: p.key,
+      canView: false,
+      canAdd: false,
+      canEdit: false,
+      canDelete: false
+    }))
+  );
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -42,7 +59,11 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
       .then(res => res.json())
       .then(data => {
         if (data.permissions) {
-          setPermissions(data.permissions.map((p: any) => p.pageKey));
+          // Merge fetched permissions with available schema
+          setPermissions(prev => prev.map(p => {
+            const fetched = data.permissions.find((fp: any) => fp.pageKey === p.pageKey);
+            return fetched ? { ...p, ...fetched } : p;
+          }));
         }
         setLoading(false);
       })
@@ -52,23 +73,38 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
       });
   }, [userId, messageApi]);
 
-  const handleToggle = (key: string, checked: boolean) => {
-    if (checked) {
-      setPermissions(prev => [...prev, key]);
-    } else {
-      setPermissions(prev => prev.filter(p => p !== key));
-    }
+  const handleToggle = (pageKey: string, field: keyof PermissionState, checked: boolean) => {
+    setPermissions(prev => prev.map(p => {
+      if (p.pageKey === pageKey) {
+        const newPerm = { ...p, [field]: checked };
+        // If they can add/edit/delete, they MUST be able to view
+        if (field !== 'canView' && checked) {
+          newPerm.canView = true;
+        }
+        // If they can't view, they can't do anything else
+        if (field === 'canView' && !checked) {
+          newPerm.canAdd = false;
+          newPerm.canEdit = false;
+          newPerm.canDelete = false;
+        }
+        return newPerm;
+      }
+      return p;
+    }));
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Only send permissions where canView is true to save DB space
+      const activePermissions = permissions.filter(p => p.canView);
+      
       const res = await fetch('/api/v1/permissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: userId,
-          permissions: permissions
+          permissions: activePermissions
         })
       });
 
@@ -86,40 +122,93 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
 
   if (loading) return <div className="flex justify-center items-center h-64"><Spin size="large" /></div>;
 
+  const columns = [
+    {
+      title: 'Module',
+      dataIndex: 'pageKey',
+      key: 'module',
+      render: (key: string) => {
+        const moduleDef = AVAILABLE_PERMISSIONS.find(m => m.key === key);
+        return (
+          <Space size="middle">
+            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-purple-600">
+              {moduleDef?.icon}
+            </div>
+            <Text strong className="text-slate-800 text-base">{moduleDef?.label}</Text>
+          </Space>
+        );
+      }
+    },
+    {
+      title: 'View',
+      key: 'canView',
+      align: 'center' as const,
+      render: (_: any, record: PermissionState) => (
+        <Checkbox 
+          checked={record.canView} 
+          onChange={(e) => handleToggle(record.pageKey, 'canView', e.target.checked)} 
+        />
+      )
+    },
+    {
+      title: 'Add / Create',
+      key: 'canAdd',
+      align: 'center' as const,
+      render: (_: any, record: PermissionState) => (
+        <Checkbox 
+          checked={record.canAdd} 
+          onChange={(e) => handleToggle(record.pageKey, 'canAdd', e.target.checked)}
+          disabled={!record.canView}
+        />
+      )
+    },
+    {
+      title: 'Edit / Update',
+      key: 'canEdit',
+      align: 'center' as const,
+      render: (_: any, record: PermissionState) => (
+        <Checkbox 
+          checked={record.canEdit} 
+          onChange={(e) => handleToggle(record.pageKey, 'canEdit', e.target.checked)}
+          disabled={!record.canView}
+        />
+      )
+    },
+    {
+      title: 'Delete / Cancel',
+      key: 'canDelete',
+      align: 'center' as const,
+      render: (_: any, record: PermissionState) => (
+        <Checkbox 
+          checked={record.canDelete} 
+          onChange={(e) => handleToggle(record.pageKey, 'canDelete', e.target.checked)}
+          disabled={!record.canView}
+        />
+      )
+    }
+  ];
+
   return (
-    <div className="max-w-[800px] mx-auto pb-10 px-4 mt-8">
+    <div className="max-w-[1000px] mx-auto pb-10 px-4 mt-8">
       {contextHolder}
       <div className="flex items-center gap-4 mb-8 border-b pb-4 border-slate-200">
         <SafetyCertificateOutlined className="text-3xl text-purple-600" />
         <div>
           <Title level={3} style={{ margin: 0, fontWeight: 800 }}>Manage Staff Permissions</Title>
-          <Text type="secondary">Control exactly which modules this staff member can access.</Text>
+          <Text type="secondary">Control exactly what this staff member can view, add, edit, or delete.</Text>
         </div>
       </div>
 
-      <Card className="shadow-sm rounded-2xl border-slate-200">
-        <div className="flex flex-col gap-6">
-          {AVAILABLE_PERMISSIONS.map(perm => (
-            <div key={perm.key} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
-              <Space size="middle">
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-purple-600">
-                  {perm.icon}
-                </div>
-                <div>
-                  <Text strong className="text-slate-800 block text-base">{perm.label}</Text>
-                  <Text type="secondary" className="text-xs">Grant access to the {perm.label} module</Text>
-                </div>
-              </Space>
-              <Switch 
-                checked={permissions.includes(perm.key)} 
-                onChange={(checked) => handleToggle(perm.key, checked)}
-                className={permissions.includes(perm.key) ? 'bg-purple-600' : 'bg-slate-300'}
-              />
-            </div>
-          ))}
-        </div>
+      <Card className="shadow-sm rounded-2xl border-slate-200" styles={{ body: { padding: 0 } }}>
+        <Table 
+          columns={columns} 
+          dataSource={permissions} 
+          rowKey="pageKey"
+          pagination={false}
+          className="permissions-table"
+        />
 
-        <div className="mt-8 pt-6 border-t border-slate-200 flex justify-end gap-4">
+        <div className="p-6 border-t border-slate-200 flex justify-end gap-4 bg-slate-50 rounded-b-2xl">
           <Button size="large" onClick={() => router.push('/owner/staff')}>Cancel</Button>
           <Button 
             type="primary" 
@@ -133,6 +222,17 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
           </Button>
         </div>
       </Card>
+      
+      <style jsx global>{`
+        .permissions-table .ant-table-thead > tr > th {
+          background-color: #f8fafc !important;
+          color: #64748b !important;
+          font-weight: 700;
+          text-transform: uppercase;
+          font-size: 12px;
+          letter-spacing: 0.05em;
+        }
+      `}</style>
     </div>
   );
 }

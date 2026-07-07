@@ -82,16 +82,23 @@ export async function loginStaff(emailOrPhone: string, passwordRaw: string) {
 
   // Fetch dynamic permissions for this staff member
   const permissions = await db.staffPermission.findMany({
-    where: { userId: user.id, canView: true }
+    where: { userId: user.id }
   });
-  const allowedPages = permissions.map(p => p.pageKey);
+
+  const fullPermissions = permissions.map(p => ({
+    pageKey: p.pageKey,
+    canView: p.canView,
+    canAdd: p.canAdd,
+    canEdit: p.canEdit,
+    canDelete: p.canDelete
+  }));
 
   await createSession({
     id: user.id,
     email: user.email,
     role: user.role,
     name: user.name,
-    permissions: allowedPages,
+    permissions: fullPermissions,
   });
 
   return user;

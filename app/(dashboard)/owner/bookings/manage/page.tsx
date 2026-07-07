@@ -58,6 +58,11 @@ function ManageBookingsContent() {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState('owner');
   
+  // Permissions
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
   const [modalType, setModalType] = useState<'accept' | 'decline' | null>(null);
@@ -100,6 +105,24 @@ function ManageBookingsContent() {
     const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
     if (roleMatch) {
       setUserRole(roleMatch[2].toLowerCase());
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/bookings/manage');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
+      }
     }
   }, []);
 
@@ -273,7 +296,7 @@ function ManageBookingsContent() {
       width: 180,
       render: (_: any, record: any) => (
         <div className="flex justify-end gap-2">
-          {record.status === "Pending" && (
+          {record.status === "Pending" && canEdit && (
             <>
               <Tooltip title="Accept">
                 <Button 
@@ -293,7 +316,7 @@ function ManageBookingsContent() {
               </Tooltip>
             </>
           )}
-          {record.status === "Confirmed" && (
+          {record.status === "Confirmed" && canEdit && (
             <Tooltip title="Process Payment & Invoice">
               <Button 
                 type="text" shape="circle" 
@@ -322,13 +345,15 @@ function ManageBookingsContent() {
           <Text type="secondary">Swipe table horizontally to see all columns on mobile.</Text>
         </div>
         
-        <Button 
-          type="primary" size="large" icon={<PlusOutlined />} 
-          onClick={() => setIsAddModalOpen(true)}
-          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none h-12 w-full md:w-auto"
-        >
-          Manual Booking
-        </Button>
+        {canAdd && (
+          <Button 
+            type="primary" size="large" icon={<PlusOutlined />} 
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none h-12 w-full md:w-auto"
+          >
+            Manual Booking
+          </Button>
+        )}
       </div>
 
       {/* KPI Stats */}
