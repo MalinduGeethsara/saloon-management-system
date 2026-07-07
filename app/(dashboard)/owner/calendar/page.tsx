@@ -222,7 +222,8 @@ function ScheduleContent() {
         fetchBookings();
         setIsNewModalOpen(false);
       } else {
-        showAlert('error', 'Failed to save booking');
+        const errorData = await res.json();
+        showAlert('error', errorData.error || 'Failed to save booking');
       }
     } catch(e) {
       showAlert('error', 'Error creating booking');

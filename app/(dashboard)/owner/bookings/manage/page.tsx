@@ -171,7 +171,8 @@ function ManageBookingsContent() {
         fetchBookings();
         setIsAddModalOpen(false);
       } else {
-        showAlert("error", "Failed to create booking.");
+        const errorData = await res.json();
+        showAlert("error", errorData.error || "Failed to create booking.");
       }
     } catch (e) {
       showAlert("error", "An error occurred.");

@@ -9,6 +9,40 @@ export async function createBooking(data: { customerId: string; serviceId: strin
     const service = await tx.service.findUnique({ where: { id: data.serviceId } });
     if (!service) throw new Error('Service not found');
     
+    // 1.5. ACID Rule: Prevent Double Booking Overlaps for the same barber
+    if (data.barberId) {
+      const newBookingStart = new Date(data.date);
+      // Ensure service duration exists, default to 30 mins
+      const durationMinutes = service.duration || 30; 
+      const newBookingEnd = new Date(newBookingStart.getTime() + (durationMinutes * 60000));
+
+      // Fetch bookings for that day to check for overlapping times
+      const startOfDay = new Date(newBookingStart);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(newBookingStart);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existingBookings = await tx.booking.findMany({
+        where: {
+          barberId: data.barberId,
+          status: { in: ['CONFIRMED', 'PENDING'] },
+          date: { gte: startOfDay, lte: endOfDay }
+        },
+        include: { service: true }
+      });
+
+      for (const existing of existingBookings) {
+        const existingStart = new Date(existing.date);
+        const existingDuration = existing.service?.duration || 30;
+        const existingEnd = new Date(existingStart.getTime() + (existingDuration * 60000));
+
+        // Overlap Condition: A starts before B ends AND A ends after B starts
+        if (newBookingStart < existingEnd && newBookingEnd > existingStart) {
+          throw new Error('DOUBLE_BOOKING: This time slot overlaps with an existing booking for the selected specialist.');
+        }
+      }
+    }
+    
     // 2. Create the booking
     const booking = await tx.booking.create({
       data: {
