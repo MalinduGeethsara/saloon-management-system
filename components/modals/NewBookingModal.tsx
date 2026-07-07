@@ -78,7 +78,6 @@ export function NewBookingModal({
   }, [isOpen, defaultDate, defaultBarberId, barbers, form]);
 
   const [services, setServices] = useState<any[]>([]);
-  const [dynamicBarbers, setDynamicBarbers] = useState<Barber[]>([]);
   const [shops, setShops] = useState<any[]>([]);
 
   useEffect(() => {
@@ -97,22 +96,10 @@ export function NewBookingModal({
         })
         .catch(console.error);
 
-      fetch('/api/v1/staff')
-        .then(res => res.json())
-        .then(data => {
-          if (data.staff) {
-            setDynamicBarbers(data.staff.map((s: any) => ({
-              id: s.id,
-              name: s.name,
-              color: '#1A1A1B' // default color or add color field to DB
-            })));
-          }
-        })
-        .catch(console.error);
     }
   }, [isOpen]);
 
-  const activeBarbers = dynamicBarbers.length > 0 ? dynamicBarbers : barbers;
+  const activeBarbers = barbers;
 
   const handleFinish = (values: any) => {
     const startDateTime = values.date

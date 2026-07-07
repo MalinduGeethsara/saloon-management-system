@@ -40,13 +40,15 @@ import { Modal, Descriptions } from 'antd';
 const { Title, Text } = Typography;
 const { useToken } = theme;
 
-// --- Sri Lankan Staff Data ---
-const BARBERS = [
-  { id: '1', name: 'Malith Sandaruwan', color: '#18181b', role: 'Senior Barber' }, 
-  { id: '2', name: 'Mahesh Madushanka', color: '#7C4DFF', role: 'Senior Barber' }, 
-  { id: '3', name: 'Vindana Lakmal', color: '#2563eb', role: 'Senior Barber' },
-  { id: '4', name: 'Nimesh Haththasingha', color: '#059669', role: 'Master Stylist' },
-];
+// --- Predefined Colors for Dynamic Staff ---
+const COLOR_PALETTE = ['#7C4DFF', '#059669', '#2563eb', '#d97706', '#dc2626', '#4f46e5', '#db2777', '#18181b'];
+
+interface Barber {
+  id: string;
+  name: string;
+  color: string;
+  role: string;
+}
 
 // --- Helper: Generate Dates ---
 const getRelativeDate = (days: number, hours: number, minutes: number) => {
@@ -60,6 +62,7 @@ function ScheduleContent() {
   const { token } = useToken();
   const calendarRef = useRef<FullCalendar>(null);
   const [events, setEvents] = useState<any[]>([]);
+  const [barbers, setBarbers] = useState<Barber[]>([]);
   const { showAlert } = useAlert();
   
   // --- States ---
@@ -75,26 +78,46 @@ function ScheduleContent() {
   const [viewTitle, setViewTitle] = useState("");
   const [userRole, setUserRole] = useState<string>('owner');
   
-  const fetchBookings = async () => {
+  const fetchBookingsAndStaff = async () => {
     try {
+      // Fetch Staff first to map colors
+      const staffRes = await fetch('/api/v1/staff');
+      const staffData = await staffRes.json();
+      let staffList: Barber[] = [];
+      
+      if (staffData.staff) {
+        staffList = staffData.staff.map((s: any, idx: number) => ({
+          id: String(s.id),
+          name: s.name,
+          color: COLOR_PALETTE[idx % COLOR_PALETTE.length],
+          role: s.role
+        }));
+        setBarbers(staffList);
+      }
+
+      // Fetch Bookings
       const res = await fetch('/api/v1/bookings');
       const data = await res.json();
       if (data.bookings) {
         setEvents(data.bookings.map((b: any) => {
           const endDate = new Date(new Date(b.date).getTime() + (b.service?.duration || 60) * 60000);
+          const assignedBarber = staffList.find(s => s.id === String(b.barberId));
+          const eventColor = assignedBarber?.color || '#7C4DFF';
+          
           return {
             id: b.id,
             title: b.customer?.name || 'Walk-in Client',
             start: new Date(b.date),
             end: endDate,
-            backgroundColor: '#7C4DFF',
-            borderColor: '#7C4DFF',
+            backgroundColor: eventColor,
+            borderColor: eventColor,
             textColor: '#ffffff',
             extendedProps: {
-              barberId: b.barberId,
+              barberId: String(b.barberId),
               service: b.service?.name,
               status: b.status,
-              shop: b.shop?.name
+              shop: b.shop?.name,
+              color: eventColor
             }
           };
         }));
@@ -105,7 +128,7 @@ function ScheduleContent() {
   };
 
   useEffect(() => {
-    fetchBookings();
+    fetchBookingsAndStaff();
   }, []);
 
   // --- Initialize Title & Cookies ---
@@ -219,7 +242,7 @@ function ScheduleContent() {
       });
       if (res.ok) {
         showAlert('success', 'Appointment booked successfully!');
-        fetchBookings();
+        fetchBookingsAndStaff();
         setIsNewModalOpen(false);
       } else {
         const errorData = await res.json();
@@ -296,7 +319,7 @@ function ScheduleContent() {
                 {!activeBarberId && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
               </div>
 
-              {BARBERS.map(b => (
+              {barbers.map(b => (
                 <div 
                   key={b.id}
                   className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${activeBarberId === String(b.id) ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
@@ -307,7 +330,7 @@ function ScheduleContent() {
                     <div className="text-sm font-bold text-slate-700">{b.name}</div>
                     <div className="text-xs text-slate-400">{b.role}</div>
                   </div>
-                  {activeBarberId === String(b.id) && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
+                  {activeBarberId === String(b.id) && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: b.color }} />}
                 </div>
               ))}
             </div>
@@ -327,7 +350,7 @@ function ScheduleContent() {
                     <div className="text-lg font-black text-slate-800">{dayjs(evt.start).format('DD')}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-[#7C4DFF] mb-0.5">{dayjs(evt.start).format('h:mm A')}</div>
+                    <div className="text-xs font-bold mb-0.5" style={{ color: evt.extendedProps.color }}>{dayjs(evt.start).format('h:mm A')}</div>
                     <div className="text-sm font-bold text-slate-800 leading-tight">{evt.title}</div>
                     <div className="text-xs text-slate-400 mt-1">{evt.extendedProps.service}</div>
                   </div>
@@ -437,14 +460,14 @@ function ScheduleContent() {
       {/* --- MODALS --- */}
       
       {/* 1. New Booking (Uses your provided component) */}
-      <NewBookingModal 
-        isOpen={isNewModalOpen}
-        onClose={() => setIsNewModalOpen(false)}
-        onSave={handleSaveBooking}
-        barbers={BARBERS}
-        defaultDate={selectedDate}
-        defaultBarberId={activeBarberId}
-      />
+        <NewBookingModal 
+          isOpen={isNewModalOpen}
+          onClose={() => setIsNewModalOpen(false)}
+          onSave={editingBooking ? async (data) => {/* Implement PUT here if needed */ setIsNewModalOpen(false); fetchBookingsAndStaff();} : handleSaveBooking}
+          barbers={barbers}
+          defaultDate={selectedDate}
+          defaultBarberId={activeBarberId || undefined}
+        />
 
       {/* 2. Simple Event Details (Inline for simplicity) */}
       <Modal
