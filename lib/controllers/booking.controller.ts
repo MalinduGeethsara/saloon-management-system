@@ -54,7 +54,7 @@ export async function createBooking(data: { customerId: string; serviceId: strin
         shopId: data.shopId,
         barberId: data.barberId,
       },
-      include: { customer: true }
+      include: { customer: true, barber: true }
     });
 
     // 3. Create initial pending payment record
@@ -67,6 +67,33 @@ export async function createBooking(data: { customerId: string; serviceId: strin
         customerId: data.customerId,
       }
     });
+
+    // 4. Create Notifications
+    const owners = await tx.user.findMany({ where: { role: 'OWNER' } });
+    const notificationData = [];
+    
+    if (data.barberId && booking.barber) {
+      notificationData.push({
+        title: 'New Appointment',
+        desc: `New booking with ${booking.customer.name} assigned to you.`,
+        userId: data.barberId
+      });
+    }
+
+    for (const owner of owners) {
+      if (owner.id !== data.barberId) {
+        const barberName = booking.barber ? booking.barber.name : 'a specialist';
+        notificationData.push({
+          title: 'New Appointment',
+          desc: `Booking created for ${booking.customer.name} with ${barberName}.`,
+          userId: owner.id
+        });
+      }
+    }
+
+    if (notificationData.length > 0) {
+      await tx.notification.createMany({ data: notificationData });
+    }
 
     return { booking, payment };
   });

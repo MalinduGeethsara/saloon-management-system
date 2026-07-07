@@ -1,83 +1,130 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Badge, Button, Popover, List, Typography, Avatar } from 'antd';
+import React, { useState, useEffect, useRef } from 'react';
+import { Badge, Button, Popover, Typography, Avatar, notification, Modal } from 'antd';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   BellOutlined, 
   CalendarOutlined, 
-  AlertOutlined, 
-  InfoCircleOutlined 
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 const { Text } = Typography;
 
-// --- Mock Notifications Data ---
-const INITIAL_NOTIFICATIONS = [
-  { 
-    id: 1, 
-    title: 'New Booking Request', 
-    desc: 'Kamal Perera booked a haircut for 3:00 PM.', 
-    time: '10 min ago', 
-    icon: <CalendarOutlined style={{ color: '#7C4DFF' }}/>, 
-    read: false 
-  },
-  { 
-    id: 2, 
-    title: 'Low Stock Alert', 
-    desc: 'Matte Clay Wax is running low in inventory.', 
-    time: '1 hour ago', 
-    icon: <AlertOutlined style={{ color: '#F59E0B' }}/>, 
-    read: false 
-  },
-  { 
-    id: 3, 
-    title: 'System Update', 
-    desc: 'Weekly analytics report is ready to view.', 
-    time: '2 hours ago', 
-    icon: <InfoCircleOutlined style={{ color: '#10B981' }}/>, 
-    read: true // This one is already read, so it won't show up initially
-  },
-];
-
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
-  
-  // Filter to only show notifications that haven't been read yet
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [api, notificationContextHolder] = notification.useNotification();
+  const [modal, modalContextHolder] = Modal.useModal();
+  const knownNotificationIds = useRef(new Set<string>());
+  const isFirstLoad = useRef(true);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/v1/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.notifications) {
+          setNotifications(data.notifications);
+          
+          data.notifications.forEach((n: any) => {
+            if (!knownNotificationIds.current.has(n.id)) {
+              knownNotificationIds.current.add(n.id);
+              
+              if (!isFirstLoad.current && !n.read) {
+                // Show a persistent popup window using hooks to consume theme context
+                modal.info({
+                  title: n.title,
+                  content: (
+                    <div className="mt-2">
+                      <p className="text-sm text-slate-600">{n.desc}</p>
+                      <p className="text-xs text-slate-400 mt-2 italic">Please review your updated schedule.</p>
+                    </div>
+                  ),
+                  okText: 'Acknowledge',
+                  centered: true,
+                  okButtonProps: { className: 'bg-[#7C4DFF]' },
+                });
+                
+                // Also show the toast as a secondary alert
+                api.info({
+                  title: n.title,
+                  description: n.desc,
+                  placement: 'topRight',
+                  duration: 6,
+                  icon: <BellOutlined style={{ color: '#7C4DFF' }} />
+                });
+              }
+            }
+          });
+
+          if (isFirstLoad.current) {
+            isFirstLoad.current = false;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch notifications');
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 5000); // Poll every 5 seconds for "realtime" feel
+    return () => clearInterval(interval);
+  }, []);
+
   const unreadNotifications = notifications.filter(n => !n.read);
   const unreadCount = unreadNotifications.length;
 
-  const handleMarkAllAsRead = () => {
-    // Set all notifications to read = true, which will make them disappear from the filtered list
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const handleMarkAllAsRead = async () => {
+    try {
+      const res = await fetch('/api/v1/notifications', { method: 'PUT' });
+      if (res.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      }
+    } catch (e) {
+      console.error('Failed to mark notifications as read');
+    }
+  };
+
+  const handleNotificationClick = (item: any) => {
+    // Navigate to the appropriate booking view
+    if (pathname.startsWith('/owner')) {
+      router.push('/owner/bookings/manage');
+    } else if (pathname.startsWith('/barber')) {
+      router.push('/barber');
+    }
+    setOpen(false); // Close popover
   };
 
   const content = (
-    <div style={{ width: 320 }}>
+    <div style={{ width: 320, maxHeight: '400px', overflowY: 'auto' }}>
       {unreadCount > 0 ? (
         <>
-          <List
-            itemLayout="horizontal"
-            dataSource={unreadNotifications}
-            renderItem={item => (
-              <List.Item style={{ padding: '12px 0', borderBottom: '1px solid #F1F5F9' }}>
-                <List.Item.Meta
-                  avatar={
-                    <Avatar style={{ backgroundColor: '#F8F9FF', border: '1px solid #E2E8F0' }}>
-                      {item.icon}
-                    </Avatar>
-                  }
-                  title={<Text strong style={{ fontSize: '13px' }}>{item.title}</Text>}
-                  description={
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                      <Text style={{ fontSize: '12px', color: '#4A5568', lineHeight: '1.4' }}>{item.desc}</Text>
-                      <Text style={{ fontSize: '10px', color: '#A0AEC0' }}>{item.time}</Text>
-                    </div>
-                  }
-                />
-              </List.Item>
-            )}
-          />
+          <div className="flex flex-col">
+            {unreadNotifications.map(item => (
+              <div 
+                key={item.id}
+                onClick={() => handleNotificationClick(item)}
+                className="flex items-start gap-3 p-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+              >
+                <Avatar style={{ backgroundColor: '#F8F9FF', border: '1px solid #E2E8F0', flexShrink: 0 }}>
+                  <CalendarOutlined style={{ color: '#7C4DFF' }}/>
+                </Avatar>
+                <div className="flex flex-col">
+                  <Text strong style={{ fontSize: '13px', color: '#1A202C' }}>{item.title}</Text>
+                  <Text style={{ fontSize: '12px', color: '#4A5568', lineHeight: '1.4', marginTop: '2px' }}>{item.desc}</Text>
+                  <Text style={{ fontSize: '10px', color: '#A0AEC0', marginTop: '4px' }}>{dayjs(item.createdAt).fromNow()}</Text>
+                </div>
+              </div>
+            ))}
+          </div>
           <Button 
             type="text" 
             block 
@@ -99,7 +146,10 @@ export function NotificationBell() {
   );
 
   return (
-    <Popover
+    <>
+      {notificationContextHolder}
+      {modalContextHolder}
+      <Popover
       content={content}
       title={
         <div style={{ fontWeight: 800, paddingBottom: '8px', borderBottom: '1px solid #E2E8F0', fontSize: '14px' }}>
@@ -120,6 +170,7 @@ export function NotificationBell() {
           </Badge>
         } 
       />
-    </Popover>
+      </Popover>
+    </>
   );
 }
