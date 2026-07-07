@@ -145,16 +145,20 @@ export default function WebsiteHomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           <ScrollReveal direction="down" className="lg:col-span-7 grid grid-cols-2 gap-6 relative">
             <div className="flex flex-col gap-6 mt-12">
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?q=80&w=2000&auto=format&fit=crop"
                 alt="Barber Tools"
+                width={800}
+                height={500}
                 className="w-full h-80 object-cover rounded-none xl:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
               />
             </div>
             <div className="flex flex-col gap-6">
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop"
                 alt="Vintage Chair"
+                width={800}
+                height={800}
                 className="w-full h-[28rem] object-cover rounded-none xl:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
               />
             </div>
@@ -379,7 +383,7 @@ export default function WebsiteHomePage() {
               <ScrollReveal direction="down" className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
                 <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
                   <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                    <Image width={400} height={500} src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
                   </div>
                   <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Nimesh Haththasingha</h4>
                   <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Master Stylist</p>
@@ -390,7 +394,7 @@ export default function WebsiteHomePage() {
               <ScrollReveal direction="down" delay={0.15} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
                 <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
                   <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                    <img src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                    <Image width={400} height={500} src="https://images.unsplash.com/photo-1618077360395-f3068be8e001?q=80&w=1780&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
                   </div>
                   <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Mahesh Madushanka</h4>
                   <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
@@ -401,7 +405,7 @@ export default function WebsiteHomePage() {
               <ScrollReveal direction="down" delay={0.3} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
                 <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
                   <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                    <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                    <Image width={400} height={500} src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1887&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
                   </div>
                   <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Malith Sandaruwan</h4>
                   <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
@@ -412,7 +416,7 @@ export default function WebsiteHomePage() {
               <ScrollReveal direction="down" delay={0.45} className="w-[85vw] sm:w-[350px] shrink-0 snap-center md:w-auto md:shrink flex flex-col">
                 <div className="flex flex-col items-center group cursor-pointer relative w-full h-full">
                   <div className="w-full sm:w-80 md:w-56 h-80 md:h-72 overflow-hidden mb-6 border border-zinc-200 dark:border-zinc-800 group-hover:border-amber-500/50 transition-colors duration-500 shadow-md dark:shadow-none">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+                    <Image width={400} height={500} src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop" alt="Barber" className="w-full h-full object-cover xl:grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
                   </div>
                   <h4 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-wide transition-colors whitespace-nowrap">Vindana Lakmal</h4>
                   <p className="text-amber-600 dark:text-amber-500 font-light text-sm mb-3 tracking-widest uppercase mt-1">Senior Barber</p>
@@ -539,7 +543,7 @@ export default function WebsiteHomePage() {
       ========================================= */}
       <section className="relative py-32 px-6 overflow-hidden border-t border-zinc-200 dark:border-zinc-900 transition-colors duration-500">
         <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-950 transition-colors duration-500">
-          <img src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=2070&auto=format&fit=crop" alt="Shop Interior" className="w-full h-full object-cover opacity-20 dark:opacity-10 grayscale mix-blend-overlay" />
+          <Image fill src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=2070&auto=format&fit=crop" alt="Shop Interior" className="object-cover opacity-20 dark:opacity-10 grayscale mix-blend-overlay" />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-100 via-zinc-100/80 dark:from-zinc-950 dark:via-zinc-950/80 to-transparent transition-colors duration-500"></div>
         </div>
 

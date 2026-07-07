@@ -18,6 +18,7 @@ import {
   Segmented,
   Empty
 } from 'antd';
+import Image from 'next/image';
 import { 
   PlusOutlined, 
   MoreOutlined, 
@@ -260,7 +261,19 @@ function ProductsContent() {
         width: 300,
         render: (text: string, record: any) => (
           <div className="flex items-center gap-3">
-            <Avatar shape="square" size={48} src={record.imageUrl || record.image || undefined} icon={<PictureOutlined />} className="bg-gray-100 border border-gray-200" />
+            <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-50 relative flex items-center justify-center">
+              {record.imageUrl || record.image ? (
+                <Image 
+                  src={(record.imageUrl || record.image).startsWith('http') ? (record.imageUrl || record.image) : ((record.imageUrl || record.image).startsWith('/') ? (record.imageUrl || record.image) : `/${(record.imageUrl || record.image)}`)}
+                  alt={text} 
+                  fill
+                  sizes="48px"
+                  className="object-cover" 
+                />
+              ) : (
+                <PictureOutlined className="text-slate-400" />
+              )}
+            </div>
             <div className="flex flex-col">
               <span className="font-semibold text-slate-800 text-sm">{text}</span>
               <span className="text-xs text-slate-500">{record.brand} • <span className="font-mono">{record.sku}</span></span>

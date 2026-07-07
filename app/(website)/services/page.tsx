@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRightOutlined } from '@ant-design/icons';
 import Magnetic from "@/components/ui/Magnetic";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import Image from "next/image";
 import { Spin } from 'antd';
 
 export default function ServicesPage() {
@@ -53,11 +54,12 @@ export default function ServicesPage() {
                   <div className="h-64 overflow-hidden relative w-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950">
                     <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
                     {service.imageUrl ? (
-                      <img
-                        src={service.imageUrl}
+                      <Image
+                        src={service.imageUrl.startsWith('http') ? service.imageUrl : (service.imageUrl.startsWith('/') ? service.imageUrl : `/${service.imageUrl}`)}
                         alt={service.name}
-                        className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
-                        loading="lazy"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
                       />
                     ) : (
                       <div className="text-zinc-400">No Image</div>

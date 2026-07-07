@@ -14,8 +14,12 @@ import {
   Col,
   Input,
   Space,
-  Switch
+  Switch,
+  Avatar,
+  Segmented,
+  Empty
 } from 'antd';
+import Image from 'next/image';
 import type { InputRef, TableColumnType } from 'antd';
 import { 
   PlusOutlined, 
@@ -233,8 +237,13 @@ function ServicesContent() {
         <div className="flex items-center gap-3">
           {record.imageUrl ? (
             <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-50 relative">
-              {/* Using standard img for simplicity in the table to avoid next/image layout issues */}
-              <img src={record.imageUrl || undefined} alt={text} className="w-full h-full object-cover" />
+              <Image 
+                src={record.imageUrl.startsWith('http') ? record.imageUrl : (record.imageUrl.startsWith('/') ? record.imageUrl : `/${record.imageUrl}`)}
+                alt={text} 
+                fill
+                sizes="48px"
+                className="object-cover" 
+              />
             </div>
           ) : (
             <div className="w-12 h-12 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center flex-shrink-0">

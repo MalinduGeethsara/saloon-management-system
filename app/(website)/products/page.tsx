@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRightOutlined } from '@ant-design/icons';
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import Image from "next/image";
 import { Spin } from 'antd';
 
 export default function ProductsPage() {
@@ -52,7 +53,13 @@ export default function ProductsPage() {
                   <div className="h-64 overflow-hidden relative bg-zinc-100 dark:bg-zinc-950 w-full flex items-center justify-center">
                     <div className="absolute inset-0 bg-black/25 dark:bg-black/45 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
                     {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0 mix-blend-multiply dark:mix-blend-normal" />
+                      <Image 
+                        src={product.imageUrl.startsWith('http') ? product.imageUrl : (product.imageUrl.startsWith('/') ? product.imageUrl : `/${product.imageUrl}`)}
+                        alt={product.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0 mix-blend-multiply dark:mix-blend-normal" 
+                      />
                     ) : (
                       <div className="text-zinc-400">No Image</div>
                     )}
