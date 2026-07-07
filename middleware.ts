@@ -27,9 +27,7 @@ export async function middleware(request: NextRequest) {
     (path.startsWith('/staff') && !path.startsWith('/staff-login'));
 
   if (isStaffPath) {
-    const validStaffRoles = ['ADMIN', 'OWNER', 'MANAGER', 'BARBER'];
-    
-    if (!session || !validStaffRoles.includes(userRole as string)) {
+    if (!session || session.role === 'CUSTOMER') {
       url.pathname = '/staff-login'; 
       url.searchParams.set('callbackUrl', path);
       return NextResponse.redirect(url);
@@ -60,8 +58,8 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
       
-      // Dynamic permissions for Manager and Barber
-      if (userRole === 'MANAGER' || userRole === 'BARBER') {
+      // Dynamic permissions for custom staff roles
+      if (userRole !== 'OWNER') {
         const allowed = (session.permissions as any[]) || [];
         
         // Allow base /owner path just in case, otherwise check if they are trying to access a specific page

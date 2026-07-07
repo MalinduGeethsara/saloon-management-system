@@ -70,7 +70,7 @@ export async function loginStaff(emailOrPhone: string, passwordRaw: string) {
         { phone: emailOrPhone }
       ],
       role: {
-        in: ['ADMIN', 'OWNER', 'MANAGER', 'BARBER']
+        not: 'CUSTOMER'
       }
     }
   });

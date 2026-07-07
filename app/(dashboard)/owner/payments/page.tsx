@@ -19,22 +19,51 @@ const INITIAL_PAYMENTS = [
   { 
     key: '1', id: "INV-1023", client: "Kamal Perera", contact: "0771234567", barber: "Malith Sandaruwan",
     items: [{ name: "Haircut", type: "Service", price: 2500 }], 
-    amount: 2500, method: "Cash", date: "2023-10-24" 
+    amount: 2500, method: "Cash", date: "2023-10-24", branch: "Colombo" 
   },
   { 
     key: '2', id: "INV-1024", client: "Saman Kumara", contact: "0719876543", barber: "Mahesh Madushanka",
     items: [{ name: "Beard Trim", type: "Service", price: 1500 }], 
-    amount: 1500, method: "Card", date: "2023-10-24" 
+    amount: 1500, method: "Card", date: "2023-10-24", branch: "Walasmulla"
   },
   { 
     key: '3', id: "INV-1025", client: "Nimal Siripala", contact: "0765551234", barber: "Vindana Lakmal",
     items: [{ name: "Haircut", type: "Service", price: 2500 }, { name: "Hair Gel", type: "Product", price: 5000 }], 
-    amount: 7500, method: "Transfer", date: "2023-10-25" 
+    amount: 7500, method: "Transfer", date: "2023-10-25", branch: "Colombo"
   },
 ];
 
 function PaymentsContent() {
   const [payments, setPayments] = useState(INITIAL_PAYMENTS);
+  const [userRole, setUserRole] = useState('owner');
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
+  
+  React.useEffect(() => {
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      setUserRole(roleMatch[2].toLowerCase());
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/payments');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+  }, []);
   
   // Modals state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -129,7 +158,7 @@ function PaymentsContent() {
       title: 'Client Details',
       dataIndex: 'client',
       key: 'client',
-      width: 250,
+      width: 200,
       align: 'left' as const,
       ...getColumnSearchProps('client', 'Client'), 
       render: (text: string, record: any) => (
@@ -140,6 +169,19 @@ function PaymentsContent() {
           </span>
         </div>
       ),
+    },
+    {
+      title: 'Branch',
+      dataIndex: 'branch',
+      key: 'branch',
+      width: 150,
+      align: 'left' as const,
+      filters: [
+        { text: 'Colombo', value: 'Colombo' },
+        { text: 'Walasmulla', value: 'Walasmulla' },
+      ],
+      onFilter: (value: any, record: any) => record.branch === value,
+      render: (text: string) => <span className="text-[12px] font-semibold text-slate-600">{text || 'Global'}</span>,
     },
     {
       title: 'Amount',
@@ -179,7 +221,18 @@ function PaymentsContent() {
       width: 80,
       align: 'right' as const, // Push action icon to the right
       render: (_: any, record: any) => (
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-2">
+          {canEdit && (
+            <Tooltip title="Edit Payment">
+              <Button 
+                type="text" 
+                shape="circle" 
+                icon={<EyeOutlined className="text-blue-500 text-lg" />} 
+                onClick={() => handleViewInvoice(record)} 
+                className="bg-blue-50 hover:bg-blue-100"
+              />
+            </Tooltip>
+          )}
           <Tooltip title="View/Print Invoice">
             <Button 
               type="text" 
@@ -203,15 +256,17 @@ function PaymentsContent() {
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Payments & Billing</Title>
           <Text type="secondary">Manage transactions, invoices, and revenue. Swipe table to see all data.</Text>
         </div>
-        <Button 
-          type="primary" 
-          size="large" 
-          icon={<PlusOutlined />} 
-          onClick={handleAddNew}
-          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold border-none w-full md:w-auto h-12 shadow-md shadow-purple-100"
-        >
-          Create Bill
-        </Button>
+        {canAdd && (
+          <Button 
+            type="primary" 
+            size="large" 
+            icon={<PlusOutlined />} 
+            onClick={handleAddNew}
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold border-none w-full md:w-auto h-12 shadow-md shadow-purple-100"
+          >
+            Create Bill
+          </Button>
+        )}
       </div>
 
       {/* KPI Stats - Centered on Mobile */}

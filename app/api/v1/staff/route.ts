@@ -14,7 +14,7 @@ export async function GET() {
     const staff = await db.user.findMany({
       where: {
         role: {
-          in: ['MANAGER', 'BARBER']
+          notIn: ['CUSTOMER', 'OWNER', 'ADMIN']
         }
       },
       select: {

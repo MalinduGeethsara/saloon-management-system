@@ -50,7 +50,7 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
     if (matchEmp) setEmpId(matchEmp[2]);
   }, []);
 
-  const hrChildrenLinks = userRole === 'barber' ? [
+  const hrChildrenLinks = (userRole !== 'owner' && userRole !== 'admin') ? [
     { key: `/owner/hr/attendance/${attendanceId}`, label: 'My Attendance' },
     { key: `/owner/hr/payroll/${empId}`, label: 'My Payroll' },
   ] : [
@@ -84,8 +84,8 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
       return item.allowedRoles.includes(userRole);
     }
     
-    // Dynamic permission check for Manager and Barber
-    if (userRole === 'manager' || userRole === 'barber') {
+    // Dynamic permission check for custom roles
+    if (userRole !== 'admin' && userRole !== 'owner') {
       // If it's the 'hr' group, check if any child is allowed
       if (item.key === 'hr') {
         return userPermissions.some((p: any) => p.pageKey?.startsWith('/owner/hr') && p.canView);

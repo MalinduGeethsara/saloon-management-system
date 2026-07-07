@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Modal, Button, Form, Input, Select, Divider, Tag, Avatar, Tabs } from 'antd';
+import { Modal, Button, Form, Input, Select, Divider, Tag, Avatar, Tabs, AutoComplete } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, SafetyCertificateOutlined, DollarOutlined } from '@ant-design/icons';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 
@@ -117,10 +117,14 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Form.Item name="role" label="Job Role" rules={[{ required: true }]}>
-                  <Select placeholder="Select Role" size="large">
-                    <Option value="MANAGER">Manager</Option>
-                    <Option value="BARBER">Barber</Option>
-                  </Select>
+                  <AutoComplete 
+                    options={[{ value: 'MANAGER' }, { value: 'BARBER' }, { value: 'CASHIER' }]}
+                    placeholder="e.g. CASHIER, RECEPTIONIST"
+                    size="large"
+                    filterOption={(inputValue, option) =>
+                      option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                  />
                 </Form.Item>
                 <Form.Item name="password" label="Password (leave blank to keep)">
                   <Input.Password placeholder="Secure password" size="large" />
