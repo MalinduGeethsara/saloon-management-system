@@ -18,6 +18,13 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
   const [imageUrl, setImageUrl] = React.useState<string>('');
+  const [shops, setShops] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetch('/api/v1/shops').then(res => res.json()).then(data => {
+      if (data.shops) setShops(data.shops);
+    });
+  }, []);
 
   React.useEffect(() => {
     if (isOpen && staff && mode === 'edit') {
@@ -97,11 +104,11 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
                 <Form.Item name="phone" label="Phone Number">
                   <Input prefix={<PhoneOutlined />} placeholder="+94 77 123 4567" size="large" />
                 </Form.Item>
-                <Form.Item name="branch" label="Assigned Branch">
-                  <Select placeholder="Select Branch" size="large">
-                    <Option value="Walasmulla">Walasmulla Studio</Option>
-                    <Option value="Colombo">Colombo Branch</Option>
-                    <Option value="Galle">Galle Branch</Option>
+                <Form.Item name="shopId" label="Assigned Branch" rules={[{ required: true, message: 'Please select a branch' }]}>
+                  <Select placeholder="Select Branch" size="large" allowClear>
+                    {shops.map(shop => (
+                      <Option key={shop.id} value={shop.id}>{shop.name}</Option>
+                    ))}
                   </Select>
                 </Form.Item>
               </div>

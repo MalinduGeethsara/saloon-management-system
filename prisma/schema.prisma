@@ -26,7 +26,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Foreign Keys
+  shopId    String?
+
   // Relations
+  shop               Shop?        @relation("ShopStaff", fields: [shopId], references: [id])
   bookingsAsCustomer Booking[]    @relation("CustomerBookings")
   bookingsAsBarber   Booking[]    @relation("BarberBookings")
   attendance         Attendance[]
@@ -40,11 +44,15 @@ model Shop {
   name      String
   address   String?
   phone     String?
+  imageUrl  String?
+  status    String   @default("Open") // Open, Closed, Renovating
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
   bookings  Booking[]
+  staff     User[]    @relation("ShopStaff")
+  services  Service[]
 }
 
 model Service {
@@ -58,7 +66,11 @@ model Service {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Foreign Keys
+  shopId      String?
+
   // Relations
+  shop        Shop?    @relation(fields: [shopId], references: [id])
   bookings    Booking[]
 }
 

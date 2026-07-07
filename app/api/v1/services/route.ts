@@ -5,7 +5,12 @@ import { deleteCloudinaryImage } from '@/lib/cloudinary';
 
 export async function GET() {
   try {
-    const services = await db.service.findMany({ orderBy: { name: 'asc' } });
+    const services = await db.service.findMany({ 
+      orderBy: { name: 'asc' },
+      include: {
+        shop: { select: { name: true } }
+      }
+    });
     return NextResponse.json({ services }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ message: 'Error fetching services', error: error.message }, { status: 500 });
@@ -31,7 +36,8 @@ export async function POST(request: Request) {
         duration: Number(body.duration || 30),
         description: body.description,
         status: body.status || 'Active',
-        imageUrl: body.imageUrl || null
+        imageUrl: body.imageUrl || null,
+        shopId: body.shopId || null
       } 
     });
     return NextResponse.json({ service, message: 'Service created successfully' }, { status: 201 });
@@ -57,6 +63,8 @@ export async function PUT(request: Request) {
     if (body.description !== undefined) updateData.description = body.description;
     if (body.status) updateData.status = body.status;
     if (body.imageUrl !== undefined) updateData.imageUrl = body.imageUrl;
+    
+    updateData.shopId = body.shopId || null;
 
     const service = await db.service.update({
       where: { id: body.id },

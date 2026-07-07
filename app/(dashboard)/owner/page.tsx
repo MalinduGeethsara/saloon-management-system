@@ -161,6 +161,7 @@ function BusinessIntelligenceContent() {
         {/* Controls - Full width on mobile, auto on desktop */}
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
            <Select 
+             id="time-range-select"
              defaultValue="This Month" 
              className="w-full sm:w-40 h-12" 
              size="large"

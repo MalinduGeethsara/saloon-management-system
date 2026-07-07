@@ -1,24 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, Button, Upload, message, Row, Col } from 'antd';
-import { ShopOutlined, UserOutlined, EnvironmentOutlined, PhoneOutlined, LoadingOutlined, PlusOutlined } from '@ant-design/icons';
-import type { RcFile, UploadChangeParam, UploadFile, UploadProps } from 'antd/es/upload';
+import { Modal, Form, Input, Select, Button, Row, Col } from 'antd';
+import { ShopOutlined, UserOutlined, EnvironmentOutlined, PhoneOutlined } from '@ant-design/icons';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 const { Option } = Select;
-
-// --- Helpers ---
-const getBase64 = (img: RcFile, callback: (url: string) => void) => {
-  const reader = new FileReader();
-  reader.addEventListener('load', () => callback(reader.result as string));
-  reader.readAsDataURL(img);
-};
-
-const beforeUpload = (file: RcFile) => {
-  const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-  if (!isJpgOrPng) message.error('You can only upload JPG/PNG file!');
-  return isJpgOrPng;
-};
 
 interface LocationModalProps {
   isOpen: boolean;
@@ -50,38 +37,21 @@ export function LocationModal({ isOpen, onClose, onSave, shopToEdit }: LocationM
     }
   }, [isOpen, shopToEdit, form]);
 
-  // Dummy upload request
-  const dummyRequest = ({ onSuccess }: any) => setTimeout(() => onSuccess("ok"), 0);
-
-  const handleImageChange: UploadProps['onChange'] = (info: UploadChangeParam<UploadFile>) => {
-    if (info.file.status === 'uploading') { setLoading(true); return; }
-    if (info.file.status === 'done') {
-      getBase64(info.file.originFileObj as RcFile, (url) => {
-        setLoading(false);
-        setImageUrl(url);
-        form.setFieldValue('image', url);
-      });
-    }
+  const handleImageChange = (url: string) => {
+    setImageUrl(url);
+    form.setFieldValue('imageUrl', url);
   };
 
   const handleFinish = (values: any) => {
     onSave({
       ...values,
       key: shopToEdit?.key, // Preserve ID if editing
-      image: imageUrl || 'https://via.placeholder.com/800x400?text=Shop+Image',
       // Default stats for new shops
       staff: shopToEdit?.staff || 0,
       revenue: shopToEdit?.revenue || 0,
     });
     onClose();
   };
-
-  const uploadButton = (
-    <div>
-      {loading ? <LoadingOutlined /> : <PlusOutlined />}
-      <div style={{ marginTop: 8 }}>Upload</div>
-    </div>
-  );
 
   if (!mounted) return null;
 
@@ -97,19 +67,14 @@ export function LocationModal({ isOpen, onClose, onSave, shopToEdit }: LocationM
       <Form form={form} layout="vertical" onFinish={handleFinish} style={{ marginTop: 20 }}>
         
         <Form.Item label="Cover Image">
-          <Upload
-            name="avatar"
-            listType="picture-card"
-            className="avatar-uploader"
-            showUploadList={false}
-            customRequest={dummyRequest}
-            beforeUpload={beforeUpload}
-            onChange={handleImageChange}
-            style={{ width: '100%' }}
-          >
-            {imageUrl ? <img src={imageUrl} alt="shop" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : uploadButton}
-          </Upload>
-          <Form.Item name="image" hidden><Input /></Form.Item>
+          <div className="w-full h-48 rounded-xl overflow-hidden border border-gray-200">
+            <ImageUpload 
+              value={imageUrl} 
+              onChange={handleImageChange}
+              folder="salon/shops"
+            />
+          </div>
+          <Form.Item name="imageUrl" hidden><Input /></Form.Item>
         </Form.Item>
 
         <Form.Item name="name" label="Shop Name" rules={[{ required: true }]}>

@@ -212,7 +212,7 @@ function ServicesContent() {
           {record.imageUrl ? (
             <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-50 relative">
               {/* Using standard img for simplicity in the table to avoid next/image layout issues */}
-              <img src={record.imageUrl} alt={text} className="w-full h-full object-cover" />
+              <img src={record.imageUrl || undefined} alt={text} className="w-full h-full object-cover" />
             </div>
           ) : (
             <div className="w-12 h-12 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center flex-shrink-0">
@@ -246,6 +246,17 @@ function ServicesContent() {
         const color = category === 'Product' ? 'purple' : 'blue';
         return <Tag color={color} className="font-bold border-0 px-3 py-0.5 rounded-md">{category.toUpperCase()}</Tag>;
       },
+    },
+    {
+      title: 'Branch',
+      dataIndex: 'shopId',
+      key: 'branch',
+      width: 140,
+      align: 'center' as const,
+      render: (_: any, record: any) => {
+        if (record.category === 'Product') return <span className="text-xs text-slate-400">N/A</span>;
+        return <span className="text-[12px] font-semibold text-slate-600">{record.shop?.name || 'Global / All'}</span>;
+      }
     },
     {
       title: 'Price',

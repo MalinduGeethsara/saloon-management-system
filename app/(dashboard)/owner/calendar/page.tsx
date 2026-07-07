@@ -42,10 +42,10 @@ const { useToken } = theme;
 
 // --- Sri Lankan Staff Data ---
 const BARBERS = [
-  { id: 1, name: 'Malith Sandaruwan', color: '#18181b', role: 'Senior Barber' }, 
-  { id: 2, name: 'Mahesh Madushanka', color: '#7C4DFF', role: 'Senior Barber' }, 
-  { id: 3, name: 'Vindana Lakmal', color: '#2563eb', role: 'Senior Barber' },
-  { id: 4, name: 'Nimesh Haththasingha', color: '#059669', role: 'Master Stylist' },
+  { id: '1', name: 'Malith Sandaruwan', color: '#18181b', role: 'Senior Barber' }, 
+  { id: '2', name: 'Mahesh Madushanka', color: '#7C4DFF', role: 'Senior Barber' }, 
+  { id: '3', name: 'Vindana Lakmal', color: '#2563eb', role: 'Senior Barber' },
+  { id: '4', name: 'Nimesh Haththasingha', color: '#059669', role: 'Master Stylist' },
 ];
 
 // --- Helper: Generate Dates ---
@@ -94,6 +94,7 @@ function ScheduleContent() {
               barberId: b.barberId,
               service: b.service?.name,
               status: b.status,
+              shop: b.shop?.name
             }
           };
         }));
@@ -210,7 +211,7 @@ function ScheduleContent() {
         body: JSON.stringify({
           serviceId: newBookingData.extendedProps.service,
           barberId: newBookingData.extendedProps.barberId,
-          shopId: null,
+          shopId: newBookingData.extendedProps.shopId || null,
           date: newBookingData.start,
           amount: 0, 
           clientName: newBookingData.title, 
@@ -459,6 +460,7 @@ function ScheduleContent() {
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="Client">{selectedEvent.title}</Descriptions.Item>
             <Descriptions.Item label="Service">{selectedEvent.extendedProps.service}</Descriptions.Item>
+            <Descriptions.Item label="Branch">{selectedEvent.extendedProps.shop || 'Not specified'}</Descriptions.Item>
             <Descriptions.Item label="Time">
               {dayjs(selectedEvent.start).format('MMM D, h:mm A')} - {dayjs(selectedEvent.end).format('h:mm A')}
             </Descriptions.Item>

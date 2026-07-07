@@ -182,10 +182,17 @@ function ProductsContent() {
                   className="border-none bg-white/90 hover:bg-white"
                 />
               </div>
-              <div className="absolute top-3 right-3">
-                <Tag color={product.status === 'Out of Stock' ? 'red' : product.status === 'Low Stock' ? 'orange' : 'green'} className="m-0 border-none shadow-sm font-semibold">
-                  {product.status === 'In Stock' ? `${product.stock} left` : product.status}
-                </Tag>
+              <div className="absolute top-3 right-3 flex gap-2">
+                {product.status === 'Inactive' && (
+                  <Tag color="default" className="m-0 border-none shadow-sm font-semibold">Inactive</Tag>
+                )}
+                {product.stock === 0 ? (
+                  <Tag color="red" className="m-0 border-none shadow-sm font-semibold">Out of Stock</Tag>
+                ) : product.stock < 10 ? (
+                  <Tag color="orange" className="m-0 border-none shadow-sm font-semibold">Low Stock ({product.stock})</Tag>
+                ) : (
+                  <Tag color="green" className="m-0 border-none shadow-sm font-semibold">In Stock ({product.stock})</Tag>
+                )}
               </div>
             </div>
           }
@@ -221,7 +228,7 @@ function ProductsContent() {
         width: 300,
         render: (text: string, record: any) => (
           <div className="flex items-center gap-3">
-            <Avatar shape="square" size={48} src={record.imageUrl || record.image} icon={<PictureOutlined />} className="bg-gray-100 border border-gray-200" />
+            <Avatar shape="square" size={48} src={record.imageUrl || record.image || undefined} icon={<PictureOutlined />} className="bg-gray-100 border border-gray-200" />
             <div className="flex flex-col">
               <span className="font-semibold text-slate-800 text-sm">{text}</span>
               <span className="text-xs text-slate-500">{record.brand} • <span className="font-mono">{record.sku}</span></span>
@@ -231,16 +238,15 @@ function ProductsContent() {
       },
       { title: 'Category', dataIndex: 'category', key: 'category', render: (t: string) => <Tag>{t}</Tag> },
       { title: 'Price (LKR)', dataIndex: 'price', key: 'price', render: (p: number) => <span className="font-mono font-medium">Rs. {p.toLocaleString()}</span> },
-      { title: 'Stock', dataIndex: 'stock', key: 'stock', render: (s: number) => <span style={{ color: s > 10 ? '#059669' : '#DC2626', fontWeight: 700 }}>{s} units</span> },
+      { title: 'Stock', dataIndex: 'stock', key: 'stock', render: (s: number) => <span style={{ color: s >= 10 ? '#059669' : s > 0 ? '#F59E0B' : '#DC2626', fontWeight: 700 }}>{s} units</span> },
       {
         title: 'Status',
-        dataIndex: 'status',
         key: 'status',
-        render: (s: string) => {
-          let color = 'green';
-          if (s === 'Low Stock') color = 'orange';
-          if (s === 'Out of Stock') color = 'red';
-          return <Tag color={color}>{s}</Tag>;
+        render: (_: any, record: any) => {
+          if (record.status === 'Inactive') return <Tag color="default">Inactive</Tag>;
+          if (record.stock === 0) return <Tag color="red">Out of Stock</Tag>;
+          if (record.stock < 10) return <Tag color="orange">Low Stock</Tag>;
+          return <Tag color="green">In Stock</Tag>;
         },
       },
       {

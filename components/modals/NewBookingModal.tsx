@@ -27,7 +27,7 @@ const { Text } = Typography;
 const { Option } = Select;
 
 interface Barber {
-  id: number;
+  id: string;
   name: string;
   color: string;
 }
@@ -38,7 +38,7 @@ interface NewBookingModalProps {
   onSave: (booking: any) => void;
   barbers: Barber[];
   defaultDate?: Date | null;
-  defaultBarberId?: number;
+  defaultBarberId?: string;
 }
 
 export function NewBookingModal({ 
@@ -79,6 +79,7 @@ export function NewBookingModal({
 
   const [services, setServices] = useState<any[]>([]);
   const [dynamicBarbers, setDynamicBarbers] = useState<Barber[]>([]);
+  const [shops, setShops] = useState<any[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -86,6 +87,13 @@ export function NewBookingModal({
         .then(res => res.json())
         .then(data => {
           if (data.services) setServices(data.services);
+        })
+        .catch(console.error);
+
+      fetch('/api/v1/shops')
+        .then(res => res.json())
+        .then(data => {
+          if (data.shops) setShops(data.shops);
         })
         .catch(console.error);
 
@@ -128,6 +136,7 @@ export function NewBookingModal({
         barberId: values.barberId,
         barberName: selectedBarber?.name,
         service: values.service,
+        shopId: values.shopId,
         status: 'Confirmed'
       }
     };
@@ -164,6 +173,14 @@ export function NewBookingModal({
               <Input size="large" placeholder="Client Name" prefix={<UserOutlined />} />
             </Form.Item>
           </div>
+          
+          <Form.Item name="shopId" label="Branch Location" rules={[{ required: true }]}>
+            <Select placeholder="Select Branch" size="large">
+              {shops.map(shop => (
+                <Option key={shop.id} value={shop.id}>{shop.name}</Option>
+              ))}
+            </Select>
+          </Form.Item>
 
           <div className="grid grid-cols-2 gap-4">
             <Form.Item name="service" label="Service" rules={[{ required: true }]}>

@@ -24,6 +24,10 @@ export async function GET() {
         phone: true,
         role: true,
         imageUrl: true,
+        shopId: true,
+        shop: {
+          select: { name: true }
+        }
       }
     });
 
@@ -48,7 +52,8 @@ export async function POST(request: Request) {
         name: data.name,
         role: data.role, // 'MANAGER' or 'BARBER'
         password: hashedPassword,
-        imageUrl: data.imageUrl || null
+        imageUrl: data.imageUrl || null,
+        shopId: data.shopId || null
       }
     });
     return NextResponse.json({ success: true, user });
@@ -73,6 +78,8 @@ export async function PUT(request: Request) {
     if (data.imageUrl !== undefined) {
       updateData.imageUrl = data.imageUrl;
     }
+
+    updateData.shopId = data.shopId || null;
 
     if (data.password) {
       updateData.password = await bcrypt.hash(data.password, 10);

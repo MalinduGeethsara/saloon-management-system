@@ -68,8 +68,9 @@ function StaffContent() {
             email: u.email,
             phone: u.phone || 'N/A',
             imageUrl: u.imageUrl,
+            shopId: u.shopId,
             status: 'Active',
-            branch: 'Main Branch',
+            branch: u.shop?.name || 'Global / All Branches',
             earnings: 'Rs. 0'
           })));
         }
@@ -96,7 +97,8 @@ function StaffContent() {
       email: record.email,
       phone: record.phone !== 'N/A' ? record.phone : '',
       role: record.role,
-      imageUrl: record.imageUrl
+      imageUrl: record.imageUrl,
+      shopId: record.shopId
     });
     setIsModalOpen(true);
   };
@@ -183,7 +185,7 @@ function StaffContent() {
         <Space size="middle">
           <Avatar 
             size={40}
-            src={record.imageUrl}
+            src={record.imageUrl || undefined}
             style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} 
             icon={!record.imageUrl ? <UserOutlined /> : undefined} 
           />

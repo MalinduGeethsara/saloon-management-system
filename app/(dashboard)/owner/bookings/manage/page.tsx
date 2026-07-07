@@ -81,6 +81,7 @@ function ManageBookingsContent() {
           id: b.id,
           client: b.customer?.name || 'Unknown',
           barber: b.barber?.name || 'Unknown',
+          branch: b.shop?.name || 'Global / All',
           status: b.status === 'CONFIRMED' ? 'Confirmed' : b.status === 'COMPLETED' ? 'Paid' : b.status === 'CANCELLED' ? 'Cancelled' : 'Pending',
           total: b.totalAmount,
           date: dayjs(b.date).format("YYYY-MM-DD")
@@ -159,7 +160,7 @@ function ManageBookingsContent() {
         body: JSON.stringify({
           serviceId: newBookingData.extendedProps.service,
           barberId: newBookingData.extendedProps.barberId,
-          shopId: null, // Optional in backend
+          shopId: newBookingData.extendedProps.shopId || null,
           date: newBookingData.start,
           amount: 0, // Should be fetched from service, backend can handle or update later
           clientName: newBookingData.title, // Pass the client name for walk-in creation
@@ -229,6 +230,13 @@ function ManageBookingsContent() {
       key: 'total',
       width: 150,
       render: (amount: number) => <span className="font-bold text-slate-800">Rs. {amount.toLocaleString()}</span>,
+    },
+    {
+      title: 'Branch',
+      dataIndex: 'branch',
+      key: 'branch',
+      width: 150,
+      render: (text: string) => <span className="text-[12px] font-semibold text-slate-600">{text || 'Global / All'}</span>,
     },
     {
       title: 'Date',

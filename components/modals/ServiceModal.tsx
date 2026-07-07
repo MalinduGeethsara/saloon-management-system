@@ -28,6 +28,13 @@ export function ServiceModal({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [shops, setShops] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/v1/shops').then(res => res.json()).then(data => {
+      if (data.shops) setShops(data.shops);
+    });
+  }, []);
 
   // Reset or Populate form
   useEffect(() => {
@@ -111,8 +118,27 @@ export function ServiceModal({
               <Col span={12}>
                 <Form.Item name="category" label="Category" rules={[{ required: true }]}>
                   <Select placeholder="Select Category" size="large">
-                    <Option value="Service">Service</Option>
-                    <Option value="Product">Product</Option>
+                    <Select.Option value="Service">Service</Select.Option>
+                    <Select.Option value="Product">Product</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="status" label="Status" initialValue="Active">
+                  <Select size="large">
+                    <Select.Option value="Active">Active</Select.Option>
+                    <Select.Option value="Inactive">Inactive</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="shopId" label="Branch Location" rules={[{ required: true, message: 'Please select a branch' }]}>
+                  <Select placeholder="Select Branch" size="large" allowClear>
+                    {shops.map(shop => (
+                      <Select.Option key={shop.id} value={shop.id}>{shop.name}</Select.Option>
+                    ))}
                   </Select>
                 </Form.Item>
               </Col>
