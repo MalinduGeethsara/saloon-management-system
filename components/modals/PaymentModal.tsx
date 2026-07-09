@@ -15,8 +15,6 @@ interface PaymentModalProps {
   paymentToEdit?: any;
 }
 
-const BARBERS = ["Malith", "Mahesh", "Vindana", "Nimesh"];
-
 import { getBillingCatalog } from '@/lib/actions/payment';
 
 export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: PaymentModalProps) => {
@@ -27,6 +25,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [catalog, setCatalog] = useState<any[]>([]);
+  const [barbersList, setBarbersList] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -34,6 +33,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
       const res = await getBillingCatalog();
       if (res.success && res.data) {
         setCatalog(res.data);
+        if (res.staff) setBarbersList(res.staff);
       }
     };
     fetchCatalog();
@@ -156,17 +156,22 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
           <Row gutter={16}>
             <Col xs={24} sm={12}>
               <Form.Item name="date" label="Date" rules={[{ required: true }]}>
-                <DatePicker className="w-full" format="YYYY-MM-DD" size="large" />
+                {/* Date is read-only and always current */}
+                <DatePicker className="w-full" format="YYYY-MM-DD" size="large" disabled />
               </Form.Item>
             </Col>
             {hasService && (
               <Col xs={24} sm={12}>
                 <Form.Item name="barber" label="Select Barber" rules={[{ required: true, message: 'Required' }]}>
                   <Select placeholder="Choose specialist" size="large">
-                    {/* Ensure the assigned barber is always an option even if not in the default mock list */}
-                    {Array.from(new Set([...BARBERS, paymentToEdit?.barber].filter(Boolean))).map(b => (
-                      <Select.Option key={b} value={b}>{b}</Select.Option>
+                    {/* Map DB barbers directly */}
+                    {barbersList.map(b => (
+                      <Select.Option key={b.id} value={b.name}>{b.name}</Select.Option>
                     ))}
+                    {/* In case an old deleted barber is attached to edit */}
+                    {paymentToEdit?.barber && !barbersList.find(b => b.name === paymentToEdit.barber) && (
+                      <Select.Option key={paymentToEdit.barber} value={paymentToEdit.barber}>{paymentToEdit.barber}</Select.Option>
+                    )}
                   </Select>
                 </Form.Item>
               </Col>
@@ -204,6 +209,8 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
                               options={filteredCatalog}
                               onChange={(val) => handleItemSelect(val, name)}
                               allowClear
+                              className="w-full"
+                              popupMatchSelectWidth={false}
                             />
                           </Form.Item>
                         </div>

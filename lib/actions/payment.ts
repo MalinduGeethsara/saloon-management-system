@@ -64,6 +64,11 @@ export async function getBillingCatalog() {
       select: { id: true, name: true, price: true }
     });
 
+    const staff = await db.user.findMany({
+      where: { role: { in: ['BARBER', 'MANAGER'] } },
+      select: { id: true, name: true }
+    });
+
     const catalog = [
       ...services.map(s => ({
         label: s.name,
@@ -79,9 +84,9 @@ export async function getBillingCatalog() {
       }))
     ];
 
-    return { success: true, data: catalog };
+    return { success: true, data: catalog, staff: staff };
   } catch (error) {
     console.error('Error fetching catalog:', error);
-    return { success: false, data: [] };
+    return { success: false, data: [], staff: [] };
   }
 }
