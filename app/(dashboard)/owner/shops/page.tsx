@@ -46,6 +46,10 @@ function ShopsContent() {
   const [editingShop, setEditingShop] = useState<any>(null);
   const [shopToDelete, setShopToDelete] = useState<string | null>(null);
 
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
+
   const fetchShops = async () => {
     setLoading(true);
     try {
@@ -69,6 +73,28 @@ function ShopsContent() {
 
   React.useEffect(() => {
     fetchShops();
+
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/shops');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
   }, []);
 
   const handleAdd = () => {
@@ -167,15 +193,17 @@ function ShopsContent() {
             className="rounded-xl w-full md:w-64"
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<PlusOutlined />} 
-            onClick={handleAdd}
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none h-12"
-          >
-            Add Location
-          </Button>
+          {canAdd && (
+            <Button 
+              type="primary" 
+              size="large" 
+              icon={<PlusOutlined />} 
+              onClick={handleAdd}
+              className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none h-12"
+            >
+              Add Location
+            </Button>
+          )}
         </div>
       </div>
 
@@ -264,19 +292,21 @@ function ShopsContent() {
                     Manage
                   </Button>
                   
-                  <Dropdown 
-                    menu={{ items: [
-                      { key: '1', label: 'Edit Details', icon: <SettingOutlined />, onClick: () => handleSettings(shop) },
-                      { type: 'divider' },
-                      { key: '3', label: 'Close Location', danger: true, onClick: () => handleDeleteClick(shop.key) },
-                    ] }} 
-                    trigger={['click']}
-                    placement="bottomRight"
-                  >
-                    <Button className="h-11 w-12 flex items-center justify-center rounded-xl border-slate-200 bg-white">
-                      <EllipsisOutlined style={{ fontSize: 20 }} />
-                    </Button>
-                  </Dropdown>
+                  {(canEdit || canDelete) && (
+                    <Dropdown 
+                      menu={{ items: [
+                        ...(canEdit ? [{ key: '1', label: 'Edit Details', icon: <SettingOutlined />, onClick: () => handleSettings(shop) }] : []),
+                        ...(canEdit && canDelete ? [{ type: 'divider' as const }] : []),
+                        ...(canDelete ? [{ key: '3', label: 'Close Location', danger: true, onClick: () => handleDeleteClick(shop.key) }] : []),
+                      ] }} 
+                      trigger={['click']}
+                      placement="bottomRight"
+                    >
+                      <Button className="h-11 w-12 flex items-center justify-center rounded-xl border-slate-200 bg-white">
+                        <EllipsisOutlined style={{ fontSize: 20 }} />
+                      </Button>
+                    </Dropdown>
+                  )}
                 </div>
               </div>
             </Card>

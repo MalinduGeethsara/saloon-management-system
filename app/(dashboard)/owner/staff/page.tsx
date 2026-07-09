@@ -51,6 +51,11 @@ function StaffContent() {
   const [staffData, setStaffData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
+  const [isOwnerOrAdmin, setIsOwnerOrAdmin] = useState(true);
+
   const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
   const router = useRouter();
@@ -84,6 +89,30 @@ function StaffContent() {
 
   useEffect(() => {
     fetchStaff();
+
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      const role = roleMatch[2].toLowerCase();
+      if (role !== 'owner' && role !== 'admin') {
+        setIsOwnerOrAdmin(false);
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/staff');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
   }, []);
 
   const handleAdd = () => {
@@ -221,14 +250,7 @@ function StaffContent() {
       width: 150,
       align: 'center' as const,
     },
-    {
-      title: 'Monthly Earnings',
-      dataIndex: 'earnings',
-      key: 'earnings',
-      width: 160,
-      align: 'right' as const,
-      render: (text: string) => <Text strong className="text-emerald-600 font-mono">{text}</Text>,
-    },
+
     {
       title: 'Status',
       dataIndex: 'status',
@@ -247,11 +269,13 @@ function StaffContent() {
       align: 'right' as const,
       render: (_: any, record: any) => {
         const items: MenuProps['items'] = [
-          { key: '1', label: 'Edit Staff', icon: <EditOutlined />, onClick: () => handleEdit(record) },
-          { key: '2', label: 'Manage Permissions', icon: <SafetyCertificateOutlined />, onClick: () => handleManagePermissions(record.key) },
-          { type: 'divider' },
-          { key: '3', label: 'Remove', icon: <DeleteOutlined />, danger: true, onClick: () => handleDelete(record.key) },
+          ...(canEdit ? [{ key: '1', label: 'Edit Staff', icon: <EditOutlined />, onClick: () => handleEdit(record) }] : []),
+          ...(isOwnerOrAdmin ? [{ key: '2', label: 'Manage Permissions', icon: <SafetyCertificateOutlined />, onClick: () => handleManagePermissions(record.key) }] : []),
+          ...(canDelete ? [{ type: 'divider' as const }, { key: '3', label: 'Remove', icon: <DeleteOutlined />, danger: true, onClick: () => handleDelete(record.key) }] : []),
         ];
+
+        if (items.length === 0) return null;
+
         return (
           <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
             <Button type="text" shape="circle" icon={<MoreOutlined className="text-lg" />} />
@@ -268,13 +292,15 @@ function StaffContent() {
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Staff Directory</Title>
           <Text type="secondary">Team management and performance tracking.</Text>
         </div>
-        <Button 
-          type="primary" size="large" icon={<PlusOutlined />} 
-          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold h-12 w-full md:w-auto border-none shadow-md shadow-purple-100"
-          onClick={handleAdd}
-        >
-          Add New Staff
-        </Button>
+        {canAdd && (
+          <Button 
+            type="primary" size="large" icon={<PlusOutlined />} 
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold h-12 w-full md:w-auto border-none shadow-md shadow-purple-100"
+            onClick={handleAdd}
+          >
+            Add New Staff
+          </Button>
+        )}
       </div>
 
       <Row gutter={[16, 16]} className="mb-8">

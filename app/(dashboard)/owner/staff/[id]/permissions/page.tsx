@@ -11,20 +11,27 @@ import {
   TeamOutlined,
   DollarCircleOutlined,
   BarChartOutlined,
-  SolutionOutlined
+  SolutionOutlined,
+  DashboardOutlined,
+  ShopOutlined,
+  UsergroupAddOutlined
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 
 const { Title, Text } = Typography;
 
 const AVAILABLE_PERMISSIONS = [
+  { key: '/owner', label: 'Intelligence', icon: <DashboardOutlined /> },
   { key: '/owner/calendar', label: 'Calendar', icon: <CalendarOutlined /> },
   { key: '/owner/bookings/manage', label: 'Bookings', icon: <CarryOutOutlined /> },
+  { key: '/owner/staff', label: 'Staff Members', icon: <UsergroupAddOutlined /> },
+  { key: '/owner/shops', label: 'Shops', icon: <ShopOutlined /> },
   { key: '/owner/services', label: 'Services', icon: <ScissorOutlined /> },
   { key: '/owner/products', label: 'Products', icon: <TeamOutlined /> },
   { key: '/owner/payments', label: 'Payments', icon: <DollarCircleOutlined /> },
   { key: '/owner/reports', label: 'Reports', icon: <BarChartOutlined /> },
   { key: '/owner/hr/attendance', label: 'HR & Attendance', icon: <SolutionOutlined /> },
+  { key: '/owner/hr/payroll', label: 'Payroll', icon: <DollarCircleOutlined /> },
 ];
 
 interface PermissionState {

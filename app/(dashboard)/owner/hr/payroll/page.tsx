@@ -63,8 +63,31 @@ function PayrollContent() {
     setIsLoadingData(false);
   };
 
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+
   useEffect(() => {
     fetchPayroll();
+
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/hr/payroll');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
   }, [selectedMonth]);
 
   // --- Processing States ---
@@ -142,15 +165,17 @@ function PayrollContent() {
             ]}
           />
           {/* Re-Added the Run Payroll Button */}
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<DollarOutlined />} 
-            onClick={() => setIsConfirmModalOpen(true)}
-            className="bg-[#1A1A1B] hover:bg-black rounded-xl font-bold border-none shadow-md w-full sm:w-auto"
-          >
-            Run Payroll
-          </Button>
+          {canAdd && (
+            <Button 
+              type="primary" 
+              size="large" 
+              icon={<DollarOutlined />} 
+              onClick={() => setIsConfirmModalOpen(true)}
+              className="bg-[#1A1A1B] hover:bg-black rounded-xl font-bold border-none shadow-md w-full sm:w-auto"
+            >
+              Run Payroll
+            </Button>
+          )}
         </div>
       </div>
 
@@ -226,13 +251,15 @@ function PayrollContent() {
               </div>
 
               <div className="flex justify-end items-center mt-auto gap-2">
-                <Button 
-                  type="text" 
-                  shape="circle" 
-                  icon={<SettingOutlined />} 
-                  onClick={(e) => handleOpenConfig(e, employee)}
-                  className="hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
-                />
+                {canEdit && (
+                  <Button 
+                    type="text" 
+                    shape="circle" 
+                    icon={<SettingOutlined />} 
+                    onClick={(e) => handleOpenConfig(e, employee)}
+                    className="hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                  />
+                )}
                 <div className="w-8 h-8 rounded-full bg-[#F3E8FF] flex items-center justify-center text-[#7C4DFF] group-hover:bg-[#7C4DFF] group-hover:text-white transition-colors duration-300">
                   <RightOutlined className="text-xs" />
                 </div>

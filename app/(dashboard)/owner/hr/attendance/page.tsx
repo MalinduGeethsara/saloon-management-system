@@ -52,8 +52,34 @@ function AttendanceContent() {
     }
   };
 
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
+
   React.useEffect(() => {
     fetchAttendance();
+
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/hr/attendance');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
   }, []);
 
   const handleAddNew = () => { setEditingRecord(null); setIsEntryModalOpen(true); };
@@ -188,15 +214,21 @@ function AttendanceContent() {
       key: 'action',
       width: 80,
       align: 'right' as const,
-      render: (_: any, record: any) => (
-        <Dropdown menu={{ items: [
-          { key: 'edit', label: 'Edit Record', icon: <EditOutlined />, onClick: () => handleEdit(record) },
-          { type: 'divider' },
-          { key: 'delete', label: 'Delete', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) }
-        ]}} trigger={['click']} placement="bottomRight">
-          <Button type="text" shape="circle" icon={<MoreOutlined style={{ fontSize: '18px' }} />} />
-        </Dropdown>
-      ),
+      render: (_: any, record: any) => {
+        const items: MenuProps['items'] = [
+          ...(canEdit ? [{ key: 'edit', label: 'Edit Record', icon: <EditOutlined />, onClick: () => handleEdit(record) }] : []),
+          ...(canEdit && canDelete ? [{ type: 'divider' as const }] : []),
+          ...(canDelete ? [{ key: 'delete', label: 'Delete', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) }] : []),
+        ];
+
+        if (items.length === 0) return null;
+
+        return (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="text" shape="circle" icon={<MoreOutlined style={{ fontSize: '18px' }} />} />
+          </Dropdown>
+        );
+      },
     },
   ];
 
@@ -209,9 +241,11 @@ function AttendanceContent() {
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <DatePicker style={{ borderRadius: '12px', height: '48px' }} defaultValue={dayjs()} className="hidden sm:block" />
-          <Button type="primary" size="large" icon={<PlusOutlined />} onClick={handleAddNew} className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold h-12 shadow-md w-full md:w-auto">
-            Manual Entry
-          </Button>
+          {canAdd && (
+            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={handleAddNew} className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold h-12 shadow-md w-full md:w-auto">
+              Manual Entry
+            </Button>
+          )}
         </div>
       </div>
 
