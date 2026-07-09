@@ -140,7 +140,7 @@ export default function BookingActionModal({
             </div>
           )}
 
-          {canDelete && (
+          {canDelete && !isCompleted && (
             <>
               <Divider className="my-2" />
               <Button 
