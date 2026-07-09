@@ -8,7 +8,8 @@ import {
   CreditCardOutlined,
   CalendarOutlined,
   UserOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -22,7 +23,9 @@ interface BookingActionModalProps {
   onDecline?: (id: string) => void;
   onGenerateBill?: (record: any) => void;
   onViewInvoice?: (record: any) => void;
+  onDelete?: (id: string) => void;
   canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export default function BookingActionModal({ 
@@ -33,7 +36,9 @@ export default function BookingActionModal({
   onDecline, 
   onGenerateBill,
   onViewInvoice,
-  canEdit = true
+  onDelete,
+  canEdit = true,
+  canDelete = false
 }: BookingActionModalProps) {
   if (!booking) return null;
 
@@ -133,6 +138,22 @@ export default function BookingActionModal({
             <div className="text-center p-6 bg-slate-50 rounded-xl text-slate-500 font-medium">
               No further actions available for this booking.
             </div>
+          )}
+
+          {canDelete && (
+            <>
+              <Divider className="my-2" />
+              <Button 
+                danger
+                type="text"
+                size="large"
+                icon={<DeleteOutlined />}
+                onClick={() => { onClose(); onDelete && onDelete(booking.id); }}
+                className="w-full h-12 rounded-xl font-bold text-base hover:bg-red-50"
+              >
+                Delete Booking
+              </Button>
+            </>
           )}
         </div>
       </div>

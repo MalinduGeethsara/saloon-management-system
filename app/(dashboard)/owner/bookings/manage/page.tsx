@@ -66,7 +66,7 @@ function ManageBookingsContent() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
-  const [modalType, setModalType] = useState<'accept' | 'decline' | null>(null);
+  const [modalType, setModalType] = useState<'accept' | 'decline' | 'delete' | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   
   // Row click actions modal
@@ -164,7 +164,7 @@ function ManageBookingsContent() {
     },
   });
 
-  const handleActionClick = (id: string, type: 'accept' | 'decline') => {
+  const handleActionClick = (id: string, type: 'accept' | 'decline' | 'delete') => {
     setSelectedBookingId(id);
     setModalType(type);
     setIsModalOpen(true);
@@ -173,17 +173,29 @@ function ManageBookingsContent() {
   const handleConfirmAction = async () => {
     if (!selectedBookingId || !modalType) return;
     try {
-      const status = modalType === 'accept' ? 'CONFIRMED' : 'CANCELLED';
-      const res = await fetch('/api/v1/bookings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: selectedBookingId, status })
-      });
-      if (res.ok) {
-        showAlert("success", `Booking ${modalType === 'accept' ? 'confirmed' : 'declined'} successfully.`);
-        fetchBookings();
+      if (modalType === 'delete') {
+        const res = await fetch(`/api/v1/bookings?id=${selectedBookingId}`, {
+          method: 'DELETE',
+        });
+        if (res.ok) {
+          showAlert("success", "Booking deleted successfully.");
+          fetchBookings();
+        } else {
+          showAlert("error", "Failed to delete booking.");
+        }
       } else {
-        showAlert("error", "Failed to update booking status.");
+        const status = modalType === 'accept' ? 'CONFIRMED' : 'CANCELLED';
+        const res = await fetch('/api/v1/bookings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: selectedBookingId, status })
+        });
+        if (res.ok) {
+          showAlert("success", `Booking ${modalType === 'accept' ? 'confirmed' : 'declined'} successfully.`);
+          fetchBookings();
+        } else {
+          showAlert("error", "Failed to update booking status.");
+        }
       }
     } catch (e) {
       showAlert("error", "An error occurred.");
@@ -429,10 +441,10 @@ function ManageBookingsContent() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onConfirm={handleConfirmAction} 
-        title={modalType === 'accept' ? "Confirm Booking?" : "Decline Booking?"} 
-        description={modalType === 'accept' ? "Confirm and notify client?" : "Decline and remove this request?"}
-        confirmText={modalType === 'accept' ? "Confirm" : "Decline"} 
-        isDanger={modalType === 'decline'} 
+        title={modalType === 'accept' ? "Confirm Booking?" : modalType === 'delete' ? "Delete Booking?" : "Decline Booking?"} 
+        description={modalType === 'accept' ? "Confirm and notify client?" : modalType === 'delete' ? "Are you sure you want to completely delete this booking? This action cannot be undone." : "Decline and remove this request?"}
+        confirmText={modalType === 'accept' ? "Confirm" : modalType === 'delete' ? "Delete" : "Decline"} 
+        isDanger={modalType === 'decline' || modalType === 'delete'} 
       />
 
       <BookingActionModal 
@@ -441,9 +453,11 @@ function ManageBookingsContent() {
         booking={selectedRow}
         onAccept={(id) => handleActionClick(id, 'accept')}
         onDecline={(id) => handleActionClick(id, 'decline')}
+        onDelete={(id) => { setIsRowModalOpen(false); handleActionClick(id, 'delete'); }}
         onGenerateBill={(record) => { setIsRowModalOpen(false); handleGenerateBill(record); }}
         onViewInvoice={(record) => { setIsRowModalOpen(false); handleViewInvoice(record); }}
         canEdit={canEdit}
+        canDelete={canDelete}
       />
 
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSave={handleSavePayment} paymentToEdit={paymentData} />

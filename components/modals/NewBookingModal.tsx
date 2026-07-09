@@ -79,6 +79,7 @@ export function NewBookingModal({
 
   const [services, setServices] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -96,10 +97,24 @@ export function NewBookingModal({
         })
         .catch(console.error);
 
+      fetch('/api/v1/staff')
+        .then(res => res.json())
+        .then(data => {
+          if (data.staff) setStaffList(data.staff);
+        })
+        .catch(console.error);
     }
   }, [isOpen]);
 
-  const activeBarbers = barbers;
+  const getActiveBarbers = (shopId?: string) => {
+    if (staffList.length > 0) {
+      return staffList
+        .filter(s => s.role === 'BARBER' || s.role === 'MANAGER')
+        .filter(s => !shopId || s.shopId === shopId)
+        .map(s => ({ id: s.id, name: s.name, color: '#7C4DFF' }));
+    }
+    return barbers;
+  };
 
   const handleFinish = (values: any) => {
     const startDateTime = values.date
@@ -109,7 +124,8 @@ export function NewBookingModal({
       .toDate();
     
     const endDateTime = new Date(startDateTime.getTime() + duration * 60000);
-    const selectedBarber = activeBarbers.find(b => b.id === values.barberId);
+    const currentBarbers = getActiveBarbers(values.shopId);
+    const selectedBarber = currentBarbers.find(b => b.id === values.barberId);
 
     const newBooking = {
       id: String(Date.now()),
@@ -162,7 +178,7 @@ export function NewBookingModal({
           </div>
           
           <Form.Item name="shopId" label="Branch Location" rules={[{ required: true }]}>
-            <Select placeholder="Select Branch" size="large">
+            <Select placeholder="Select Branch" size="large" onChange={() => form.setFieldsValue({ barberId: undefined })}>
               {shops.map(shop => (
                 <Option key={shop.id} value={shop.id}>{shop.name}</Option>
               ))}
@@ -177,12 +193,20 @@ export function NewBookingModal({
                 ))}
               </Select>
             </Form.Item>
-            <Form.Item name="barberId" label="Specialist" rules={[{ required: true }]}>
-              <Select size="large" disabled={userRole === 'barber'}>
-                {activeBarbers.map(b => (
-                  <Option key={b.id} value={b.id}>{b.name}</Option>
-                ))}
-              </Select>
+            <Form.Item noStyle dependencies={['shopId']}>
+              {({ getFieldValue }) => {
+                const currentShopId = getFieldValue('shopId');
+                const filteredBarbers = getActiveBarbers(currentShopId);
+                return (
+                  <Form.Item name="barberId" label="Specialist" rules={[{ required: true }]}>
+                    <Select size="large" disabled={userRole === 'barber'} placeholder="Select Specialist">
+                      {filteredBarbers.map((b: any) => (
+                        <Option key={b.id} value={b.id}>{b.name}</Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                );
+              }}
             </Form.Item>
           </div>
 
