@@ -69,9 +69,12 @@ function StaffContent() {
             phone: u.phone || 'N/A',
             imageUrl: u.imageUrl,
             shopId: u.shopId,
+            salaryType: u.salaryType,
+            baseSalary: u.baseSalary,
+            commissionRate: u.commissionRate,
             status: 'Active',
             branch: u.shop?.name || 'Global / All Branches',
-            earnings: 'Rs. 0'
+            earnings: `Rs. ${u.baseSalary || 0}`
           })));
         }
         setLoading(false);
@@ -98,7 +101,10 @@ function StaffContent() {
       phone: record.phone !== 'N/A' ? record.phone : '',
       role: record.role,
       imageUrl: record.imageUrl,
-      shopId: record.shopId
+      shopId: record.shopId,
+      salaryType: record.salaryType,
+      baseSalary: record.baseSalary,
+      commissionRate: record.commissionRate
     });
     setIsModalOpen(true);
   };

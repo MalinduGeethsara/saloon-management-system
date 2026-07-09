@@ -12,29 +12,12 @@ import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { PaymentModal } from "@/components/modals/PaymentModal";
 import { InvoiceModal } from "@/components/modals/InvoiceModal";
 
+import { getAllPayments } from '@/lib/actions/payment';
+
 const { Title, Text } = Typography;
 
-// --- Mock Data ---
-const INITIAL_PAYMENTS = [
-  { 
-    key: '1', id: "INV-1023", client: "Kamal Perera", contact: "0771234567", barber: "Malith Sandaruwan",
-    items: [{ name: "Haircut", type: "Service", price: 2500 }], 
-    amount: 2500, method: "Cash", date: "2023-10-24", branch: "Colombo" 
-  },
-  { 
-    key: '2', id: "INV-1024", client: "Saman Kumara", contact: "0719876543", barber: "Mahesh Madushanka",
-    items: [{ name: "Beard Trim", type: "Service", price: 1500 }], 
-    amount: 1500, method: "Card", date: "2023-10-24", branch: "Walasmulla"
-  },
-  { 
-    key: '3', id: "INV-1025", client: "Nimal Siripala", contact: "0765551234", barber: "Vindana Lakmal",
-    items: [{ name: "Haircut", type: "Service", price: 2500 }, { name: "Hair Gel", type: "Product", price: 5000 }], 
-    amount: 7500, method: "Transfer", date: "2023-10-25", branch: "Colombo"
-  },
-];
-
 function PaymentsContent() {
-  const [payments, setPayments] = useState(INITIAL_PAYMENTS);
+  const [payments, setPayments] = useState<any[]>([]);
   const [userRole, setUserRole] = useState('owner');
   const [canAdd, setCanAdd] = useState(true);
   const [canEdit, setCanEdit] = useState(true);
@@ -63,6 +46,15 @@ function PaymentsContent() {
         }
       }
     }
+    
+    // Fetch payments
+    const fetchPayments = async () => {
+      const res = await getAllPayments();
+      if (res.success && res.data) {
+        setPayments(res.data);
+      }
+    };
+    fetchPayments();
   }, []);
   
   // Modals state
@@ -214,37 +206,7 @@ function PaymentsContent() {
       width: 140,
       align: 'center' as const,
       render: (text: string) => <span className="text-slate-500">{text}</span>,
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      width: 80,
-      align: 'right' as const, // Push action icon to the right
-      render: (_: any, record: any) => (
-        <div className="flex items-center justify-end gap-2">
-          {canEdit && (
-            <Tooltip title="Edit Payment">
-              <Button 
-                type="text" 
-                shape="circle" 
-                icon={<EyeOutlined className="text-blue-500 text-lg" />} 
-                onClick={() => handleViewInvoice(record)} 
-                className="bg-blue-50 hover:bg-blue-100"
-              />
-            </Tooltip>
-          )}
-          <Tooltip title="View/Print Invoice">
-            <Button 
-              type="text" 
-              shape="circle" 
-              icon={<EyeOutlined className="text-[#7C4DFF] text-lg" />} 
-              onClick={() => handleViewInvoice(record)} 
-              className="bg-[#F3E8FF] hover:bg-[#E9D5FF]"
-            />
-          </Tooltip>
-        </div>
-      ),
-    },
+    }
   ];
 
   return (
@@ -305,6 +267,10 @@ function PaymentsContent() {
           rowKey="key" 
           // Force horizontal scroll for the entire table
           scroll={{ x: 900 }}
+          onRow={(record) => ({
+            onClick: () => handleViewInvoice(record),
+            className: 'cursor-pointer hover:bg-purple-50 transition-colors'
+          })}
         />
       </Card>
 

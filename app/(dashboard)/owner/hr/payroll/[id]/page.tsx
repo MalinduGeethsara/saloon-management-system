@@ -20,51 +20,7 @@ const ETF_EMPLOYER_RATE = 0.03;
 const LEAVE_ALLOWANCE = 4;
 const NO_PAY_RATE = 1000; 
 
-// --- Mock Data Fetcher (Now reacts to the selected month) ---
-const fetchEmployeePayroll = (id: string, month: string) => {
-  // Simulating different data for different months so you can see the UI update
-  let leavesTaken = 2;
-  let commissions = 15000;
-  let status = 'Paid';
-
-  if (month === 'February 2026') {
-    leavesTaken = 6; // Exceeds allowance, triggers No Pay
-    commissions = 12000;
-  } else if (month === 'January 2026') {
-    leavesTaken = 0; // Perfect attendance
-    commissions = 18000;
-  } else if (month === 'March 2026') {
-    status = 'Pending';
-  }
-
-  let name = 'Mahesh Madushanka';
-  let role = 'Senior Barber';
-  if (id === 'EMP-002') {
-    name = 'Malith Sandaruwan';
-    role = 'Senior Barber';
-  } else if (id === 'EMP-003') {
-    name = 'Vindana Lakmal';
-    role = 'Senior Barber';
-  } else if (id === 'EMP-004') {
-    name = 'Nimesh Haththasingha';
-    role = 'Master Stylist';
-  }
-
-  return { 
-    id: id || 'EMP-001', 
-    name, 
-    role, 
-    department: 'Hair Styling',
-    basicSalary: 75000, 
-    allowances: 5000, 
-    commissions: commissions, 
-    leavesTaken: leavesTaken, 
-    status: status, 
-    method: 'Bank Transfer',
-    bankDetails: 'BOC - 123456789',
-    month: month
-  };
-};
+import { getMonthlyPayroll } from '@/lib/actions/payroll';
 
 export default function PayslipPreviewPage() {
   const router = useRouter();
@@ -73,10 +29,39 @@ export default function PayslipPreviewPage() {
 
   // New State for Month Selection
   const [selectedMonth, setSelectedMonth] = useState('March 2026');
+  const [record, setRecord] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   // Fetch and Calculate based on the currently selected month
-  const record = fetchEmployeePayroll(employeeId, selectedMonth);
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const res = await getMonthlyPayroll(selectedMonth);
+      if (res.success && res.data) {
+        // Find the employee by generated ID (EMP-XXXX) or fallback UUID
+        const emp = res.data.find(e => e.id === employeeId || e.key === employeeId);
+        if (emp) {
+          setRecord({
+            ...emp,
+            department: 'Hair Styling',
+            bankDetails: 'BOC - 123456789',
+            month: selectedMonth
+          });
+        }
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [selectedMonth, employeeId]);
   
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading Payslip...</div>;
+  }
+
+  if (!record) {
+    return <div className="flex justify-center items-center h-screen">Employee not found for this month.</div>;
+  }
+
   const grossEarnings = record.basicSalary + record.allowances + record.commissions;
   const epfDeduction = record.basicSalary * EPF_EMPLOYEE_RATE;
   const excessLeaves = Math.max(0, record.leavesTaken - LEAVE_ALLOWANCE);

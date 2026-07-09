@@ -20,6 +20,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Payroll & Commission Fields
+  salaryType     String   @default("Commission") // Fixed, Commission, Hybrid
+  baseSalary     Float    @default(0)
+  commissionRate Float    @default(0) // Percentage (e.g., 50 for 50%)
+
   // Foreign Keys
   shopId    String?
 

@@ -67,12 +67,7 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
         </div>
       }
     >
-      <Tabs defaultActiveKey="1" items={[
-        {
-          key: '1',
-          label: 'Profile & Role',
-          children: (
-            <Form form={form} layout="vertical" onFinish={handleFinish} style={{ marginTop: 16 }}>
+      <Form form={form} layout="vertical" onFinish={handleFinish} style={{ marginTop: 16 }}>
               <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
                 <div style={{ width: 120 }}>
                   <Form.Item label="Profile Photo" style={{ marginBottom: 0 }}>
@@ -138,48 +133,6 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
                 </Button>
               </div>
             </Form>
-          )
-        },
-        {
-          key: '2',
-          label: 'Payroll & Commission',
-          children: (
-            <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Form.Item name="salaryType" label="Salary Structure">
-  <               Select size="large">
-                    <Option value="Commission">Commission Based</Option>
-                    <Option value="Fixed">Fixed Salary</Option>
-                    <Option value="Hybrid">Fixed + Commission</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item name="comm" label="Commission Rate (%)">
-                  <Input suffix="%" size="large" />
-                </Form.Item>
-              </div>
-              
-              <Form.Item name="baseSalary" label="Base Salary (LKR)">
-                <Input prefix="Rs." size="large" />
-              </Form.Item>
-
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex items-start gap-3">
-                <SafetyCertificateOutlined style={{ color: '#2563eb', fontSize: '20px', marginTop: '4px' }} />
-                <div>
-                  <h4 className="font-bold text-blue-900 m-0">Payroll Note</h4>
-                  <p className="text-blue-700 text-xs m-0">Changes to commission rates will apply from the next billing cycle automatically.</p>
-                </div>
-              </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
-                <Button onClick={onClose} size="large">Cancel</Button>
-                <Button type="primary" size="large" style={{ backgroundColor: '#7C4DFF' }}>
-                  Update Payroll
-                </Button>
-              </div>
-            </Form>
-          )
-        }
-      ]} />
     </Modal>
   );
 }

@@ -6,10 +6,12 @@ import {
   Card, Typography, Row, Col, Statistic, Tag, Button, Select, Modal, Progress 
 } from 'antd';
 import { 
-  DollarOutlined, RightOutlined, SyncOutlined 
+  DollarOutlined, RightOutlined, SyncOutlined, SettingOutlined 
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { PayrollConfigModal } from "@/components/modals/PayrollConfigModal";
+import { getMonthlyPayroll, processPayroll } from '@/lib/actions/payroll';
 
 const { Title, Text } = Typography;
 
@@ -19,30 +21,6 @@ const EPF_EMPLOYER_RATE = 0.12;
 const ETF_EMPLOYER_RATE = 0.03; 
 const LEAVE_ALLOWANCE = 4;
 const NO_PAY_RATE = 1000; 
-
-// --- Mock Data ---
-const PAYROLL_DATA = [
-  { 
-    key: '1', id: 'EMP-001', name: 'Mahesh Madushanka', role: 'Senior Barber', 
-    basicSalary: 75000, allowances: 5000, commissions: 15000, 
-    leavesTaken: 2, status: 'Paid', method: 'Bank Transfer' 
-  },
-  { 
-    key: '2', id: 'EMP-002', name: 'Malith Sandaruwan', role: 'Senior Barber', 
-    basicSalary: 55000, allowances: 2000, commissions: 8000, 
-    leavesTaken: 5, status: 'Pending', method: 'Cash' 
-  },
-  { 
-    key: '3', id: 'EMP-003', name: 'Vindana Lakmal', role: 'Senior Barber', 
-    basicSalary: 65000, allowances: 3000, commissions: 12000, 
-    leavesTaken: 1, status: 'Paid', method: 'Bank Transfer' 
-  },
-  { 
-    key: '4', id: 'EMP-004', name: 'Nimesh Haththasingha', role: 'Master Stylist', 
-    basicSalary: 40000, allowances: 1000, commissions: 4000, 
-    leavesTaken: 6, status: 'Pending', method: 'Cash' 
-  },
-];
 
 // --- Payroll Calculation Engine ---
 const calculatePayroll = (record: any) => {
@@ -73,11 +51,26 @@ function PayrollContent() {
   const { showAlert } = useAlert();
   
   const [selectedMonth, setSelectedMonth] = useState('March 2026');
-  const processedData = PAYROLL_DATA.map(calculatePayroll);
-  const [payrollList] = useState(processedData);
+  const [payrollList, setPayrollList] = useState<any[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  const fetchPayroll = async () => {
+    setIsLoadingData(true);
+    const res = await getMonthlyPayroll(selectedMonth);
+    if (res.success && res.data) {
+      setPayrollList(res.data.map(calculatePayroll));
+    }
+    setIsLoadingData(false);
+  };
+
+  useEffect(() => {
+    fetchPayroll();
+  }, [selectedMonth]);
 
   // --- Processing States ---
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -91,32 +84,39 @@ function PayrollContent() {
     router.push(`/owner/hr/payroll/${record.id}`); 
   };
 
-  const startPayrollProcessing = () => {
+  const handleOpenConfig = (e: React.MouseEvent, record: any) => {
+    e.stopPropagation(); // prevent card click
+    setSelectedStaff(record);
+    setIsConfigModalOpen(true);
+  };
+
+  const startPayrollProcessing = async () => {
     setIsConfirmModalOpen(false); // Close the confirmation modal
     setIsProcessing(true); // Open the loading modal
     setProgress(0);
 
-    // Simulate a complex background calculation (takes ~3.5 seconds)
-    const totalTime = 3500; 
-    const intervalTime = 50; 
-    let currentProgress = 0;
+    // Simulate progress bar for better UX
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) return 90;
+        return prev + 10;
+      });
+    }, 200);
 
-    const timer = setInterval(() => {
-      currentProgress += (100 / (totalTime / intervalTime));
-      
-      if (currentProgress >= 100) {
-        clearInterval(timer);
-        setProgress(100);
-        
-        // Small delay at 100% so it feels complete before closing
-        setTimeout(() => {
-          setIsProcessing(false);
-          showAlert('success', `Payroll for ${selectedMonth} has been successfully processed!`);
-        }, 400);
+    const res = await processPayroll(selectedMonth);
+    clearInterval(interval);
+    setProgress(100);
+
+    setTimeout(() => {
+      setIsProcessing(false);
+      setProgress(0);
+      if (res.success) {
+        showAlert('success', res.message || `Payroll for ${selectedMonth} processed successfully!`);
+        fetchPayroll(); // Refresh the list
       } else {
-        setProgress(Math.floor(currentProgress));
+        showAlert('error', res.message || 'Failed to process payroll.');
       }
-    }, intervalTime);
+    }, 500);
   };
 
   return (
@@ -130,6 +130,7 @@ function PayrollContent() {
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <Select 
+            id="month-select"
             value={selectedMonth} 
             onChange={setSelectedMonth}
             size="large"
@@ -208,9 +209,30 @@ function PayrollContent() {
               <div className="mb-6 flex-grow">
                 <h3 className="text-xl font-black text-slate-800 m-0 truncate group-hover:text-[#7C4DFF] transition-colors">{employee.name}</h3>
                 <span className="text-xs text-[#7C4DFF] font-bold uppercase tracking-wider">{employee.role}</span>
+                <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Base Salary:</span>
+                    <span className="font-bold text-slate-700">Rs. {employee.basicSalary.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Commission:</span>
+                    <span className="font-bold text-emerald-600">+Rs. {employee.commissions.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs mt-2 font-bold">
+                    <span className="text-slate-800">Net Salary:</span>
+                    <span className="text-[#7C4DFF]">Rs. {employee.netSalary.toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-end items-end mt-auto">
+              <div className="flex justify-end items-center mt-auto gap-2">
+                <Button 
+                  type="text" 
+                  shape="circle" 
+                  icon={<SettingOutlined />} 
+                  onClick={(e) => handleOpenConfig(e, employee)}
+                  className="hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                />
                 <div className="w-8 h-8 rounded-full bg-[#F3E8FF] flex items-center justify-center text-[#7C4DFF] group-hover:bg-[#7C4DFF] group-hover:text-white transition-colors duration-300">
                   <RightOutlined className="text-xs" />
                 </div>
@@ -254,7 +276,7 @@ function PayrollContent() {
               strokeColor="#7C4DFF" 
               railColor="#F3E8FF"
               status="active" 
-              strokeWidth={12}
+              size={[undefined, 12]}
               showInfo={false}
             />
           </div>
@@ -265,6 +287,14 @@ function PayrollContent() {
           </div>
         </div>
       </Modal>
+
+      {/* 3. Configuration Modal */}
+      <PayrollConfigModal 
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        staff={selectedStaff}
+        onSaveSuccess={() => fetchPayroll()}
+      />
 
     </div>
   );

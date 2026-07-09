@@ -17,16 +17,7 @@ interface PaymentModalProps {
 
 const BARBERS = ["Malith", "Mahesh", "Vindana", "Nimesh"];
 
-// PREDEFINED CATALOG FOR SEARCH DROPDOWN
-const CATALOG = [
-  { label: 'Haircut', value: 'Haircut', type: 'Service', price: 2500 },
-  { label: 'Beard Trim', value: 'Beard Trim', type: 'Service', price: 1500 },
-  { label: 'Hair Coloring', value: 'Hair Coloring', type: 'Service', price: 4000 },
-  { label: 'Facial Treatment', value: 'Facial Treatment', type: 'Service', price: 3000 },
-  { label: 'Hair Gel (Strong Hold)', value: 'Hair Gel (Strong Hold)', type: 'Product', price: 1200 },
-  { label: 'Beard Oil', value: 'Beard Oil', type: 'Product', price: 1500 },
-  { label: 'Matte Clay Wax', value: 'Matte Clay Wax', type: 'Product', price: 1800 },
-];
+import { getBillingCatalog } from '@/lib/actions/payment';
 
 export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: PaymentModalProps) => {
   const [form] = Form.useForm();
@@ -35,9 +26,17 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
   // --- New States for Confirmation Modal ---
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<any>(null);
+  const [catalog, setCatalog] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
+    const fetchCatalog = async () => {
+      const res = await getBillingCatalog();
+      if (res.success && res.data) {
+        setCatalog(res.data);
+      }
+    };
+    fetchCatalog();
   }, []);
 
   // Watch the items array to calculate the total amount and filter dropdowns in real-time
@@ -46,6 +45,8 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
   const totalAmount = React.useMemo(() => {
     return items.reduce((sum: number, item: any) => sum + (item?.price || 0), 0) || 0;
   }, [items]);
+
+  const hasService = items.some((item: any) => item?.type === 'Service');
 
   useEffect(() => {
     if (!mounted) return;
@@ -96,12 +97,12 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
 
   // AUTO-FILL LOGIC
   const handleItemSelect = (selectedValue: string, fieldNameIndex: number) => {
-    const selectedItem = CATALOG.find(item => item.value === selectedValue);
+    const selectedItem = catalog.find(item => item.value === selectedValue);
     if (selectedItem) {
       const currentItems = form.getFieldValue('items');
       currentItems[fieldNameIndex] = {
         ...currentItems[fieldNameIndex],
-        name: selectedItem.value,
+        name: selectedItem.label,
         type: selectedItem.type,
         price: selectedItem.price
       };
@@ -158,16 +159,18 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
                 <DatePicker className="w-full" format="YYYY-MM-DD" size="large" />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="barber" label="Select Barber" rules={[{ required: true, message: 'Required' }]}>
-                <Select placeholder="Choose specialist" size="large">
-                  {/* Ensure the assigned barber is always an option even if not in the default mock list */}
-                  {Array.from(new Set([...BARBERS, paymentToEdit?.barber].filter(Boolean))).map(b => (
-                    <Select.Option key={b} value={b}>{b}</Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
+            {hasService && (
+              <Col xs={24} sm={12}>
+                <Form.Item name="barber" label="Select Barber" rules={[{ required: true, message: 'Required' }]}>
+                  <Select placeholder="Choose specialist" size="large">
+                    {/* Ensure the assigned barber is always an option even if not in the default mock list */}
+                    {Array.from(new Set([...BARBERS, paymentToEdit?.barber].filter(Boolean))).map(b => (
+                      <Select.Option key={b} value={b}>{b}</Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+            )}
           </Row>
 
           <div className="text-xs uppercase font-bold text-slate-400 border-b border-slate-200 pb-2 mb-4 mt-2">
@@ -179,7 +182,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
               <>
                 {fields.map(({ key, name, ...restField }) => {
                   const currentType = items[name]?.type || 'Service';
-                  const filteredCatalog = CATALOG.filter(item => item.type === currentType);
+                  const filteredCatalog = catalog.filter(item => item.type === currentType);
 
                   return (
                     <div key={key} className="bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-xl mb-3 border border-slate-200 md:border-none">

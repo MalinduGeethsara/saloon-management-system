@@ -25,6 +25,9 @@ export async function GET() {
         role: true,
         imageUrl: true,
         shopId: true,
+        salaryType: true,
+        baseSalary: true,
+        commissionRate: true,
         shop: {
           select: { name: true }
         }
@@ -53,7 +56,10 @@ export async function POST(request: Request) {
         role: data.role, // 'MANAGER' or 'BARBER'
         password: hashedPassword,
         imageUrl: data.imageUrl || null,
-        shopId: data.shopId || null
+        shopId: data.shopId || null,
+        salaryType: data.salaryType || 'Commission',
+        baseSalary: parseFloat(data.baseSalary) || 0,
+        commissionRate: parseFloat(data.commissionRate) || 0,
       }
     });
     return NextResponse.json({ success: true, user });
@@ -78,6 +84,10 @@ export async function PUT(request: Request) {
     if (data.imageUrl !== undefined) {
       updateData.imageUrl = data.imageUrl;
     }
+
+    if (data.salaryType !== undefined) updateData.salaryType = data.salaryType;
+    if (data.baseSalary !== undefined) updateData.baseSalary = parseFloat(data.baseSalary) || 0;
+    if (data.commissionRate !== undefined) updateData.commissionRate = parseFloat(data.commissionRate) || 0;
 
     updateData.shopId = data.shopId || null;
 
