@@ -303,7 +303,7 @@ function PayrollContent() {
               strokeColor="#7C4DFF" 
               railColor="#F3E8FF"
               status="active" 
-              size={[undefined, 12]}
+              size="small"
               showInfo={false}
             />
           </div>

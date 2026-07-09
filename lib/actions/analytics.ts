@@ -6,7 +6,7 @@ import { verifySession } from '@/lib/session';
 // Helper to get date boundaries based on range string
 function getDateBounds(timeRange: string) {
   const now = new Date();
-  let start = new Date();
+  const start = new Date();
   
   if (timeRange === 'Today') {
     start.setHours(0, 0, 0, 0);
@@ -237,7 +237,7 @@ export async function getReportsAnalytics(shopId: string | 'all', startDate?: st
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
     // Initialize months between start and end
-    let current = new Date(start);
+    const current = new Date(start);
     while (current <= end) {
       const key = `${current.getFullYear()}-${current.getMonth()}`;
       if (!monthlyData[key]) {
