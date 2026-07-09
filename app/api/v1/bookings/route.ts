@@ -63,6 +63,35 @@ export async function POST(request: Request) {
       finalAmount = services.reduce((sum: number, s: any) => sum + s.price, 0);
     }
 
+    // Validation against Shop Operating Hours
+    if (body.shopId && body.date) {
+      const { db } = await import('@/lib/db');
+      const shop = await db.shop.findUnique({ where: { id: body.shopId } });
+      if (shop) {
+        if (shop.status === 'Closed' || shop.status === 'Renovating') {
+          return NextResponse.json({ message: `This location is currently ${shop.status}` }, { status: 400 });
+        }
+        
+        const bookingDate = new Date(body.date);
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = days[bookingDate.getDay()];
+        
+        if (shop.operatingHours) {
+          const schedule = (shop.operatingHours as any)[dayName];
+          if (schedule) {
+            if (schedule.isClosed) {
+              return NextResponse.json({ message: `This location is closed on ${dayName}s` }, { status: 400 });
+            }
+
+            const bTimeStr = bookingDate.toTimeString().substring(0, 5); // "HH:mm"
+            if (bTimeStr < schedule.open || bTimeStr > schedule.close) {
+              return NextResponse.json({ message: `Booking time on ${dayName} must be between ${schedule.open} and ${schedule.close}` }, { status: 400 });
+            }
+          }
+        }
+      }
+    }
+
     const booking = await createBooking({
       customerId: session.role === 'CUSTOMER' ? session.id : customerId, 
       serviceIds: serviceIds,

@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, Button, Row, Col } from 'antd';
-import { ShopOutlined, UserOutlined, EnvironmentOutlined, PhoneOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Select, Button, Row, Col, TimePicker } from 'antd';
+import { ShopOutlined, UserOutlined, EnvironmentOutlined, PhoneOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { ImageUpload } from '@/components/ui/ImageUpload';
+import dayjs from 'dayjs';
 
 const { Option } = Select;
 
@@ -28,10 +29,20 @@ export function LocationModal({ isOpen, onClose, onSave, shopToEdit }: LocationM
     if (!mounted) return;
     if (isOpen) {
       if (shopToEdit) {
-        form.setFieldsValue(shopToEdit);
-        setImageUrl(shopToEdit.image || '');
+        form.setFieldsValue({
+          ...shopToEdit,
+          openTime: shopToEdit.openTime ? dayjs(shopToEdit.openTime, 'HH:mm') : dayjs('09:00', 'HH:mm'),
+          closeTime: shopToEdit.closeTime ? dayjs(shopToEdit.closeTime, 'HH:mm') : dayjs('18:00', 'HH:mm'),
+          closedDays: shopToEdit.closedDays ? shopToEdit.closedDays.split(',') : []
+        });
+        setImageUrl(shopToEdit.image || shopToEdit.imageUrl || '');
       } else {
         form.resetFields();
+        form.setFieldsValue({
+          openTime: dayjs('09:00', 'HH:mm'),
+          closeTime: dayjs('18:00', 'HH:mm'),
+          closedDays: []
+        });
         setImageUrl('');
       }
     }
@@ -45,6 +56,9 @@ export function LocationModal({ isOpen, onClose, onSave, shopToEdit }: LocationM
   const handleFinish = (values: any) => {
     onSave({
       ...values,
+      openTime: values.openTime ? values.openTime.format('HH:mm') : '09:00',
+      closeTime: values.closeTime ? values.closeTime.format('HH:mm') : '18:00',
+      closedDays: values.closedDays ? values.closedDays.join(',') : '',
       key: shopToEdit?.key, // Preserve ID if editing
       // Default stats for new shops
       staff: shopToEdit?.staff || 0,
@@ -103,6 +117,33 @@ export function LocationModal({ isOpen, onClose, onSave, shopToEdit }: LocationM
             <Option value="Open">Open</Option>
             <Option value="Closed">Closed</Option>
             <Option value="Renovating">Renovating</Option>
+          </Select>
+        </Form.Item>
+
+        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-6 mb-3 border-b border-slate-100 pb-2">Operating Hours</div>
+        
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="openTime" label="Opening Time" rules={[{ required: true }]}>
+              <TimePicker format="HH:mm" size="large" className="w-full" minuteStep={15} />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="closeTime" label="Closing Time" rules={[{ required: true }]}>
+              <TimePicker format="HH:mm" size="large" className="w-full" minuteStep={15} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item name="closedDays" label="Closed Days (Optional)">
+          <Select mode="multiple" size="large" placeholder="Select days this branch is closed" allowClear>
+            <Option value="Sunday">Sunday</Option>
+            <Option value="Monday">Monday</Option>
+            <Option value="Tuesday">Tuesday</Option>
+            <Option value="Wednesday">Wednesday</Option>
+            <Option value="Thursday">Thursday</Option>
+            <Option value="Friday">Friday</Option>
+            <Option value="Saturday">Saturday</Option>
           </Select>
         </Form.Item>
 

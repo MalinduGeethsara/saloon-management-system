@@ -45,7 +45,8 @@ model Shop {
   address   String?
   phone     String?
   imageUrl  String?
-  status    String   @default("Open") // Open, Closed, Renovating
+  status           String   @default("Open") // Open, Closed, Renovating
+  operatingHours   Json?    // e.g. { "Monday": { "open": "09:00", "close": "18:00", "isClosed": false }, ... }
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

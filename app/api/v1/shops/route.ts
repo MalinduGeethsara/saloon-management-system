@@ -10,16 +10,41 @@ export async function GET() {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
     const shops = await db.shop.findMany({
       include: {
         _count: {
-          select: { staff: true, bookings: true, services: true }
+          select: { bookings: true, services: true }
+        },
+        staff: {
+          select: { id: true, name: true, imageUrl: true, role: true }
+        },
+        bookings: {
+          where: {
+            status: 'COMPLETED',
+            date: {
+              gte: startDate,
+              lte: endDate
+            }
+          },
+          select: {
+            totalAmount: true
+          }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    return NextResponse.json({ shops }, { status: 200 });
+    const shopsWithRevenue = shops.map(shop => {
+      const monthlyRevenue = shop.bookings.reduce((sum, b) => sum + b.totalAmount, 0);
+      const { bookings, ...rest } = shop;
+      return { ...rest, revenue: monthlyRevenue };
+    });
+
+    return NextResponse.json({ shops: shopsWithRevenue }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ message: 'Error fetching shops', error: error.message }, { status: 500 });
   }
@@ -43,8 +68,17 @@ export async function POST(request: Request) {
         address: body.address,
         phone: body.phone,
         status: body.status || 'Open',
-        imageUrl: body.imageUrl || null
-      } 
+        imageUrl: body.imageUrl || null,
+        operatingHours: body.operatingHours || {
+          "Monday": { open: "09:00", close: "18:00", isClosed: false },
+          "Tuesday": { open: "09:00", close: "18:00", isClosed: false },
+          "Wednesday": { open: "09:00", close: "18:00", isClosed: false },
+          "Thursday": { open: "09:00", close: "18:00", isClosed: false },
+          "Friday": { open: "09:00", close: "18:00", isClosed: false },
+          "Saturday": { open: "09:00", close: "18:00", isClosed: false },
+          "Sunday": { open: "09:00", close: "18:00", isClosed: true }
+        }
+      }
     });
     return NextResponse.json({ shop, message: 'Shop created successfully' }, { status: 201 });
   } catch (error: any) {
@@ -68,6 +102,7 @@ export async function PUT(request: Request) {
     if (body.phone !== undefined) updateData.phone = body.phone;
     if (body.status !== undefined) updateData.status = body.status;
     if (body.imageUrl !== undefined) updateData.imageUrl = body.imageUrl;
+    if (body.operatingHours !== undefined) updateData.operatingHours = body.operatingHours;
 
     const shop = await db.shop.update({
       where: { id: body.id },

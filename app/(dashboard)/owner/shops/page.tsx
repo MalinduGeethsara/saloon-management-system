@@ -12,7 +12,8 @@ import {
   Col, 
   Statistic, 
   Dropdown, 
-  Input 
+  Input,
+  Tooltip
 } from 'antd';
 import { 
   ShopOutlined, 
@@ -54,8 +55,9 @@ function ShopsContent() {
         setShops(data.shops.map((s: any) => ({
           ...s,
           key: s.id,
-          staffCount: s._count?.staff || 0,
-          revenue: 0 // Will implement later with bookings connection
+          staffCount: s.staff ? s.staff.length : 0,
+          staffMembers: s.staff || [],
+          revenue: s.revenue || 0
         })));
       }
     } catch (e) {
@@ -234,12 +236,19 @@ function ShopsContent() {
                     />
                   </Col>
                   <Col span={12}>
-                    <Statistic 
-                      title={<span className="text-[10px] uppercase font-bold text-slate-400">Total Staff</span>}
-                      value={shop.staffCount} 
-                      suffix={<span className="text-[10px] text-slate-400 ml-1 font-normal">Team</span>}
-                      styles={{ content: { fontSize: '16px', fontWeight: 800 } }}
-                    />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Staff ({shop.staffCount})</span>
+                      <Avatar.Group max={{ count: 3, style: { color: '#f56a00', backgroundColor: '#fde3cf' } }}>
+                        {shop.staffMembers?.map((staff: any) => (
+                          <Tooltip title={staff.name} placement="top" key={staff.id}>
+                            <Avatar src={staff.imageUrl} style={{ backgroundColor: '#7C4DFF' }}>
+                              {staff.name.charAt(0)}
+                            </Avatar>
+                          </Tooltip>
+                        ))}
+                      </Avatar.Group>
+                      {shop.staffCount === 0 && <span className="text-xs text-slate-400 font-semibold mt-1">No staff assigned</span>}
+                    </div>
                   </Col>
                 </Row>
 
