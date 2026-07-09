@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Typography, 
@@ -20,34 +20,54 @@ import {
   ArrowUpOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
+import { getDashboardAnalytics } from '@/lib/actions/analytics';
 
 const { Title, Text } = Typography;
-
-// --- Mock Data ---
-const RECENT_TRANSACTIONS = [
-  { key: '1', id: 'INV-1024', client: 'Kamal Perera', service: 'Haircut + Beard', amount: 3500, status: 'Completed', time: '10:30 AM' },
-  { key: '2', id: 'INV-1025', client: 'Saman Kumara', service: 'Haircut', amount: 1500, status: 'Completed', time: '11:15 AM' },
-  { key: '3', id: 'INV-1026', client: 'Nimal Siripala', service: 'Full Service', amount: 5000, status: 'Pending', time: '12:00 PM' },
-  { key: '4', id: 'INV-1027', client: 'Ruwan Fernando', service: 'Beard Trim', amount: 1200, status: 'Completed', time: '12:45 PM' },
-  { key: '5', id: 'INV-1028', client: 'Chamara Silva', service: 'Hair Coloring', amount: 8500, status: 'Completed', time: '01:30 PM' },
-];
-
-const TOP_STAFF = [
-  { name: 'Malith Sandaruwan', role: 'Senior Barber', sales: 185000, bookings: 42 },
-  { name: 'Mahesh Madushanka', role: 'Senior Barber', sales: 120000, bookings: 38 },
-  { name: 'Vindana Lakmal', role: 'Senior Barber', sales: 95000, bookings: 25 },
-];
-
-const POPULAR_SERVICES = [
-  { name: 'Gentlemans Cut', percent: 75, color: '#7C4DFF' },
-  { name: 'Beard Sculpting', percent: 60, color: '#10B981' },
-  { name: 'Hair Coloring', percent: 30, color: '#F59E0B' },
-  { name: 'Facial Treatment', percent: 20, color: '#EC4899' },
-];
 
 function BusinessIntelligenceContent() {
   const { showAlert } = useAlert();
   const [timeRange, setTimeRange] = useState('This Month');
+  const [selectedShop, setSelectedShop] = useState('all');
+  const [shops, setShops] = useState<{label: string, value: string}[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [data, setData] = useState({
+    kpis: { revenue: 0, bookings: 0, customers: 0, staff: 0 },
+    recentTransactions: [] as any[],
+    topStaff: [] as any[],
+    popularServices: [] as any[]
+  });
+
+  useEffect(() => {
+    // Fetch shops for dropdown
+    fetch('/api/v1/shops')
+      .then(res => res.json())
+      .then(data => {
+        if (data.shops) {
+          setShops([
+            { label: 'All Branches (Global)', value: 'all' },
+            ...data.shops.map((s: any) => ({ label: s.name, value: s.id }))
+          ]);
+        }
+      })
+      .catch(() => console.error('Failed to load shops'));
+  }, []);
+
+  useEffect(() => {
+    // Fetch dashboard data
+    const loadAnalytics = async () => {
+      setLoading(true);
+      const res = await getDashboardAnalytics(selectedShop, timeRange);
+      if (res.success && res.data) {
+        setData(res.data);
+      } else {
+        showAlert('error', res.message || 'Failed to load analytics data.');
+      }
+      setLoading(false);
+    };
+    
+    loadAnalytics();
+  }, [selectedShop, timeRange]);
 
   // --- Table Columns with Mobile-Optimized Alignments ---
   const columns = [
@@ -88,7 +108,7 @@ function BusinessIntelligenceContent() {
       dataIndex: 'amount',
       key: 'amount',
       width: 130,
-      align: 'right' as const, // Right-align for clean reading of numbers
+      align: 'right' as const,
       render: (amount: number) => <span className="font-mono font-bold text-[#7C4DFF] text-[14px]">Rs. {amount.toLocaleString()}</span>,
     },
     {
@@ -96,9 +116,9 @@ function BusinessIntelligenceContent() {
       dataIndex: 'status',
       key: 'status',
       width: 120,
-      align: 'center' as const, // Center tags
+      align: 'center' as const,
       render: (status: string) => {
-        let color = status === 'Completed' ? 'green' : 'gold';
+        let color = status === 'COMPLETED' ? 'green' : 'gold';
         return <Tag color={color} className="rounded-full px-3 py-0.5 m-0 text-[10px] font-bold border-0">{status.toUpperCase()}</Tag>;
       },
     },
@@ -113,26 +133,26 @@ function BusinessIntelligenceContent() {
     
     csvRows.push('KPI Summary');
     csvRows.push('Revenue,Bookings,Customers,Staff');
-    csvRows.push('Rs. 458000,142,+28,8');
+    csvRows.push(`Rs. ${data.kpis.revenue},${data.kpis.bookings},${data.kpis.customers},${data.kpis.staff}`);
     csvRows.push('');
     
     csvRows.push('Top Specialists');
     csvRows.push('Name,Role,Bookings,Sales');
-    TOP_STAFF.forEach(staff => {
+    data.topStaff.forEach(staff => {
       csvRows.push(`"${staff.name}","${staff.role}",${staff.bookings},Rs. ${staff.sales}`);
     });
     csvRows.push('');
     
     csvRows.push('Popular Services');
     csvRows.push('Service Name,Popularity Percentage');
-    POPULAR_SERVICES.forEach(service => {
+    data.popularServices.forEach(service => {
       csvRows.push(`"${service.name}",${service.percent}%`);
     });
     csvRows.push('');
     
     csvRows.push('Recent Transactions');
     csvRows.push('Invoice ID,Client,Service,Time,Amount,Status');
-    RECENT_TRANSACTIONS.forEach(tx => {
+    data.recentTransactions.forEach(tx => {
       csvRows.push(`"${tx.id}","${tx.client}","${tx.service}","${tx.time}",Rs. ${tx.amount},"${tx.status}"`);
     });
     
@@ -158,11 +178,21 @@ function BusinessIntelligenceContent() {
           <Text type="secondary" className="text-sm sm:text-base">Real-time overview of your salon's performance.</Text>
         </div>
         
-        {/* Controls - Full width on mobile, auto on desktop */}
+        {/* Controls */}
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+           {shops.length > 0 && (
+             <Select
+               id="shop-select"
+               value={selectedShop}
+               onChange={setSelectedShop}
+               className="w-full sm:w-48 h-12"
+               size="large"
+               options={shops}
+             />
+           )}
            <Select 
              id="time-range-select"
-             defaultValue="This Month" 
+             value={timeRange} 
              className="w-full sm:w-40 h-12" 
              size="large"
              onChange={setTimeRange}
@@ -184,13 +214,13 @@ function BusinessIntelligenceContent() {
         </div>
       </div>
 
-      {/* KPI Cards - Centered content on mobile, left on desktop */}
+      {/* KPI Cards */}
       <Row gutter={[16, 16]}>
         {[
-          { label: 'Revenue', value: 458000, prefix: 'Rs.' },
-          { label: 'Bookings', value: 142, prefix: '' },
-          { label: 'Customers', value: 28, prefix: '+' },
-          { label: 'Staff', value: 8, prefix: '' },
+          { label: 'Revenue', value: data.kpis.revenue, prefix: 'Rs.' },
+          { label: 'Bookings', value: data.kpis.bookings, prefix: '' },
+          { label: 'Customers', value: data.kpis.customers, prefix: '' },
+          { label: 'Staff', value: data.kpis.staff, prefix: '' },
         ].map((kpi, i) => (
           <Col xs={12} lg={6} key={i}>
             <Card variant="borderless" className="shadow-sm rounded-2xl flex flex-col justify-center text-center sm:text-left sm:items-start h-full">
@@ -214,15 +244,18 @@ function BusinessIntelligenceContent() {
             title={<span className="font-bold text-lg">Popular Services</span>} 
             variant="borderless" 
             className="shadow-sm rounded-3xl h-full"
+            loading={loading}
           >
             <div className="flex flex-col gap-6 pt-2">
-              {POPULAR_SERVICES.map(service => (
+              {data.popularServices.length === 0 && !loading && (
+                <div className="text-center text-slate-400 py-4">No services booked in this period.</div>
+              )}
+              {data.popularServices.map(service => (
                 <div key={service.name}>
                   <div className="flex justify-between items-end mb-1">
-                    <span className="text-sm font-bold text-slate-700">{service.name}</span>
+                    <span className="text-sm font-bold text-slate-700">{service.name} ({service.count})</span>
                     <span className="text-sm font-bold text-slate-400">{service.percent}%</span>
                   </div>
-                  {/* FIX: trailColor changed to railColor */}
                   <Progress 
                     percent={service.percent} 
                     showInfo={false} 
@@ -236,19 +269,24 @@ function BusinessIntelligenceContent() {
           </Card>
         </Col>
 
-        {/* Top Performing Staff - Mobile Overflow Fixed */}
+        {/* Top Performing Staff */}
         <Col xs={24} lg={10}>
           <Card 
             title={<span className="font-bold text-lg">Top Specialists</span>} 
             variant="borderless" 
             className="shadow-sm rounded-3xl h-full"
             extra={<Button type="link" size="small" className="text-[#7C4DFF] font-bold">View All</Button>}
+            loading={loading}
           >
             <div className="flex flex-col gap-5">
-              {TOP_STAFF.map((item, index) => (
+              {data.topStaff.length === 0 && !loading && (
+                <div className="text-center text-slate-400 py-4">No staff data in this period.</div>
+              )}
+              {data.topStaff.map((item, index) => (
                 <div key={item.name} className="flex items-center gap-3 pb-4 border-b border-slate-50 last:border-0 last:pb-0">
                   <Avatar 
                     size={40}
+                    src={item.avatar}
                     style={{ 
                       backgroundColor: index === 0 ? '#7C4DFF' : '#F3E8FF', 
                       color: index === 0 ? 'white' : '#7C4DFF',
@@ -256,25 +294,18 @@ function BusinessIntelligenceContent() {
                       flexShrink: 0
                     }}
                   >
-                    {index + 1}
+                    {!item.avatar ? index + 1 : undefined}
                   </Avatar>
                   
-                  {/* min-w-0 allows truncation to work inside flex */}
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="font-bold text-slate-800 text-sm truncate">{item.name}</span>
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide truncate">{item.role} • {item.bookings} Bookings</span>
                   </div>
                   
                   <div className="text-right flex-shrink-0">
-                    <div className="font-mono font-bold text-emerald-600 text-[13px]">
-                      Rs. {(item.sales / 1000).toFixed(0)}k
+                    <div className="font-mono font-bold text-emerald-600">
+                      Rs. {(item.sales / 1000).toFixed(1)}k
                     </div>
-                    <div className="text-[9px] text-slate-400 font-bold flex justify-end items-center gap-0.5">
-                      <ArrowUpOutlined className="text-emerald-500" /> 12%
-                    </div>
-                  </div>
-                  <div className="font-mono font-bold text-emerald-600">
-                    Rs. {(item.sales / 1000).toFixed(1)}k
                   </div>
                 </div>
               ))}
@@ -283,7 +314,7 @@ function BusinessIntelligenceContent() {
         </Col>
       </Row>
 
-      {/* Bottom Section: Recent Transactions - FULL SWIPE */}
+      {/* Bottom Section: Recent Transactions */}
       <Card 
         title={<span className="font-bold text-lg">Recent Transactions</span>} 
         variant="borderless" 
@@ -293,10 +324,10 @@ function BusinessIntelligenceContent() {
       >
         <Table 
           columns={columns} 
-          dataSource={RECENT_TRANSACTIONS} 
+          dataSource={data.recentTransactions} 
           pagination={false} 
           rowKey="key"
-          // Force horizontal scroll for full table swipe
+          loading={loading}
           scroll={{ x: 900 }} 
           className="analytics-swipe-table"
         />
