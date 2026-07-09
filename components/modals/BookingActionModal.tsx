@@ -10,6 +10,7 @@ import {
   UserOutlined,
   InfoCircleOutlined
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
 
 const { Text, Title } = Typography;
 
@@ -66,7 +67,7 @@ export default function BookingActionModal({
               <Text className="font-bold text-slate-800 text-base">{booking.client || booking.customer?.name || 'Walk-in'}</Text>
               <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                 <CalendarOutlined /> 
-                {booking.date ? new Date(booking.date).toLocaleString() : 'Unknown Date'}
+                {booking.date ? dayjs(booking.date).format('MMM DD, YYYY - h:mm A') : 'Unknown Date'}
               </div>
             </div>
           </div>

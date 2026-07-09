@@ -164,6 +164,26 @@ export default function BookingPage() {
 
   const totalAmount = calculateTotalAmount();
 
+  const isSlotPassed = (slotTimeStr: string, selectedDateStr: string) => {
+    if (!selectedDateStr) return false;
+    const now = new Date();
+    const [yyyy, mm, dd] = selectedDateStr.split('-').map(Number);
+    const selectedDate = new Date(yyyy, mm - 1, dd);
+    
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (selectedDate < today) return true;
+    if (selectedDate > today) return false;
+    
+    const [time, period] = slotTimeStr.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    
+    if (period === 'PM' && hours !== 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    
+    const slotDate = new Date(yyyy, mm - 1, dd, hours, minutes);
+    return slotDate < now;
+  };
+
   return (
     <div className="relative flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 overflow-hidden">
       
@@ -415,22 +435,29 @@ export default function BookingPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {timeSlots.map((slot) => {
                     const isBooked = bookedSlots.includes(slot);
+                    const isPassed = isSlotPassed(slot, bookingDate);
+                    const isDisabled = isBooked || isPassed;
                     const isSelected = selectedSlot === slot;
                     
                     return (
                       <button
                         key={slot}
-                        onClick={() => !isBooked && setSelectedSlot(slot)}
-                        disabled={isBooked}
+                        onClick={() => !isDisabled && setSelectedSlot(slot)}
+                        disabled={isDisabled}
                         className={`py-4 px-2 border flex items-center justify-center text-sm font-bold tracking-wider transition-all duration-300 ${
-                          isBooked
+                          isDisabled
                             ? 'border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-600 cursor-not-allowed line-through opacity-70'
                             : isSelected 
                               ? 'border-amber-500 bg-amber-600 text-white shadow-md shadow-amber-500/20' 
                               : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:border-amber-500/50 hover:text-zinc-900 dark:hover:text-white'
                         }`}
                       >
-                        {slot} {isBooked && <span className="text-[10px] ml-2 font-normal line-through-none">(Booked)</span>}
+                        {slot} 
+                        {isBooked ? (
+                          <span className="text-[10px] ml-2 font-normal line-through-none">(Booked)</span>
+                        ) : isPassed ? (
+                          <span className="text-[10px] ml-2 font-normal line-through-none">(Passed)</span>
+                        ) : null}
                       </button>
                     );
                   })}

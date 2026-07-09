@@ -13,7 +13,7 @@ export async function createBooking(data: { customerId: string; serviceIds: stri
     if (data.barberId) {
       const newBookingStart = new Date(data.date);
       // Sum up duration for all services, default to 30 mins if none found
-      const durationMinutes = services.reduce((sum, s) => sum + (s.duration || 30), 0) || 30;
+      const durationMinutes = services.reduce((sum: number, s: any) => sum + (s.duration || 30), 0) || 30;
       const newBookingEnd = new Date(newBookingStart.getTime() + (durationMinutes * 60000));
 
       // Fetch bookings for that day to check for overlapping times
@@ -33,7 +33,7 @@ export async function createBooking(data: { customerId: string; serviceIds: stri
 
       for (const existing of existingBookings) {
         const existingStart = new Date(existing.date);
-        const existingDuration = existing.services?.reduce((sum, bs) => sum + (bs.service?.duration || 30), 0) || 30;
+        const existingDuration = existing.services?.reduce((sum: number, bs: any) => sum + (bs.service?.duration || 30), 0) || 30;
         const existingEnd = new Date(existingStart.getTime() + (existingDuration * 60000));
 
         // Overlap Condition: A starts before B ends AND A ends after B starts

@@ -95,7 +95,7 @@ function ManageBookingsContent() {
           branch: b.shop?.name || 'Global / All',
           status: b.status === 'CONFIRMED' ? 'Confirmed' : b.status === 'COMPLETED' ? 'Paid' : b.status === 'CANCELLED' ? 'Cancelled' : 'Pending',
           total: b.totalAmount,
-          date: dayjs(b.date).format("YYYY-MM-DD")
+          date: b.date
         })));
       }
     } catch (e) {
