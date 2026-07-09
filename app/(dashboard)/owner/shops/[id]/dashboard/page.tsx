@@ -18,7 +18,7 @@ export default async function ShopDashboardPage({ params }: { params: Promise<{ 
         include: {
           customer: true,
           barber: true,
-          service: true
+          services: { include: { service: true } }
         },
         orderBy: {
           date: 'desc'
@@ -118,7 +118,9 @@ export default async function ShopDashboardPage({ params }: { params: Promise<{ 
                       <Avatar className="bg-white border border-slate-200" icon={<UserOutlined className="text-slate-400" />} />
                       <div>
                         <div className="font-bold text-slate-800">{booking.customer?.name || 'Walk-in Client'}</div>
-                        <div className="text-xs text-slate-500">{booking.service?.name || 'General Service'} • {dayjs(booking.date).format('MMM DD, YYYY h:mm A')}</div>
+                        <div className="text-xs text-slate-500">
+                          {booking.services?.map((bs: any) => bs.service?.name).join(', ') || 'General Service'} • {dayjs(booking.date).format('MMM DD, YYYY h:mm A')}
+                        </div>
                       </div>
                     </div>
                     

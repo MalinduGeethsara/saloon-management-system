@@ -28,7 +28,7 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
   const [attendanceId, setAttendanceId] = useState<string>('1');
   const [empId, setEmpId] = useState<string>('EMP-001');
 
-  const [userPermissions, setUserPermissions] = useState<string[]>([]);
+  const [userPermissions, setUserPermissions] = useState<any[]>([]);
 
   useEffect(() => {
     const matchRole = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
