@@ -62,7 +62,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
           date: dayjs(),
           method: 'Cash',
           items: [{ name: undefined, type: 'Service', price: 0 }],
-          id: `INV-${Math.floor(1000 + Math.random() * 9000)}` 
+          id: `INV-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
         });
       }
     }

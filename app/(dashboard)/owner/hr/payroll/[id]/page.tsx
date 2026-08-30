@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { 
   Card, Typography, Row, Col, Button, Divider, Select 
@@ -27,8 +27,13 @@ export default function PayslipPreviewPage() {
   const params = useParams();
   const employeeId = params?.id as string;
 
-  // New State for Month Selection
-  const [selectedMonth, setSelectedMonth] = useState('March 2026');
+  const monthOptions = useMemo(() =>
+    Array.from({ length: 12 }, (_, i) => {
+      const label = dayjs().subtract(i, 'month').format('MMMM YYYY');
+      return { value: label, label };
+    }), []);
+
+  const [selectedMonth, setSelectedMonth] = useState(() => dayjs().format('MMMM YYYY'));
   const [record, setRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,8 +48,7 @@ export default function PayslipPreviewPage() {
         if (emp) {
           setRecord({
             ...emp,
-            department: 'Hair Styling',
-            bankDetails: 'BOC - 123456789',
+            department: emp.role,
             month: selectedMonth
           });
         }
@@ -141,11 +145,7 @@ export default function PayslipPreviewPage() {
                 onChange={setSelectedMonth}
                 size="large"
                 className="w-full sm:w-48"
-                options={[
-                  { value: 'January 2026', label: 'January 2026' },
-                  { value: 'February 2026', label: 'February 2026' },
-                  { value: 'March 2026', label: 'March 2026' },
-                ]}
+                options={monthOptions}
               />
               <Button 
                 type="primary" 
@@ -230,7 +230,7 @@ export default function PayslipPreviewPage() {
                 <div>
                   <h4 className="text-xs font-bold text-[#7C4DFF] uppercase tracking-widest m-0">Net Salary Payable</h4>
                   <div className="text-sm text-slate-500 font-medium flex items-center gap-2 mt-1">
-                    <BankOutlined /> {record.method} ({record.bankDetails})
+                    <BankOutlined /> {record.method}
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
@@ -287,7 +287,7 @@ export default function PayslipPreviewPage() {
                 <span className="font-bold uppercase">Designation:</span> <span>{record.role}</span>
               </div>
               <div className="w-1/2 p-3 flex justify-between">
-                <span className="font-bold uppercase">Department:</span> <span>{record.department}</span>
+                <span className="font-bold uppercase">Department:</span> <span>{record.role}</span>
               </div>
             </div>
             <div className="flex">
@@ -329,7 +329,7 @@ export default function PayslipPreviewPage() {
           <div className="flex justify-between items-center p-3 border-2 border-black mb-8">
             <div>
               <span className="text-xl font-bold uppercase tracking-widest block mb-1">Net Salary Payable</span>
-              <span className="text-xs font-medium italic">Transfer to: {record.bankDetails}</span>
+              <span className="text-xs font-medium italic">Payment Method: {record.method}</span>
             </div>
             <span className="text-3xl font-black border-l-2 border-black pl-6 py-1">Rs. {netSalary.toLocaleString()}.00</span>
           </div>

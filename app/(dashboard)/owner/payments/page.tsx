@@ -12,7 +12,7 @@ import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { PaymentModal } from "@/components/modals/PaymentModal";
 import { InvoiceModal } from "@/components/modals/InvoiceModal";
 
-import { getAllPayments } from '@/lib/actions/payment';
+import { getAllPayments, createManualBill } from '@/lib/actions/payment';
 
 const { Title, Text } = Typography;
 
@@ -74,14 +74,26 @@ function PaymentsContent() {
     setIsInvoiceModalOpen(true);
   };
 
-  const handleSavePayment = (paymentData: any) => {
+  const handleSavePayment = async (paymentData: any) => {
     const finalRecord = { ...paymentData, key: Date.now().toString() };
-    setPayments(prev => [finalRecord, ...prev]);
+
+    await createManualBill({
+      invoiceNo: paymentData.id,
+      clientName: paymentData.client,
+      clientPhone: paymentData.contact,
+      barberName: paymentData.barber,
+      items: paymentData.items,
+      amount: paymentData.amount,
+      method: paymentData.method,
+    });
+
+    const res = await getAllPayments();
+    if (res.success && res.data) setPayments(res.data);
+
     showAlert('success', 'Payment recorded successfully.');
-    
-    setIsPaymentModalOpen(false); 
-    setSelectedInvoice(finalRecord); 
-    setTimeout(() => setIsInvoiceModalOpen(true), 300); // Wait for modal animation, then open Print View
+    setIsPaymentModalOpen(false);
+    setSelectedInvoice(finalRecord);
+    setTimeout(() => setIsInvoiceModalOpen(true), 300);
   };
 
   // --- Column Search Setup ---

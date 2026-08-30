@@ -22,29 +22,64 @@ export async function getAllPayments() {
         }
       },
       orderBy: { createdAt: 'desc' },
-      take: 50 // Limit for performance
+      take: 100
     });
 
-    const formattedData = payments.map(p => ({
+    const data = payments.map(p => ({
       key: p.id,
       id: `INV-${p.id.slice(0, 6).toUpperCase()}`,
-      client: p.customer?.name || 'Walk-in',
-      contact: p.customer?.phone || 'N/A',
-      barber: p.booking?.barber?.name || 'Unknown',
+      client: p.booking ? (p.customer?.name || 'Customer') : (p.clientName || 'Walk-in'),
+      contact: p.booking ? (p.customer?.phone || 'N/A') : (p.clientPhone || 'N/A'),
+      barber: p.booking?.barber?.name || p.barberName || 'N/A',
       items: p.booking?.services?.map(bs => ({
         name: bs.service?.name,
         type: 'Service',
         price: bs.service?.price
-      })) || [],
+      })) || (p.items as any[]) || [],
       amount: p.amount,
-      method: p.method === 'CARD' ? 'Card' : p.method === 'CASH' ? 'Cash' : 'Transfer',
+      method: p.method === 'CARD' ? 'Card' : p.method === 'CASH' ? 'Cash' : p.method || 'Cash',
       date: p.createdAt.toISOString().split('T')[0],
-      branch: p.booking?.shop?.name || 'Global'
+      branch: p.booking?.shop?.name || 'Global',
     }));
 
-    return { success: true, data: formattedData };
+    return { success: true, data };
   } catch (error) {
     console.error('Error fetching payments:', error);
+    return { success: false, message: 'Server Error' };
+  }
+}
+
+export async function createManualBill(data: {
+  invoiceNo: string;
+  clientName: string;
+  clientPhone?: string;
+  barberName?: string;
+  items: { name: string; type: string; price: number }[];
+  amount: number;
+  method: string;
+  branch?: string;
+}) {
+  try {
+    const session = await verifySession();
+    if (!session || !['OWNER', 'ADMIN', 'MANAGER'].includes(session.role)) {
+      return { success: false, message: 'Unauthorized' };
+    }
+
+    await db.payment.create({
+      data: {
+        amount: data.amount,
+        method: data.method,
+        status: 'COMPLETED',
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        barberName: data.barberName,
+        items: data.items,
+      }
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error creating manual bill:', error);
     return { success: false, message: 'Server Error' };
   }
 }

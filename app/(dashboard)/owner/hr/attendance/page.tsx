@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Table, Card, Tag, Button, Typography, Space, Dropdown, MenuProps, Avatar, Input, DatePicker } from 'antd';
 import type { InputRef, TableColumnType } from 'antd';
-import { 
+import {
   PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined,
   EnvironmentOutlined, MoreOutlined, EditOutlined, DeleteOutlined, SearchOutlined, UserOutlined
 } from '@ant-design/icons';
@@ -15,16 +15,10 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-const INITIAL_DATA = [
-  { key: '1', name: "Mahesh Madushanka", shop: "Walasmulla", status: "Present", clockIn: "08:50 AM", clockOut: "05:30 PM" },
-  { key: '2', name: "Malith Sandaruwan", shop: "Walasmulla", status: "On Leave", clockIn: "-", clockOut: "-" },
-  { key: '3', name: "Vindana Lakmal", shop: "Colombo", status: "Present", clockIn: "09:05 AM", clockOut: "06:15 PM" },
-];
-
-const STAFF_NAMES = ["Mahesh Madushanka", "Malith Sandaruwan", "Vindana Lakmal"];
-
 function AttendanceContent() {
-  const [attendanceData, setAttendanceData] = useState(INITIAL_DATA);
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<{ id: string; name: string }[]>([]);
+  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
@@ -33,31 +27,53 @@ function AttendanceContent() {
   const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
-  const fetchAttendance = async () => {
+  const fetchAttendance = async (date?: dayjs.Dayjs | null) => {
+    const target = date === undefined ? selectedDate : date;
     try {
-      const res = await fetch('/api/v1/attendance');
+      const url = target
+        ? `/api/v1/attendance?date=${target.format('YYYY-MM-DD')}`
+        : '/api/v1/attendance';
+      const res = await fetch(url);
       const data = await res.json();
       if (data.attendance) {
         setAttendanceData(data.attendance.map((a: any) => ({
           key: a.id,
+          userId: a.userId,
           name: a.user?.name || 'Unknown',
-          shop: a.user?.shopId || 'Main Shop',
-          status: a.checkOut ? 'Present' : 'Late', // or logic
-          clockIn: dayjs(a.checkIn).format('hh:mm A'),
-          clockOut: a.checkOut ? dayjs(a.checkOut).format('hh:mm A') : '-'
+          shop: a.user?.shop?.name || 'Main Shop',
+          role: a.user?.role || '',
+          status: a.checkOut ? 'Present' : a.checkIn ? 'Active (In)' : 'Absent',
+          method: a.method || 'MANUAL',
+          clockIn: a.checkIn ? dayjs(a.checkIn).format('hh:mm A') : '-',
+          clockOut: a.checkOut ? dayjs(a.checkOut).format('hh:mm A') : '-',
         })));
       }
-    } catch (e) {
+    } catch {
       showAlert('error', 'Failed to load attendance');
     }
+  };
+
+  const handleDateChange = (date: dayjs.Dayjs | null) => {
+    setSelectedDate(date);
+    fetchAttendance(date);
   };
 
   const [canAdd, setCanAdd] = useState(true);
   const [canEdit, setCanEdit] = useState(true);
   const [canDelete, setCanDelete] = useState(true);
 
-  React.useEffect(() => {
-    fetchAttendance();
+  useEffect(() => {
+    fetchAttendance(null);
+
+    // Fetch real staff list
+    fetch('/api/v1/staff')
+      .then(r => r.json())
+      .then(d => {
+        if (d.staff) {
+          setStaffList(d.staff.map((s: any) => ({ id: s.id, name: s.name })));
+        }
+      })
+      .catch(() => {});
 
     const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
     if (roleMatch) {
@@ -76,7 +92,7 @@ function AttendanceContent() {
               setCanEdit(false);
               setCanDelete(false);
             }
-          } catch (e) {}
+          } catch {}
         }
       }
     }
@@ -92,11 +108,11 @@ function AttendanceContent() {
         const res = await fetch(`/api/v1/attendance?id=${recordToDelete}`, { method: 'DELETE' });
         if (res.ok) {
           showAlert('success', 'Record deleted successfully.');
-          fetchAttendance();
+          fetchAttendance(selectedDate ?? null);
         } else {
           showAlert('error', 'Failed to delete record.');
         }
-      } catch (e) {
+      } catch {
         showAlert('error', 'An error occurred.');
       }
       setIsDeleteModalOpen(false);
@@ -105,26 +121,36 @@ function AttendanceContent() {
   };
 
   const handleSaveRecord = async (newRecord: any) => {
-    // In a real implementation, you'd match staff name to ID here, or pass ID directly.
-    // Assuming `newRecord` has userId and dates properly formatted.
     try {
+      const isEdit = !!newRecord.key;
+      const now = new Date();
+      const dateStr = newRecord.date || now.toISOString().split('T')[0];
+
+      const body = isEdit
+        ? { id: newRecord.key, checkIn: newRecord.clockInRaw, checkOut: newRecord.clockOutRaw }
+        : {
+            userId: newRecord.userId,
+            date: new Date(dateStr).toISOString(),
+            checkIn: newRecord.clockInRaw || now.toISOString(),
+            checkOut: newRecord.clockOutRaw || null,
+            method: 'MANUAL',
+            allowDuplicate: isEdit,
+          };
+
       const res = await fetch('/api/v1/attendance', {
-        method: newRecord.key ? 'PUT' : 'POST',
+        method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newRecord.key ? { id: newRecord.key, ...newRecord } : {
-          userId: "dummy-user-id", // Hardcoded for demo if no real selector
-          date: new Date().toISOString(),
-          checkIn: new Date().toISOString(),
-          checkOut: null
-        })
+        body: JSON.stringify(body),
       });
+
       if (res.ok) {
         showAlert('success', 'Attendance record saved.');
-        fetchAttendance();
+        fetchAttendance(selectedDate ?? null);
       } else {
-        showAlert('error', 'Failed to save record.');
+        const err = await res.json();
+        showAlert('error', err.message || 'Failed to save record.');
       }
-    } catch (e) {
+    } catch {
       showAlert('error', 'An error occurred.');
     }
     setIsEntryModalOpen(false);
@@ -148,7 +174,7 @@ function AttendanceContent() {
       </div>
     ),
     filterIcon: (filtered: boolean) => <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined }} />,
-    onFilter: (value, record) => record[dataIndex].toString().toLowerCase().includes((value as string).toLowerCase()),
+    onFilter: (value, record) => record[dataIndex]?.toString().toLowerCase().includes((value as string).toLowerCase()),
   });
 
   const columns = [
@@ -160,7 +186,6 @@ function AttendanceContent() {
       align: 'left' as const,
       ...getColumnSearchProps('name', 'Employee'),
       render: (text: string, record: any) => (
-        // FIX: Made the name clickable to go to the employee's detail page
         <Link href={`/owner/hr/attendance/${record.key}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} />
           <span className="font-bold text-[#7C4DFF] hover:underline">{text}</span>
@@ -179,7 +204,7 @@ function AttendanceContent() {
       title: 'Clock In',
       dataIndex: 'clockIn',
       key: 'clockIn',
-      width: 130,
+      width: 120,
       align: 'center' as const,
       render: (text: string) => <span className="font-mono font-medium text-slate-600">{text}</span>,
     },
@@ -187,23 +212,35 @@ function AttendanceContent() {
       title: 'Clock Out',
       dataIndex: 'clockOut',
       key: 'clockOut',
-      width: 130,
+      width: 120,
       align: 'center' as const,
       render: (text: string) => <span className="font-mono font-medium text-slate-600">{text}</span>,
+    },
+    {
+      title: 'Method',
+      dataIndex: 'method',
+      key: 'method',
+      width: 130,
+      align: 'center' as const,
+      render: (method: string) => (
+        <Tag color={method === 'FINGERPRINT' ? 'green' : 'blue'} className="rounded-full px-3 py-0.5 font-bold border-0 text-[10px]">
+          {method === 'FINGERPRINT' ? 'Fingerprint' : 'Manual'}
+        </Tag>
+      ),
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 160,
+      width: 150,
       align: 'center' as const,
       render: (status: string) => {
         let color = 'green';
         let icon = <CheckCircleOutlined />;
-        if (status === 'On Leave') { color = 'red'; icon = <CloseCircleOutlined />; }
-        if (status === 'Late') { color = 'orange'; icon = <ClockCircleOutlined />; }
+        if (status === 'On Leave' || status === 'Absent') { color = 'red'; icon = <CloseCircleOutlined />; }
+        if (status === 'Active (In)') { color = 'blue'; icon = <ClockCircleOutlined />; }
         return (
-          <Tag color={color} className="rounded-full px-4 py-0.5 font-bold border-0 flex items-center justify-center gap-1 w-fit mx-auto">
+          <Tag color={color} className="rounded-full px-3 py-0.5 font-bold border-0 flex items-center justify-center gap-1 w-fit mx-auto text-[10px]">
             {icon} {status.toUpperCase()}
           </Tag>
         );
@@ -220,9 +257,7 @@ function AttendanceContent() {
           ...(canEdit && canDelete ? [{ type: 'divider' as const }] : []),
           ...(canDelete ? [{ key: 'delete', label: 'Delete', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) }] : []),
         ];
-
         if (items.length === 0) return null;
-
         return (
           <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
             <Button type="text" shape="circle" icon={<MoreOutlined style={{ fontSize: '18px' }} />} />
@@ -240,7 +275,14 @@ function AttendanceContent() {
           <Text type="secondary">Monitor staff check-ins and leaves. Click an employee name to view details.</Text>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          <DatePicker style={{ borderRadius: '12px', height: '48px' }} defaultValue={dayjs()} className="hidden sm:block" />
+          <DatePicker
+            style={{ borderRadius: '12px', height: '48px' }}
+            value={selectedDate}
+            onChange={handleDateChange}
+            allowClear={true}
+            placeholder="Filter by date..."
+            className="hidden sm:block"
+          />
           {canAdd && (
             <Button type="primary" size="large" icon={<PlusOutlined />} onClick={handleAddNew} className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold h-12 shadow-md w-full md:w-auto">
               Manual Entry
@@ -253,8 +295,22 @@ function AttendanceContent() {
         <Table columns={columns} dataSource={attendanceData} pagination={{ pageSize: 8, size: 'small' }} rowKey="key" scroll={{ x: 1000 }} />
       </Card>
 
-      <ManualAttendanceModal isOpen={isEntryModalOpen} onClose={() => setIsEntryModalOpen(false)} onSave={handleSaveRecord} staffList={STAFF_NAMES} recordToEdit={editingRecord} />
-      <ConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={confirmDelete} title="Delete Record?" description="Are you sure?" confirmText="Yes, Delete" isDanger={true} />
+      <ManualAttendanceModal
+        isOpen={isEntryModalOpen}
+        onClose={() => setIsEntryModalOpen(false)}
+        onSave={handleSaveRecord}
+        staffList={staffList}
+        recordToEdit={editingRecord}
+      />
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Record?"
+        description="Are you sure?"
+        confirmText="Yes, Delete"
+        isDanger={true}
+      />
     </div>
   );
 }

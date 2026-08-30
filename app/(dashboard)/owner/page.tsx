@@ -26,7 +26,7 @@ const { Title, Text } = Typography;
 
 function BusinessIntelligenceContent() {
   const { showAlert } = useAlert();
-  const [timeRange, setTimeRange] = useState('This Month');
+  const [timeRange, setTimeRange] = useState('Last 30 Days');
   const [selectedShop, setSelectedShop] = useState('all');
   const [shops, setShops] = useState<{label: string, value: string}[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,6 +197,7 @@ function BusinessIntelligenceContent() {
              size="large"
              onChange={setTimeRange}
              options={[
+               { value: 'Last 30 Days', label: 'Last 30 Days' },
                { value: 'Today', label: 'Today' },
                { value: 'This Week', label: 'This Week' },
                { value: 'This Month', label: 'This Month' },

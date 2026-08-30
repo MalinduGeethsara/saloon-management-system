@@ -18,9 +18,12 @@ function getDateBounds(timeRange: string) {
   } else if (timeRange === 'This Month') {
     start.setDate(1);
     start.setHours(0, 0, 0, 0);
+  } else if (timeRange === 'Last 30 Days') {
+    start.setDate(start.getDate() - 30);
+    start.setHours(0, 0, 0, 0);
   } else {
-    // Default to this month
-    start.setDate(1);
+    // Default to last 30 days
+    start.setDate(start.getDate() - 30);
     start.setHours(0, 0, 0, 0);
   }
   

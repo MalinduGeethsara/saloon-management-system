@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { Modal, Button, Form, Input, Select, Divider } from 'antd';
+import { Modal, Button, Form, Input, InputNumber, Select, Divider } from 'antd';
 import { SafetyCertificateOutlined } from '@ant-design/icons';
 import { useAlert } from "@/components/alerts/AlertSystem";
 
@@ -25,6 +25,7 @@ export function PayrollConfigModal({ isOpen, onClose, staff, onSaveSuccess }: Pa
         salaryType: staff.salaryType || 'Commission',
         baseSalary: staff.basicSalary || 0,
         commissionRate: staff.commissionRate || 0,
+        allowances: staff.allowances || 0,
       });
     }
   }, [isOpen, staff, form]);
@@ -36,10 +37,11 @@ export function PayrollConfigModal({ isOpen, onClose, staff, onSaveSuccess }: Pa
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: staff.key, // employee.key is the db id
+          id: staff.key,
           salaryType: values.salaryType,
           baseSalary: values.baseSalary,
-          commissionRate: values.commissionRate
+          commissionRate: values.commissionRate,
+          allowances: values.allowances,
         })
       });
 
@@ -86,14 +88,23 @@ export function PayrollConfigModal({ isOpen, onClose, staff, onSaveSuccess }: Pa
               <Option value="Hybrid">Fixed + Commission</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="commissionRate" label="Commission Rate (%)">
-            <Input suffix="%" size="large" type="number" />
+          <Form.Item
+            name="commissionRate"
+            label="Commission Rate (%)"
+            rules={[{ type: 'number', min: 0, max: 100, message: 'Must be 0–100%' }]}
+          >
+            <InputNumber suffix="%" size="large" min={0} max={100} className="w-full" />
           </Form.Item>
         </div>
         
-        <Form.Item name="baseSalary" label="Base Salary (LKR)">
-          <Input prefix="Rs." size="large" type="number" />
-        </Form.Item>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Form.Item name="baseSalary" label="Base Salary (LKR)">
+            <Input prefix="Rs." size="large" type="number" />
+          </Form.Item>
+          <Form.Item name="allowances" label="Fixed Allowances (LKR)">
+            <Input prefix="Rs." size="large" type="number" />
+          </Form.Item>
+        </div>
 
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex items-start gap-3 mt-4">
           <SafetyCertificateOutlined style={{ color: '#2563eb', fontSize: '20px', marginTop: '4px' }} />

@@ -25,19 +25,21 @@ model User {
   salaryType     String   @default("Commission") // Fixed, Commission, Hybrid
   baseSalary     Float    @default(0)
   commissionRate Float    @default(0) // Percentage (e.g., 50 for 50%)
+  allowances     Float    @default(0) // Fixed monthly allowances (LKR)
 
   // Foreign Keys
   shopId    String?
 
   // Relations
-  shop               Shop?        @relation("ShopStaff", fields: [shopId], references: [id])
-  bookingsAsCustomer Booking[]    @relation("CustomerBookings")
-  bookingsAsBarber   Booking[]    @relation("BarberBookings")
+  shop               Shop?           @relation("ShopStaff", fields: [shopId], references: [id])
+  bookingsAsCustomer Booking[]       @relation("CustomerBookings")
+  bookingsAsBarber   Booking[]       @relation("BarberBookings")
   attendance         Attendance[]
   payroll            Payroll[]
   payments           Payment[]
   permissions        StaffPermission[]
   notifications      Notification[]
+  employeeDevices    EmployeeDevice[]
 }
 
 model Shop {
@@ -139,17 +141,21 @@ model Payment {
   id          String        @id @default(uuid())
   amount      Float
   status      PaymentStatus @default(PENDING)
-  method      String?       // e.g., STRIPE, PAYHERE, CASH
+  method      String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  // Foreign Keys
-  bookingId   String   @unique
-  customerId  String
+  // nullable — walk-in payments have no booking or registered customer
+  bookingId   String?  @unique
+  customerId  String?
+  clientName  String?
+  clientPhone String?
+  barberName  String?
+  items       Json?
 
   // Relations
-  booking     Booking  @relation(fields: [bookingId], references: [id])
-  customer    User     @relation(fields: [customerId], references: [id])
+  booking     Booking?  @relation(fields: [bookingId], references: [id])
+  customer    User?     @relation(fields: [customerId], references: [id])
 }
 
 model Attendance {
@@ -157,6 +163,9 @@ model Attendance {
   date        DateTime
   checkIn     DateTime
   checkOut    DateTime?
+  method      String   @default("MANUAL")  // MANUAL | FINGERPRINT
+  deviceId    String?
+  recordedBy  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -165,6 +174,23 @@ model Attendance {
 
   // Relations
   user        User     @relation(fields: [userId], references: [id])
+}
+
+model EmployeeDevice {
+  id            String   @id @default(uuid())
+  fingerprintId String   @db.VarChar(100)
+  deviceId      String   @db.VarChar(100)
+  deviceName    String?
+  status        String   @default("ACTIVE")  // ACTIVE | REVOKED
+  registeredAt  DateTime @default(now())
+
+  // Foreign Keys
+  userId        String
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@unique([fingerprintId, deviceId])
 }
 
 model Payroll {

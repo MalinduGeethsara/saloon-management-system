@@ -88,6 +88,7 @@ export async function PUT(request: Request) {
     if (data.salaryType !== undefined) updateData.salaryType = data.salaryType;
     if (data.baseSalary !== undefined) updateData.baseSalary = parseFloat(data.baseSalary) || 0;
     if (data.commissionRate !== undefined) updateData.commissionRate = parseFloat(data.commissionRate) || 0;
+    if (data.allowances !== undefined) updateData.allowances = parseFloat(data.allowances) || 0;
 
     updateData.shopId = data.shopId || null;
 

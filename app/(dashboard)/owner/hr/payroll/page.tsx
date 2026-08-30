@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import dayjs from 'dayjs';
 import { 
   Card, Typography, Row, Col, Statistic, Tag, Button, Select, Modal, Progress 
 } from 'antd';
@@ -11,7 +12,7 @@ import {
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { PayrollConfigModal } from "@/components/modals/PayrollConfigModal";
-import { getMonthlyPayroll, processPayroll } from '@/lib/actions/payroll';
+import { getMonthlyPayroll, processPayroll, markPayrollPaid } from '@/lib/actions/payroll';
 
 const { Title, Text } = Typography;
 
@@ -47,10 +48,16 @@ const calculatePayroll = (record: any) => {
 };
 
 function PayrollContent() {
-  const router = useRouter(); 
+  const router = useRouter();
   const { showAlert } = useAlert();
-  
-  const [selectedMonth, setSelectedMonth] = useState('March 2026');
+
+  const monthOptions = useMemo(() =>
+    Array.from({ length: 12 }, (_, i) => {
+      const label = dayjs().subtract(i, 'month').format('MMMM YYYY');
+      return { value: label, label };
+    }), []);
+
+  const [selectedMonth, setSelectedMonth] = useState(() => dayjs().format('MMMM YYYY'));
   const [payrollList, setPayrollList] = useState<any[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -158,11 +165,7 @@ function PayrollContent() {
             onChange={setSelectedMonth}
             size="large"
             className="w-full sm:w-40"
-            options={[
-              { value: 'January 2026', label: 'January 2026' },
-              { value: 'February 2026', label: 'February 2026' },
-              { value: 'March 2026', label: 'March 2026' },
-            ]}
+            options={monthOptions}
           />
           {/* Re-Added the Run Payroll Button */}
           {canAdd && (
@@ -237,29 +240,45 @@ function PayrollContent() {
                 <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500">Base Salary:</span>
-                    <span className="font-bold text-slate-700">Rs. {employee.basicSalary.toLocaleString()}</span>
+                    <span className="font-bold text-slate-700">Rs. {(employee.basicSalary ?? 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500">Commission:</span>
-                    <span className="font-bold text-emerald-600">+Rs. {employee.commissions.toLocaleString()}</span>
+                    <span className="font-bold text-emerald-600">+Rs. {(employee.commissions ?? 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-xs mt-2 font-bold">
                     <span className="text-slate-800">Net Salary:</span>
-                    <span className="text-[#7C4DFF]">Rs. {employee.netSalary.toLocaleString()}</span>
+                    <span className="text-[#7C4DFF]">Rs. {(employee.netSalary ?? 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end items-center mt-auto gap-2">
-                {canEdit && (
-                  <Button 
-                    type="text" 
-                    shape="circle" 
-                    icon={<SettingOutlined />} 
-                    onClick={(e) => handleOpenConfig(e, employee)}
-                    className="hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
-                  />
-                )}
+              <div className="flex justify-between items-center mt-auto gap-2">
+                <div className="flex gap-1">
+                  {canEdit && (
+                    <Button
+                      type="text"
+                      shape="circle"
+                      icon={<SettingOutlined />}
+                      onClick={(e) => handleOpenConfig(e, employee)}
+                      className="hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                    />
+                  )}
+                  {canEdit && employee.status === 'Pending' && employee.payrollId && (
+                    <Button
+                      size="small"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const res = await markPayrollPaid(employee.payrollId);
+                        if (res.success) { showAlert('success', 'Marked as paid.'); fetchPayroll(); }
+                        else showAlert('error', res.message || 'Failed.');
+                      }}
+                      className="text-xs font-bold border-emerald-300 text-emerald-600 hover:bg-emerald-50"
+                    >
+                      Mark Paid
+                    </Button>
+                  )}
+                </div>
                 <div className="w-8 h-8 rounded-full bg-[#F3E8FF] flex items-center justify-center text-[#7C4DFF] group-hover:bg-[#7C4DFF] group-hover:text-white transition-colors duration-300">
                   <RightOutlined className="text-xs" />
                 </div>
