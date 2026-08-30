@@ -573,26 +573,6 @@ function LoginFormContent() {
 
           {/* Social Logins */}
           <div className="mt-8 pt-8 border-t border-zinc-800/50 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <button 
-                type="button"
-                onClick={() => fillDemoCredentials(false)}
-                className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                Demo Email
-              </button>
-
-              <button 
-                type="button"
-                onClick={() => fillDemoCredentials(true)}
-                className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                Demo Phone
-              </button>
-            </div>
-
             <a
               href={`/api/auth/google?callbackUrl=${encodeURIComponent(callbackUrl)}`}
               className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white py-3.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3"
@@ -604,11 +584,7 @@ function LoginFormContent() {
 
           {/* Assistance details */}
           <div className="mt-8 p-5 bg-zinc-950/60 border border-zinc-800/60 text-[11px] text-zinc-500 leading-relaxed font-light">
-            <span className="font-bold text-amber-500 uppercase tracking-widest block mb-2">Demo Credentials</span>
-            <span className="font-bold text-zinc-400">Email:</span> customer@salon.com <br />
-            <span className="font-bold text-zinc-400">Phone:</span> +94 77 123 4567 <br />
-            <span className="font-bold text-zinc-400">Password:</span> password123 <br />
-            <span className="block mt-3 text-[10px] text-zinc-600 border-t border-zinc-900 pt-2">
+            <span className="block text-[10px] text-zinc-600">
               Are you a staff member? <Link href="/staff-login" className="text-amber-500/80 hover:text-amber-500 underline font-bold uppercase tracking-wider text-[9px] ml-1">Staff Portal</Link>
             </span>
           </div>
