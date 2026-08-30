@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { verifySession } from '@/lib/session';
+import { sendBookingConfirmation } from '@/lib/services/email.service';
 
 interface BookingPayload {
   serviceIds: string[];
@@ -59,7 +60,7 @@ export async function createBooking(payload: BookingPayload) {
         }
       });
 
-      const newPayment = await tx.payment.create({
+      await tx.payment.create({
         data: {
           amount: totalAmount,
           status: 'COMPLETED',
@@ -99,10 +100,26 @@ export async function createBooking(payload: BookingPayload) {
       return newBooking;
     });
 
-    return { 
-      success: true, 
-      bookingId: bookingResult.id, 
-      message: 'Booking completed successfully.' 
+    // Send booking confirmation email (fire-and-forget — don't block the response)
+    if (session.email) {
+      const barber = await db.user.findUnique({ where: { id: barberId }, select: { name: true } });
+      const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      sendBookingConfirmation({
+        customerName: session.name || 'Valued Customer',
+        customerEmail: session.email,
+        bookingId: bookingResult.id,
+        date: formattedDate,
+        time,
+        services: services.map(s => s.name).join(', '),
+        barberName: barber?.name || 'Our Artisan',
+        totalAmount: bookingResult.totalAmount,
+      }).catch(err => console.error('[Email] Booking confirmation failed silently:', err));
+    }
+
+    return {
+      success: true,
+      bookingId: bookingResult.id,
+      message: 'Booking completed successfully.'
     };
 
   } catch (error: any) {
