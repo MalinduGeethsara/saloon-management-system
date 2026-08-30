@@ -34,22 +34,30 @@ function AttendanceContent() {
         ? `/api/v1/attendance?date=${target.format('YYYY-MM-DD')}`
         : '/api/v1/attendance';
       const res = await fetch(url);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showAlert('error', err.message || 'Failed to load attendance');
+        return;
+      }
       const data = await res.json();
       if (data.attendance) {
         setAttendanceData(data.attendance.map((a: any) => ({
           key: a.id,
           userId: a.userId,
           name: a.user?.name || 'Unknown',
-          shop: a.user?.shop?.name || 'Main Shop',
+          shop: 'Main Shop',
           role: a.user?.role || '',
           status: a.checkOut ? 'Present' : a.checkIn ? 'Active (In)' : 'Absent',
           method: a.method || 'MANUAL',
           clockIn: a.checkIn ? dayjs(a.checkIn).format('hh:mm A') : '-',
           clockOut: a.checkOut ? dayjs(a.checkOut).format('hh:mm A') : '-',
+          checkInRaw: a.checkIn,
+          checkOutRaw: a.checkOut,
         })));
       }
-    } catch {
+    } catch (e: any) {
       showAlert('error', 'Failed to load attendance');
+      console.error('[Attendance fetch]', e);
     }
   };
 
@@ -131,10 +139,9 @@ function AttendanceContent() {
         : {
             userId: newRecord.userId,
             date: new Date(dateStr).toISOString(),
-            checkIn: newRecord.clockInRaw || now.toISOString(),
+            checkIn: newRecord.clockInRaw || null,
             checkOut: newRecord.clockOutRaw || null,
             method: 'MANUAL',
-            allowDuplicate: isEdit,
           };
 
       const res = await fetch('/api/v1/attendance', {

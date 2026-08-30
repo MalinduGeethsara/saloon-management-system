@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Layout, Menu, Button, Modal, Progress, Space, Badge } from 'antd';
+import { Layout, Menu, Button, Modal, Progress, Badge } from 'antd';
 import { 
   HomeOutlined, 
   DatabaseOutlined, 
@@ -139,7 +139,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
         centered
         destroyOnHidden
       >
-        <Space direction="vertical" size="large" style={{ width: '100%', marginTop: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', marginTop: '16px' }}>
           {/* Progress Indicator */}
           <div style={{ background: '#F8F9FF', padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -209,7 +209,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
               );
             })}
           </div>
-        </Space>
+        </div>
       </Modal>
     </Sider>
   );

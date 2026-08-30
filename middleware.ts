@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
   const isStaffPath =
     path.startsWith('/owner') ||
     path.startsWith('/admin') ||
-    path.startsWith('/barber') ||
+    (path === '/barber' || path.startsWith('/barber/')) ||
     path.startsWith('/manager') ||
     (path.startsWith('/staff') && !path.startsWith('/staff-login'));
 

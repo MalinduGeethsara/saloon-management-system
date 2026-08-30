@@ -32,7 +32,6 @@ export async function GET(request: Request) {
           select: {
             name: true,
             role: true,
-            shop: { select: { name: true } }
           }
         }
       },
@@ -41,6 +40,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ attendance }, { status: 200 });
   } catch (error: any) {
+    console.error('[Attendance GET]', error);
     return NextResponse.json({ message: 'Error fetching attendance', error: error.message }, { status: 500 });
   }
 }
@@ -53,11 +53,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    if (!body.userId || !body.date || !body.checkIn) {
-      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
+    if (!body.userId || !body.date) {
+      return NextResponse.json({ message: 'userId and date are required' }, { status: 400 });
     }
 
-    // Duplicate check-in prevention
     const targetDate = new Date(body.date);
     const startOfDay = new Date(targetDate);
     startOfDay.setHours(0, 0, 0, 0);
@@ -71,21 +70,26 @@ export async function POST(request: Request) {
       }
     });
 
-    // If a record already exists but has no checkout, update it instead of blocking
     if (existing) {
       if (existing.checkOut !== null) {
-        return NextResponse.json({ message: 'Already fully checked in and out today' }, { status: 409 });
+        return NextResponse.json({ message: 'Already fully checked in and out for this day' }, { status: 409 });
       }
-      // Update the existing record with the new checkout (and optionally checkIn correction)
+      // Existing check-in without checkout: update checkout (only update checkIn if explicitly provided)
       const updateData: any = {};
       if (body.checkIn) updateData.checkIn = new Date(body.checkIn);
       if (body.checkOut) updateData.checkOut = new Date(body.checkOut);
+      if (Object.keys(updateData).length === 0) {
+        return NextResponse.json({ message: 'Nothing to update' }, { status: 400 });
+      }
       const updated = await db.attendance.update({ where: { id: existing.id }, data: updateData });
-      return NextResponse.json({ record: updated, message: 'Attendance updated with checkout' }, { status: 200 });
+      return NextResponse.json({ record: updated, message: 'Attendance updated' }, { status: 200 });
     }
 
-    // Create new record — omit new fields (method/recordedBy) so DB defaults apply
-    // until Prisma client is regenerated after dev-server restart
+    // New record — checkIn is required when no existing record
+    if (!body.checkIn) {
+      return NextResponse.json({ message: 'Clock-in time is required for a new attendance record' }, { status: 400 });
+    }
+
     const record = await db.attendance.create({
       data: {
         userId: body.userId,

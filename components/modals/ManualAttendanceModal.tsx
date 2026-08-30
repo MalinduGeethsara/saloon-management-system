@@ -39,9 +39,9 @@ export function ManualAttendanceModal({
         form.setFieldsValue({
           userId: recordToEdit.userId,
           status: recordToEdit.status,
-          date: dayjs(),
-          clockIn: recordToEdit.clockIn !== '-' ? dayjs(recordToEdit.clockIn, 'h:mm A') : undefined,
-          clockOut: recordToEdit.clockOut !== '-' ? dayjs(recordToEdit.clockOut, 'h:mm A') : undefined,
+          date: recordToEdit.checkInRaw ? dayjs(recordToEdit.checkInRaw) : dayjs(),
+          clockIn: recordToEdit.checkInRaw ? dayjs(recordToEdit.checkInRaw) : undefined,
+          clockOut: recordToEdit.checkOutRaw ? dayjs(recordToEdit.checkOutRaw) : undefined,
           reason: 'Correction',
         });
       } else {
@@ -60,7 +60,7 @@ export function ManualAttendanceModal({
       status: values.status,
       clockIn: values.clockIn ? values.clockIn.format('h:mm A') : '-',
       clockOut: values.clockOut ? values.clockOut.format('h:mm A') : '-',
-      clockInRaw: values.clockIn ? values.date.format('YYYY-MM-DD') + 'T' + values.clockIn.format('HH:mm:ss') : new Date().toISOString(),
+      clockInRaw: values.clockIn ? values.date.format('YYYY-MM-DD') + 'T' + values.clockIn.format('HH:mm:ss') : null,
       clockOutRaw: values.clockOut ? values.date.format('YYYY-MM-DD') + 'T' + values.clockOut.format('HH:mm:ss') : null,
       date: values.date.format('YYYY-MM-DD'),
     };
