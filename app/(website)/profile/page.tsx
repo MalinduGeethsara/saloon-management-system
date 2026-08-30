@@ -145,7 +145,7 @@ export default function ProfileDashboard() {
               </div>
               <div className="flex flex-col items-start lg:items-center">
                 <h2 className="text-lg lg:text-xl font-bold text-zinc-900 dark:text-white tracking-wide capitalize">{user.name}</h2>
-                <p className="text-zinc-500 dark:text-zinc-400 font-mono text-xs lg:text-sm mt-1">{user.phone}</p>
+                <p className="text-zinc-500 dark:text-zinc-400 font-mono text-xs lg:text-sm mt-1">{user.phone || "No phone added"}</p>
               </div>
             </div>
 
