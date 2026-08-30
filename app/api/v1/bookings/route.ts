@@ -20,10 +20,6 @@ export async function POST(request: Request) {
     if (!session) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
     const body = await request.json();
-    
-    // Debug log to file
-    const fs = require('fs');
-    fs.appendFileSync('booking_debug.log', JSON.stringify(body) + '\n');
 
     // Validate body
     if ((!body.serviceIds && !body.serviceId) || !body.date) {

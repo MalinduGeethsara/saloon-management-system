@@ -132,10 +132,10 @@ function ScheduleContent() {
   useEffect(() => {
     fetchBookingsAndStaff();
     
-    // Add real-time polling every 5 seconds
+    // Poll every 30 seconds
     const interval = setInterval(() => {
       fetchBookingsAndStaff();
-    }, 5000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -378,7 +378,7 @@ function ScheduleContent() {
           <div className="flex items-center gap-4">
             <div className="flex items-center bg-slate-100 rounded-lg p-1">
               <Button type="text" size="small" icon={<LeftOutlined />} onClick={() => handleCalendarNav('prev')} />
-              <Button type="text" size="small" className="font-bold w-24">Today</Button>
+              <Button type="text" size="small" className="font-bold w-24" onClick={() => handleCalendarNav('today')}>Today</Button>
               <Button type="text" size="small" icon={<RightOutlined />} onClick={() => handleCalendarNav('next')} />
             </div>
             <Title level={4} style={{ margin: 0 }}>{viewTitle}</Title>

@@ -42,7 +42,7 @@ export const LoginForm = () => {
           const userRole = (data.role || '').toLowerCase();
           if (userRole === 'admin') destination = '/admin';
           else if (userRole === 'manager') destination = '/owner/bookings/manage';
-          else if (userRole === 'barber') destination = '/owner/calendar';
+          else if (userRole === 'barber') destination = '/barber';
           else destination = '/owner'; 
         }
 
