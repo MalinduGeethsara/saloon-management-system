@@ -1,20 +1,14 @@
 // lib/services/sms.service.ts
 // Notify.lk SMS gateway — https://developer.notify.lk/api-endpoints/
 
+import { toNotifyLkFormat } from '../utils/phone';
+
 const NOTIFYLK_ENDPOINT = 'https://app.notify.lk/api/v1/send';
 const NOTIFYLK_STATUS_ENDPOINT = 'https://app.notify.lk/api/v1/status';
 
 interface NotifyLkSendResponse {
   status: string;
   data?: string;
-}
-
-// DB stores local format (e.g. "0771234567"); notify.lk expects "9471234567" (no +, no leading 0)
-function normalizeSriLankanPhone(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
-  if (digits.startsWith('94')) return digits;
-  if (digits.startsWith('0')) return `94${digits.slice(1)}`;
-  return `94${digits}`;
 }
 
 // Sinhala/Tamil content must be sent as unicode — otherwise it arrives as garbled text
@@ -32,7 +26,7 @@ export async function sendSms(phoneNumber: string, message: string) {
     return { success: false, error: 'not_configured' as const };
   }
 
-  const to = normalizeSriLankanPhone(phoneNumber);
+  const to = toNotifyLkFormat(phoneNumber);
   const body = new URLSearchParams({
     user_id: userId,
     api_key: apiKey,

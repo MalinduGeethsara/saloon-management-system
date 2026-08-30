@@ -3,6 +3,7 @@
 import { db } from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { sendBookingConfirmation } from '@/lib/services/email.service';
+import { sendSms } from '@/lib/services/sms.service';
 
 interface BookingPayload {
   serviceIds: string[];
@@ -78,7 +79,7 @@ export async function createBooking(payload: BookingPayload) {
             { id: barberId }
           ]
         },
-        select: { id: true }
+        select: { id: true, phone: true }
       });
 
       const serviceNames = services.map(s => s.name).join(', ');
@@ -97,28 +98,45 @@ export async function createBooking(payload: BookingPayload) {
         });
       }
 
-      return newBooking;
+      return { newBooking, staffToNotify };
     });
+
+    const { newBooking: createdBooking, staffToNotify } = bookingResult;
+    const barber = await db.user.findUnique({ where: { id: barberId }, select: { name: true } });
 
     // Send booking confirmation email (fire-and-forget — don't block the response)
     if (session.email) {
-      const barber = await db.user.findUnique({ where: { id: barberId }, select: { name: true } });
       const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       sendBookingConfirmation({
         customerName: session.name || 'Valued Customer',
         customerEmail: session.email,
-        bookingId: bookingResult.id,
+        bookingId: createdBooking.id,
         date: formattedDate,
         time,
         services: services.map(s => s.name).join(', '),
         barberName: barber?.name || 'Our Artisan',
-        totalAmount: bookingResult.totalAmount,
+        totalAmount: createdBooking.totalAmount,
       }).catch(err => console.error('[Email] Booking confirmation failed silently:', err));
+    }
+
+    // SMS confirmation to the customer (fire-and-forget — don't block the response)
+    if (session.phone) {
+      sendSms(session.phone, `Your booking on ${date} at ${time} is confirmed. See you soon!`)
+        .catch(err => console.error('[SMS] Booking confirmation failed silently:', err));
+    }
+
+    // Alert owners/managers and the assigned barber by SMS — the in-app notification bell
+    // above only reaches someone with the dashboard open.
+    for (const staffMember of staffToNotify) {
+      if (staffMember.phone) {
+        sendSms(staffMember.phone, `New booking: ${session.name || 'a customer'} on ${date} at ${time}.`)
+          .catch(err => console.error('[SMS] Staff booking alert failed silently:', err));
+      }
     }
 
     return {
       success: true,
-      bookingId: bookingResult.id,
+      bookingId: createdBooking.id,
       message: 'Booking completed successfully.'
     };
 

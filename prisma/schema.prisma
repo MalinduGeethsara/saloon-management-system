@@ -229,8 +229,28 @@ model StaffPermission {
   canEdit   Boolean  @default(false)
   canDelete Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@unique([userId, pageKey])
+}
+
+enum OtpPurpose {
+  REGISTER
+  LOGIN
+  PASSWORD_RESET
+  ADD_PHONE
+}
+
+model OtpCode {
+  id         String     @id @default(uuid())
+  identifier String     @db.VarChar(191) // normalized email or phone
+  purpose    OtpPurpose
+  codeHash   String     @db.VarChar(191) // HMAC-SHA256(code, SESSION_SECRET) — raw code is never stored
+  attempts   Int        @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([identifier, purpose])
 }
 
 model Notification {

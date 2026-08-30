@@ -22,7 +22,6 @@ function ForgotPasswordContent() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [enteredCode, setEnteredCode] = useState('');
-  const [sentCode, setSentCode] = useState('');
   const [resendCountdown, setResendCountdown] = useState(0);
 
   const [newPassword, setNewPassword] = useState('');
@@ -33,7 +32,6 @@ function ForgotPasswordContent() {
     type: 'sms' | 'email';
     title: string;
     message: string;
-    code: string;
   } | null>(null);
 
   // Resend timer countdown
@@ -62,29 +60,27 @@ function ForgotPasswordContent() {
       const response = await fetch('/api/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier }),
+        body: JSON.stringify({ identifier, purpose: 'PASSWORD_RESET' }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setSentCode(data.code);
         setStep('verify');
         setResendCountdown(30);
 
         setShowNotification({
           show: true,
           type: data.type,
-          title: data.type === 'sms' ? 'New Message from MR POLAA' : 'Verification Code Inbox',
-          message: data.type === 'sms' 
-            ? `Your password reset code for MR POLAA Premium Grooming is: ${data.code}` 
-            : `Please verify your email address to reset password. Your reset code is: ${data.code}`,
-          code: data.code
+          title: 'Reset code sent',
+          message: data.type === 'sms'
+            ? `We sent a 6-digit password reset code by SMS to ${identifier}.`
+            : `We sent a 6-digit password reset code to ${identifier}. Check your inbox.`,
         });
 
         setTimeout(() => {
-          setShowNotification(prev => prev?.code === data.code ? null : prev);
-        }, 15000);
+          setShowNotification(null);
+        }, 8000);
       } else {
         setMessage({ type: 'error', text: data.message || 'Failed to send verification code.' });
       }
@@ -95,19 +91,33 @@ function ForgotPasswordContent() {
     }
   };
 
-  const handleVerifyCode = (e: React.FormEvent) => {
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
-    if (enteredCode !== sentCode) {
-      setMessage({ type: 'error', text: 'Invalid verification code. Please check the code and try again.' });
-      setLoading(false);
-      return;
-    }
+    const identifier = method === 'email' ? email : phone;
 
-    setStep('reset');
-    setLoading(false);
+    try {
+      const response = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, purpose: 'PASSWORD_RESET', code: enteredCode }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage({ type: 'error', text: data.message || 'Invalid verification code.' });
+        setLoading(false);
+        return;
+      }
+
+      setStep('reset');
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -127,8 +137,22 @@ function ForgotPasswordContent() {
       return;
     }
 
-    // Simulate password updates successfully
-    setTimeout(() => {
+    const identifier = method === 'email' ? email : phone;
+
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, newPassword }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage({ type: 'error', text: data.message || 'Failed to reset password.' });
+        setLoading(false);
+        return;
+      }
+
       setMessage({
         type: 'success',
         text: 'Your password has been reset successfully! Redirecting to login...'
@@ -138,7 +162,10 @@ function ForgotPasswordContent() {
       setTimeout(() => {
         router.push('/login?reset=success');
       }, 1500);
-    }, 1000);
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+      setLoading(false);
+    }
   };
 
   return (
@@ -154,23 +181,8 @@ function ForgotPasswordContent() {
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white uppercase tracking-wider">{showNotification.title}</p>
               <p className="text-[11px] text-zinc-400 mt-1 leading-normal">{showNotification.message}</p>
-              <div className="mt-2.5 flex items-center gap-2">
-                <span className="text-[10px] bg-zinc-950 px-2.5 py-1 font-mono font-bold text-white border border-zinc-800/80 rounded">
-                  Code: {showNotification.code}
-                </span>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setEnteredCode(showNotification.code);
-                    setShowNotification(null);
-                  }} 
-                  className="text-[9px] text-amber-500 hover:text-amber-400 font-bold uppercase tracking-wider underline cursor-pointer ml-auto"
-                >
-                  Auto-fill
-                </button>
-              </div>
             </div>
-            <button 
+            <button
               type="button"
               onClick={() => setShowNotification(null)}
               className="text-zinc-500 hover:text-zinc-300 text-xs shrink-0 self-start p-1"
@@ -353,7 +365,7 @@ function ForgotPasswordContent() {
             <form onSubmit={handleVerifyCode} className="space-y-5">
               <div className="p-4 bg-zinc-950/60 border border-zinc-800/60 text-xs text-zinc-400 leading-relaxed font-light">
                 <span className="font-bold text-amber-500 block mb-1">Verify Identity</span>
-                We simulated sending a 6-digit verification code to: <br />
+                We sent a 6-digit verification code to: <br />
                 <span className="font-mono font-bold text-white mt-1 block">
                   {method === 'email' ? email : phone}
                 </span>

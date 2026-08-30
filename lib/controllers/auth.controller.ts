@@ -1,14 +1,7 @@
 import { db } from '../db';
 import { createSession } from '../session';
+import { normalizePhone } from '../utils/phone';
 import bcrypt from 'bcryptjs';
-
-function normalizePhone(value: string) {
-  if (!value.match(/^\+?[\d\s]+$/)) return value;
-  let cleaned = value.replace(/\D/g, '');
-  if (cleaned.startsWith('94') && cleaned.length > 9) cleaned = cleaned.slice(2);
-  if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
-  return cleaned;
-}
 
 export async function loginCustomer(emailOrPhone: string, passwordRaw: string) {
   const normalized = normalizePhone(emailOrPhone);
@@ -70,7 +63,7 @@ export async function loginStaff(emailOrPhone: string, passwordRaw: string) {
     where: {
       OR: [
         { email: emailOrPhone.toLowerCase() },
-        { phone: emailOrPhone }
+        { phone: normalizePhone(emailOrPhone) }
       ],
       role: {
         not: 'CUSTOMER'

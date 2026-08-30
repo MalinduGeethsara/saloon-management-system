@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import bcrypt from 'bcryptjs';
 import { deleteCloudinaryImage } from '@/lib/cloudinary';
+import { normalizePhone } from '@/lib/utils/phone';
 
 export async function GET() {
   const session = await verifySession();
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     const user = await db.user.create({
       data: {
         email: data.email,
-        phone: data.phone,
+        phone: data.phone ? normalizePhone(data.phone) : null,
         name: data.name,
         role: data.role, // 'MANAGER' or 'BARBER'
         password: hashedPassword,
@@ -77,7 +78,7 @@ export async function PUT(request: Request) {
     const updateData: any = {
       name: data.name,
       email: data.email,
-      phone: data.phone,
+      phone: data.phone ? normalizePhone(data.phone) : null,
       role: data.role
     };
 

@@ -72,10 +72,10 @@ export async function createBooking(data: { customerId: string; serviceIds: stri
       }
     });
 
-    // 4. Create Notifications
-    const owners = await tx.user.findMany({ where: { role: 'OWNER' } });
+    // 4. Create Notifications (owners + managers get alerted on every booking, not just owners)
+    const staffToAlert = await tx.user.findMany({ where: { role: { in: ['OWNER', 'MANAGER'] } } });
     const notificationData = [];
-    
+
     if (data.barberId && booking.barber) {
       notificationData.push({
         title: 'New Appointment',
@@ -84,13 +84,13 @@ export async function createBooking(data: { customerId: string; serviceIds: stri
       });
     }
 
-    for (const owner of owners) {
-      if (owner.id !== data.barberId) {
+    for (const staffMember of staffToAlert) {
+      if (staffMember.id !== data.barberId) {
         const barberName = booking.barber ? booking.barber.name : 'a specialist';
         notificationData.push({
           title: 'New Appointment',
           desc: `Booking created for ${booking.customer.name} with ${barberName}.`,
-          userId: owner.id
+          userId: staffMember.id
         });
       }
     }
@@ -99,7 +99,7 @@ export async function createBooking(data: { customerId: string; serviceIds: stri
       await tx.notification.createMany({ data: notificationData });
     }
 
-    return { booking, payment };
+    return { booking, payment, staffToAlert };
   });
 
   // Post-transaction Integrations (Outside ACID tx so failure here doesn't rollback booking)
@@ -107,8 +107,23 @@ export async function createBooking(data: { customerId: string; serviceIds: stri
     await processPayment(data.amount, data.paymentMethod, 'dummy_token');
   }
 
+  const bookingTimeStr = result.booking.date.toLocaleString();
+
   if (result.booking.customer.phone) {
-    await sendSms(result.booking.customer.phone, `Your booking for ${result.booking.date.toLocaleString()} is confirmed.`);
+    await sendSms(result.booking.customer.phone, `Your booking for ${bookingTimeStr} is confirmed.`);
+  }
+
+  // Alert owners/managers and the assigned barber by SMS too — the in-app notification bell
+  // above only reaches someone with the dashboard open.
+  const smsRecipients = [...result.staffToAlert];
+  if (result.booking.barber && !smsRecipients.some(s => s.id === result.booking.barber!.id)) {
+    smsRecipients.push(result.booking.barber);
+  }
+
+  for (const staffMember of smsRecipients) {
+    if (staffMember.phone) {
+      await sendSms(staffMember.phone, `New booking: ${result.booking.customer.name} at ${bookingTimeStr}.`);
+    }
   }
 
   return result.booking;
