@@ -52,7 +52,14 @@ function LoginFormContent() {
 
   // Clear message and verification state on tab switch
   useEffect(() => {
-    if (activeTab === 'login' && searchParams.get('reset') === 'success') {
+    const googleError = searchParams.get('error');
+    if (googleError === 'google_cancelled') {
+      setMessage({ type: 'error', text: 'Google sign-in was cancelled.' });
+    } else if (googleError === 'google_auth_failed') {
+      setMessage({ type: 'error', text: 'Google sign-in failed. Please try again.' });
+    } else if (googleError === 'server_error') {
+      setMessage({ type: 'error', text: 'A server error occurred. Please try again.' });
+    } else if (activeTab === 'login' && searchParams.get('reset') === 'success') {
       setMessage({ type: 'success', text: 'Password reset successfully. Please sign in with your new password.' });
     } else {
       setMessage(null);
@@ -145,10 +152,9 @@ function LoginFormContent() {
           type: 'success',
           text: 'Account verified & created successfully! Logging you in...'
         });
-        
+
         setTimeout(() => {
           router.push(callbackUrl);
-          router.refresh();
         }, 1200);
       } else {
         setMessage({
@@ -184,10 +190,9 @@ function LoginFormContent() {
           type: 'success',
           text: `Welcome back, ${data.name}!`
         });
-        
+
         setTimeout(() => {
           router.push(callbackUrl);
-          router.refresh();
         }, 1200);
       } else {
         setMessage({
@@ -599,14 +604,13 @@ function LoginFormContent() {
               </button>
             </div>
 
-            <button 
-              type="button" 
-              className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white py-3.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 cursor-not-allowed opacity-50"
-              disabled
+            <a
+              href={`/api/auth/google?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+              className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white py-3.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3"
             >
               <GoogleOutlined className="text-sm" />
               Continue with Google
-            </button>
+            </a>
           </div>
 
           {/* Assistance details */}

@@ -32,9 +32,9 @@ export default function ProfileDashboard() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [user, setUser] = useState({
-    name: "malindu",
-    phone: "713307710",
-    initials: "M"
+    name: "",
+    phone: "",
+    initials: ""
   });
 
   useEffect(() => {

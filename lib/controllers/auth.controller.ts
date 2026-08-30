@@ -2,15 +2,16 @@ import { db } from '../db';
 import { createSession } from '../session';
 import bcrypt from 'bcryptjs';
 
+function normalizePhone(value: string) {
+  if (!value.match(/^\+?[\d\s]+$/)) return value;
+  let cleaned = value.replace(/\D/g, '');
+  if (cleaned.startsWith('94') && cleaned.length > 9) cleaned = cleaned.slice(2);
+  if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+  return cleaned;
+}
+
 export async function loginCustomer(emailOrPhone: string, passwordRaw: string) {
-  // Normalize phone if provided
-  let normalized = emailOrPhone;
-  if (normalized.match(/^\+?[\d\s]+$/)) {
-    let cleaned = normalized.replace(/\D/g, '');
-    if (cleaned.startsWith('94') && cleaned.length > 9) cleaned = cleaned.slice(2);
-    if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
-    normalized = cleaned;
-  }
+  const normalized = normalizePhone(emailOrPhone);
 
   // Find user in DB (Customer role ideally, but we'll check any role if needed, though this is customer login)
   const user = await db.user.findFirst({
@@ -33,6 +34,7 @@ export async function loginCustomer(emailOrPhone: string, passwordRaw: string) {
     email: user.email,
     role: user.role,
     name: user.name,
+    phone: user.phone,
   });
 
   return user;
@@ -44,8 +46,8 @@ export async function registerCustomer(data: { email?: string, phone?: string, p
   
   const user = await db.user.create({
     data: {
-      email: data.email && data.email.trim() !== '' ? data.email : `${Date.now()}@temp.com`, 
-      phone: data.phone && data.phone.trim() !== '' ? data.phone : null,
+      email: data.email && data.email.trim() !== '' ? data.email.toLowerCase() : `${Date.now()}@temp.com`,
+      phone: data.phone && data.phone.trim() !== '' ? normalizePhone(data.phone) : null,
       password: hashedPassword,
       name: data.name,
       role: 'CUSTOMER',
@@ -57,6 +59,7 @@ export async function registerCustomer(data: { email?: string, phone?: string, p
     email: user.email,
     role: user.role,
     name: user.name,
+    phone: user.phone,
   });
 
   return user;

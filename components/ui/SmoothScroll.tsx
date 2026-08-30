@@ -9,7 +9,6 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
-    // Register GSAP ScrollTrigger
     gsap.registerPlugin(ScrollTrigger);
 
     // Disable smooth scroll on mobile/tablet devices and touch screens

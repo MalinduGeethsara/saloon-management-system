@@ -17,6 +17,7 @@ export interface SessionPayload extends JWTPayload {
   email: string;
   role: string;
   name: string;
+  phone?: string | null;
   permissions?: Permission[];
   [key: string]: any;
 };
@@ -62,6 +63,24 @@ export async function createSession(payload: SessionPayload) {
     path: '/',
   });
 
+  cookieStore.set('user_name', payload.name, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    expires: expiresAt,
+    sameSite: 'lax',
+    path: '/',
+  });
+
+  if (payload.phone) {
+    cookieStore.set('user_phone', payload.phone, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      expires: expiresAt,
+      sameSite: 'lax',
+      path: '/',
+    });
+  }
+
   if (payload.permissions) {
     cookieStore.set('user_permissions', JSON.stringify(payload.permissions), {
       httpOnly: false,
@@ -85,5 +104,7 @@ export async function deleteSession() {
   const cookieStore = await cookies();
   cookieStore.delete('auth_token');
   cookieStore.delete('user_role');
+  cookieStore.delete('user_name');
+  cookieStore.delete('user_phone');
   cookieStore.delete('user_permissions');
 }

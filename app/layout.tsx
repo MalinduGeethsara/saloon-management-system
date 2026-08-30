@@ -12,8 +12,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "My App",
-  description: "Created with Next.js",
+  title: "MR POLAA — Premium Grooming",
+  description: "An exclusive sanctuary for the modern gentleman. Book precision haircuts, hot towel shaves, and premium artisan barber slots online.",
 };
 
 export default function RootLayout({

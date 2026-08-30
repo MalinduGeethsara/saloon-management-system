@@ -16,6 +16,7 @@ model User {
   password  String
   name      String
   imageUrl  String?
+  googleId  String?  @unique
   role      String   @default("CUSTOMER")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
