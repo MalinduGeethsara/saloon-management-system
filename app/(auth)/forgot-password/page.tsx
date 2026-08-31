@@ -169,8 +169,8 @@ function ForgotPasswordContent() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
-      
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
+
       {/* Slide-down Notification Bubble */}
       {showNotification && showNotification.show && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-full max-w-sm mx-auto p-4 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl animate-in slide-in-from-top-12 duration-500 text-zinc-100">
@@ -194,7 +194,7 @@ function ForgotPasswordContent() {
       )}
 
       {/* Left Column: Ambient branding (hidden on mobile/tablet) */}
-      <div className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-16 overflow-hidden">
+      <div className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-10 xl:p-16 overflow-hidden lg:h-screen">
         
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0 bg-zinc-900">
@@ -238,7 +238,7 @@ function ForgotPasswordContent() {
       </div>
 
       {/* Right Column: Authentication Card */}
-      <div className="col-span-1 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-12 md:p-16 relative bg-zinc-900 border-l border-zinc-800/50">
+      <div className="col-span-1 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-12 lg:p-10 xl:p-16 relative bg-zinc-900 border-l border-zinc-800/50 lg:h-screen lg:overflow-y-auto">
         
         {/* Mobile Logo Branding (visible only on mobile) */}
         <div className="lg:hidden mb-8 text-center flex flex-col items-center">
@@ -262,7 +262,7 @@ function ForgotPasswordContent() {
 
         <div className="w-full max-w-md">
           {/* Headline */}
-          <div className="mb-8">
+          <div className="mb-8 lg:mb-5">
             <h2 className="text-2xl font-black text-white tracking-wide">
               {step === 'request' && 'Reset Password'}
               {step === 'verify' && 'Verify Identity'}

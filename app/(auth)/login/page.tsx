@@ -221,8 +221,8 @@ function LoginFormContent() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
-      
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
+
       {/* Slide-down Notification Bubble */}
       {showNotification && showNotification.show && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-100 w-full max-w-sm mx-auto p-4 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl animate-in slide-in-from-top-12 duration-500 text-zinc-100">
@@ -246,7 +246,7 @@ function LoginFormContent() {
       )}
 
       {/* Left Column: Ambient branding (hidden on mobile/tablet) */}
-      <div className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-16 overflow-hidden">
+      <div className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-10 xl:p-16 overflow-hidden lg:h-screen">
         
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0 bg-zinc-900">
@@ -290,7 +290,7 @@ function LoginFormContent() {
       </div>
 
       {/* Right Column: Authentication Card */}
-      <div className="col-span-1 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-12 md:p-16 relative bg-zinc-900 border-l border-zinc-800/50">
+      <div className="col-span-1 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-12 lg:p-10 xl:p-16 relative bg-zinc-900 border-l border-zinc-800/50 lg:h-screen lg:overflow-y-auto">
         
         {/* Mobile Logo Branding (visible only on mobile) */}
         <div className="lg:hidden mb-8 text-center flex flex-col items-center">
@@ -314,7 +314,7 @@ function LoginFormContent() {
 
         <div className="w-full max-w-md">
           {/* Headline */}
-          <div className="mb-8">
+          <div className="mb-8 lg:mb-5">
             <h2 className="text-2xl font-black text-white tracking-wide">
               {activeTab === 'login' ? 'Welcome Back' : 'Create Account'}
             </h2>
@@ -326,7 +326,7 @@ function LoginFormContent() {
           </div>
 
           {/* Form Tabs Switcher */}
-          <div className="grid grid-cols-2 bg-zinc-950/80 p-1 mb-8 border border-zinc-800/80">
+          <div className="grid grid-cols-2 bg-zinc-950/80 p-1 mb-8 lg:mb-5 border border-zinc-800/80">
             <button
               onClick={() => setActiveTab('login')}
               className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${
@@ -572,7 +572,7 @@ function LoginFormContent() {
           )}
 
           {/* Social Logins */}
-          <div className="mt-8 pt-8 border-t border-zinc-800/50 space-y-4">
+          <div className="mt-8 pt-8 lg:mt-5 lg:pt-5 border-t border-zinc-800/50 space-y-4">
             <a
               href={`/api/auth/google?callbackUrl=${encodeURIComponent(callbackUrl)}`}
               className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white py-3.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3"
@@ -583,7 +583,7 @@ function LoginFormContent() {
           </div>
 
           {/* Assistance details */}
-          <div className="mt-8 p-5 bg-zinc-950/60 border border-zinc-800/60 text-[11px] text-zinc-500 leading-relaxed font-light">
+          <div className="mt-8 lg:mt-5 p-5 bg-zinc-950/60 border border-zinc-800/60 text-[11px] text-zinc-500 leading-relaxed font-light">
             <span className="block text-[10px] text-zinc-600">
               Are you a staff member? <Link href="/staff-login" className="text-amber-500/80 hover:text-amber-500 underline font-bold uppercase tracking-wider text-[9px] ml-1">Staff Portal</Link>
             </span>

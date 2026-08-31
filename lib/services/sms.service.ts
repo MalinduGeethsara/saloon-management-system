@@ -16,7 +16,24 @@ function isUnicodeMessage(message: string): boolean {
   return /[^\x00-\x7F]/.test(message);
 }
 
-export async function sendSms(phoneNumber: string, message: string) {
+// notify.lk rejects messages containing "unsupported content" — in practice this means smart
+// quotes/dashes/odd spacing (e.g. Node's toLocaleString() emits a narrow no-break space before
+// AM/PM on modern ICU builds) or actual emoji, even when sent with type=unicode. Normalize the
+// common typographic look-alikes to plain ASCII and strip emoji outright, so genuine Sinhala/Tamil
+// text is still preserved and sent as unicode, but accidental "smart" characters don't get rejected.
+function sanitizeSmsMessage(message: string): string {
+  return message
+    .replace(/[‘’‚‛]/g, "'") // smart single quotes
+    .replace(/[“”„‟]/g, '"') // smart double quotes
+    .replace(/[–—]/g, '-') // en/em dash
+    .replace(/…/g, '...') // ellipsis
+    .replace(/[  -​ ]/g, ' ') // non-breaking/narrow/thin/zero-width spaces
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '') // emoji/pictographs
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+}
+
+export async function sendSms(phoneNumber: string, rawMessage: string) {
   const userId = process.env.NOTIFYLK_USER_ID;
   const apiKey = process.env.NOTIFYLK_API_KEY;
   const senderId = process.env.NOTIFYLK_SENDER_ID || 'NotifyDEMO';
@@ -26,6 +43,7 @@ export async function sendSms(phoneNumber: string, message: string) {
     return { success: false, error: 'not_configured' as const };
   }
 
+  const message = sanitizeSmsMessage(rawMessage);
   const to = toNotifyLkFormat(phoneNumber);
   const body = new URLSearchParams({
     user_id: userId,

@@ -14,6 +14,7 @@ import {
   HomeOutlined
 } from '@ant-design/icons';
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import DatePickerField from "@/components/ui/DatePickerField";
 import { getAllPublicBarbers, getAllPublicServices, getPublicShops } from "@/lib/actions/public";
 import { createBooking, getBookedSlots } from "@/lib/actions/booking";
 
@@ -163,6 +164,15 @@ export default function BookingPage() {
   }
 
   const totalAmount = calculateTotalAmount();
+
+  const getLocalDateString = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const isBookingDateInPast = !!bookingDate && bookingDate < getLocalDateString(new Date());
 
   const isSlotPassed = (slotTimeStr: string, selectedDateStr: string) => {
     if (!selectedDateStr) return false;
@@ -418,13 +428,9 @@ export default function BookingPage() {
 
                 <div className="mb-10">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Select Date</h3>
-                  <input 
-                    type="date" 
-                    value={bookingDate}
-                    onChange={(e) => setBookingDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]} // Prevent past dates
-                    className="w-full md:w-64 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 outline-none focus:border-amber-500 transition-colors font-mono cursor-pointer"
-                  />
+                  <div className="w-full md:w-72">
+                    <DatePickerField value={bookingDate} onChange={setBookingDate} />
+                  </div>
                 </div>
 
                 <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-3">
@@ -432,45 +438,51 @@ export default function BookingPage() {
                   {isFetchingSlots && <span className="text-[10px] text-amber-500 animate-pulse normal-case">Checking availability...</span>}
                 </h3>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {timeSlots.map((slot) => {
-                    const isBooked = bookedSlots.includes(slot);
-                    const isPassed = isSlotPassed(slot, bookingDate);
-                    const isDisabled = isBooked || isPassed;
-                    const isSelected = selectedSlot === slot;
-                    
-                    return (
-                      <button
-                        key={slot}
-                        onClick={() => !isDisabled && setSelectedSlot(slot)}
-                        disabled={isDisabled}
-                        className={`py-4 px-2 border flex items-center justify-center text-sm font-bold tracking-wider transition-all duration-300 ${
-                          isDisabled
-                            ? 'border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-600 cursor-not-allowed line-through opacity-70'
-                            : isSelected 
-                              ? 'border-amber-500 bg-amber-600 text-white shadow-md shadow-amber-500/20' 
-                              : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:border-amber-500/50 hover:text-zinc-900 dark:hover:text-white'
-                        }`}
-                      >
-                        {slot} 
-                        {isBooked ? (
-                          <span className="text-[10px] ml-2 font-normal line-through-none">(Booked)</span>
-                        ) : isPassed ? (
-                          <span className="text-[10px] ml-2 font-normal line-through-none">(Passed)</span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
+                {!bookingDate || isBookingDateInPast ? (
+                  <div className="text-center py-10 text-sm text-zinc-500 dark:text-zinc-400 border border-dashed border-zinc-300 dark:border-zinc-800">
+                    {isBookingDateInPast ? 'Please select today or a future date to see available times.' : 'Please select a date to see available times.'}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {timeSlots.map((slot) => {
+                      const isBooked = bookedSlots.includes(slot);
+                      const isPassed = isSlotPassed(slot, bookingDate);
+                      const isDisabled = isBooked || isPassed;
+                      const isSelected = selectedSlot === slot;
+
+                      return (
+                        <button
+                          key={slot}
+                          onClick={() => !isDisabled && setSelectedSlot(slot)}
+                          disabled={isDisabled}
+                          className={`py-4 px-2 border flex items-center justify-center text-sm font-bold tracking-wider transition-all duration-300 ${
+                            isDisabled
+                              ? 'border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-600 cursor-not-allowed line-through opacity-70'
+                              : isSelected
+                                ? 'border-amber-500 bg-amber-600 text-white shadow-md shadow-amber-500/20'
+                                : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:border-amber-500/50 hover:text-zinc-900 dark:hover:text-white'
+                          }`}
+                        >
+                          {slot}
+                          {isBooked ? (
+                            <span className="text-[10px] ml-2 font-normal line-through-none">(Booked)</span>
+                          ) : isPassed ? (
+                            <span className="text-[10px] ml-2 font-normal line-through-none">(Passed)</span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              
+
               <div className="mt-auto flex justify-end">
-                <button 
-                  onClick={() => selectedSlot && setStep(5)}
-                  disabled={!selectedSlot}
+                <button
+                  onClick={() => bookingDate && !isBookingDateInPast && selectedSlot && setStep(5)}
+                  disabled={!bookingDate || isBookingDateInPast || !selectedSlot}
                   className={`inline-flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-sm py-5 px-12 transition-all shadow-xl dark:shadow-none ${
-                    selectedSlot 
-                      ? 'bg-amber-600 text-white dark:text-zinc-950 hover:bg-amber-700 dark:hover:bg-amber-500 cursor-pointer hover:scale-105' 
+                    bookingDate && !isBookingDateInPast && selectedSlot
+                      ? 'bg-amber-600 text-white dark:text-zinc-950 hover:bg-amber-700 dark:hover:bg-amber-500 cursor-pointer hover:scale-105'
                       : 'bg-zinc-300 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed'
                   }`}
                 >
