@@ -7,6 +7,7 @@ import { sendSms } from '@/lib/services/sms.service';
 
 interface BookingPayload {
   serviceIds: string[];
+  productIds?: string[];
   barberId: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:MM AM/PM
@@ -17,12 +18,12 @@ interface BookingPayload {
 export async function createBooking(payload: BookingPayload) {
   try {
     const session = await verifySession();
-    
+
     if (!session || !session.id) {
       return { success: false, message: 'You must be logged in to book an appointment.' };
     }
 
-    const { serviceIds, barberId, date, time, paymentMethod, shopId } = payload;
+    const { serviceIds, productIds, barberId, date, time, paymentMethod, shopId } = payload;
 
     if (!serviceIds || serviceIds.length === 0) {
       return { success: false, message: 'No services selected.' };
@@ -37,13 +38,31 @@ export async function createBooking(payload: BookingPayload) {
       return { success: false, message: 'One or more services not found.' };
     }
 
+    // Products are optional — customers can add retail items to the same booking checkout
+    const uniqueProductIds = Array.from(new Set(productIds || []));
+    const products = uniqueProductIds.length > 0
+      ? await db.product.findMany({ where: { id: { in: uniqueProductIds } } })
+      : [];
+
+    if (products.length !== uniqueProductIds.length) {
+      return { success: false, message: 'One or more products not found.' };
+    }
+
+    // Fast, friendly rejection before touching the transaction
+    const outOfStock = products.find(p => p.stock < 1);
+    if (outOfStock) {
+      return { success: false, message: `${outOfStock.name} is out of stock.` };
+    }
+
     // Parse the date and time to a real DateTime object
     const dateObj = new Date(date + ' ' + time);
 
     // Create the booking and payment using Prisma transaction
     const bookingResult = await db.$transaction(async (tx) => {
-      
-      const totalAmount = services.reduce((sum, s) => sum + s.price, 0);
+
+      const serviceAmount = services.reduce((sum, s) => sum + s.price, 0);
+      const productAmount = products.reduce((sum, p) => sum + p.price, 0);
+      const totalAmount = serviceAmount + productAmount;
 
       const newBooking = await tx.booking.create({
         data: {
@@ -51,6 +70,7 @@ export async function createBooking(payload: BookingPayload) {
           status: 'CONFIRMED',
           source: 'WEBSITE',
           totalAmount: totalAmount,
+          serviceAmount: serviceAmount,
           customerId: session.id,
           barberId: barberId,
           shopId: shopId || null,
@@ -58,9 +78,27 @@ export async function createBooking(payload: BookingPayload) {
             create: services.map(s => ({
               service: { connect: { id: s.id } }
             }))
-          }
+          },
+          products: products.length > 0 ? {
+            create: products.map(p => ({
+              product: { connect: { id: p.id } }
+            }))
+          } : undefined
         }
       });
+
+      // Decrement stock now — the product is sold and paid for at booking time, regardless of
+      // when the appointment itself later happens. Atomic conditional update so a race against
+      // the last unit is rejected instead of overselling (no need to bump isolation level for this).
+      for (const p of products) {
+        const stockResult = await tx.product.updateMany({
+          where: { id: p.id, stock: { gte: 1 } },
+          data: { stock: { decrement: 1 } }
+        });
+        if (stockResult.count === 0) {
+          throw new Error(`STOCK_UNAVAILABLE: ${p.name} just went out of stock. Please remove it and try again.`);
+        }
+      }
 
       await tx.payment.create({
         data: {
@@ -115,6 +153,7 @@ export async function createBooking(payload: BookingPayload) {
         date: formattedDate,
         time,
         services: services.map(s => s.name).join(', '),
+        products: products.length > 0 ? products.map(p => p.name).join(', ') : undefined,
         barberName: barber?.name || 'Our Artisan',
         totalAmount: createdBooking.totalAmount,
       }).catch(err => console.error('[Email] Booking confirmation failed silently:', err));
@@ -143,6 +182,9 @@ export async function createBooking(payload: BookingPayload) {
 
   } catch (error: any) {
     console.error("Booking Error:", error);
+    if (typeof error?.message === 'string' && error.message.startsWith('STOCK_UNAVAILABLE:')) {
+      return { success: false, message: error.message.replace('STOCK_UNAVAILABLE: ', '') };
+    }
     return { success: false, message: 'Server error processing your booking. Please try again.' };
   }
 }
@@ -201,6 +243,7 @@ export async function getCustomerBookings() {
         barber: true,
         payment: true,
         services: { include: { service: true } },
+        products: { include: { product: true } },
       },
       orderBy: { date: 'desc' }
     });
@@ -237,7 +280,8 @@ export async function getCustomerBookings() {
         paymentStatus: b.payment?.status === 'COMPLETED' ? 'Paid' : (b.payment?.status || 'Pending'),
         barberName: b.barber?.name || 'Unknown',
         barberRole: b.barber?.role === 'OWNER' ? 'Master Stylist' : 'Senior Barber',
-        serviceName: b.services?.map((bs: any) => bs.service?.name).filter(Boolean).join(', ') || 'Service'
+        serviceName: b.services?.map((bs: any) => bs.service?.name).filter(Boolean).join(', ') || 'Service',
+        productNames: b.products?.map((bp: any) => bp.product?.name).filter(Boolean).join(', ') || ''
       };
     });
   } catch (error) {

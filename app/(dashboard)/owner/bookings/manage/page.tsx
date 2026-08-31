@@ -101,8 +101,9 @@ function ManageBookingsContent() {
           paymentStatus: b.payment?.status,
           paymentMethod: b.payment?.method,
           source: b.source, // 'WEBSITE' (customer booked it themselves) or 'ADMIN' (staff-created)
-          // Real booked services (name/price), for showing what was actually paid instead of a fake line item
+          // Real booked services/products (name/price), for showing what was actually paid instead of a fake line item
           services: b.services?.map((bs: any) => ({ name: bs.service?.name, price: bs.service?.price })) || [],
+          products: b.products?.map((bp: any) => ({ name: bp.product?.name, price: bp.product?.price })) || [],
         })));
       }
     } catch (e) {
@@ -239,10 +240,18 @@ function ManageBookingsContent() {
     }
   };
 
+  // Real booked services + products for a booking, falling back to a single generic line only
+  // for legacy bookings that predate this data being tracked.
+  const buildBillingItems = (record: any) => {
+    const items = [
+      ...(record.services?.map((s: any) => ({ type: 'Service', name: s.name, price: s.price })) || []),
+      ...(record.products?.map((p: any) => ({ type: 'Product', name: p.name, price: p.price })) || []),
+    ];
+    return items.length > 0 ? items : [{ type: 'Service', name: 'Salon Service Booking', price: record.total }];
+  };
+
   const handleGenerateBill = (record: any) => {
-    const realItems = record.services?.length > 0
-      ? record.services.map((s: any) => ({ type: 'Service', name: s.name, price: s.price }))
-      : [{ type: 'Service', name: 'Salon Service Booking', price: record.total }]; // fallback for legacy bookings with no linked services
+    const realItems = buildBillingItems(record);
 
     setPaymentData({
       bookingId: record.id,
@@ -288,7 +297,7 @@ function ManageBookingsContent() {
   const handleViewInvoice = (record: any) => {
     // Construct invoice data for already paid bookings
     const amount = record.payment?.amount || record.total || 0;
-    const paymentMethod = record.payment?.method || 'CASH';
+    const paymentMethod = record.payment?.method || record.paymentMethod || 'CASH';
     setInvoiceData({
       bookingId: record.id,
       client: record.client === 'Unknown' ? '' : record.client,
@@ -296,7 +305,7 @@ function ManageBookingsContent() {
       date: record.date,
       method: paymentMethod,
       amount: amount,
-      items: [{ type: 'Service', name: 'Salon Service Booking', price: amount }]
+      items: buildBillingItems(record)
     });
     setIsInvoiceModalOpen(true);
   };

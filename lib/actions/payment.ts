@@ -18,7 +18,8 @@ export async function getAllPayments() {
           include: {
             barber: true,
             shop: true,
-            services: { include: { service: true } }
+            services: { include: { service: true } },
+            products: { include: { product: true } }
           }
         }
       },
@@ -26,23 +27,26 @@ export async function getAllPayments() {
       take: 100
     });
 
-    const data = payments.map(p => ({
-      key: p.id,
-      id: `INV-${p.id.slice(0, 6).toUpperCase()}`,
-      client: p.booking ? (p.customer?.name || 'Customer') : (p.clientName || 'Walk-in'),
-      contact: p.booking ? (p.customer?.phone || 'N/A') : (p.clientPhone || 'N/A'),
-      barber: p.booking?.barber?.name || p.barber?.name || p.barberName || 'N/A',
-      barberId: p.booking?.barberId || p.barberId || undefined,
-      items: p.booking?.services?.map(bs => ({
-        name: bs.service?.name,
-        type: 'Service',
-        price: bs.service?.price
-      })) || (p.items as any[]) || [],
-      amount: p.amount,
-      method: p.method === 'CARD' ? 'Card' : p.method === 'CASH' ? 'Cash' : p.method || 'Cash',
-      date: p.createdAt.toISOString().split('T')[0],
-      branch: p.booking?.shop?.name || 'Global',
-    }));
+    const data = payments.map(p => {
+      const bookingItems = [
+        ...(p.booking?.services?.map(bs => ({ name: bs.service?.name, type: 'Service', price: bs.service?.price })) || []),
+        ...(p.booking?.products?.map(bp => ({ name: bp.product?.name, type: 'Product', price: bp.product?.price })) || []),
+      ];
+
+      return {
+        key: p.id,
+        id: `INV-${p.id.slice(0, 6).toUpperCase()}`,
+        client: p.booking ? (p.customer?.name || 'Customer') : (p.clientName || 'Walk-in'),
+        contact: p.booking ? (p.customer?.phone || 'N/A') : (p.clientPhone || 'N/A'),
+        barber: p.booking?.barber?.name || p.barber?.name || p.barberName || 'N/A',
+        barberId: p.booking?.barberId || p.barberId || undefined,
+        items: bookingItems.length > 0 ? bookingItems : ((p.items as any[]) || []),
+        amount: p.amount,
+        method: p.method === 'CARD' ? 'Card' : p.method === 'CASH' ? 'Cash' : p.method || 'Cash',
+        date: p.createdAt.toISOString().split('T')[0],
+        branch: p.booking?.shop?.name || 'Global',
+      };
+    });
 
     return { success: true, data };
   } catch (error) {

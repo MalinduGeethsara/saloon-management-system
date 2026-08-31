@@ -22,6 +22,7 @@ interface Appointment {
   barberName?: string;
   barberRole?: string;
   serviceName?: string;
+  productNames?: string;
 }
 
 export default function ProfileDashboard() {
@@ -241,7 +242,12 @@ export default function ProfileDashboard() {
                             <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400">{index + 1}</td>
                             <td className="py-5 px-6 text-sm font-bold text-zinc-900 dark:text-white">{app.code}</td>
                             <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400">{app.date} / {app.time}</td>
-                            <td className="py-5 px-6 text-sm font-medium text-zinc-800 dark:text-zinc-200">{app.serviceName}</td>
+                            <td className="py-5 px-6 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                              {app.serviceName}
+                              {app.productNames && (
+                                <div className="text-xs font-normal text-zinc-400 mt-0.5">+ {app.productNames}</div>
+                              )}
+                            </td>
                             <td className="py-5 px-6 text-sm font-bold text-amber-600 dark:text-amber-500">{app.barberName}</td>
                             <td className="py-5 px-6 text-sm font-medium text-zinc-600 dark:text-zinc-400">{app.amount}</td>
                             <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400">{app.paymentMethod}</td>
@@ -325,6 +331,13 @@ export default function ProfileDashboard() {
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-500 text-sm">Service</span>
                   <span className="font-bold text-zinc-900 dark:text-white text-right max-w-[200px] truncate" title={selectedAppointment.serviceName}>{selectedAppointment.serviceName}</span>
+                </div>
+              )}
+
+              {selectedAppointment.productNames && (
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500 text-sm">Products</span>
+                  <span className="font-bold text-zinc-900 dark:text-white text-right max-w-[200px] truncate" title={selectedAppointment.productNames}>{selectedAppointment.productNames}</span>
                 </div>
               )}
 

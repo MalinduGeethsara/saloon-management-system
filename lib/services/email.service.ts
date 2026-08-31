@@ -98,6 +98,7 @@ interface BookingEmailDetails {
   date: string;       // e.g. "Saturday, 30 August 2026"
   time: string;       // e.g. "10:00 AM"
   services: string;   // e.g. "Haircut, Hot Towel Shave"
+  products?: string;  // e.g. "Argan Oil Shampoo, Beard Balm" — omitted when no products were added
   barberName: string;
   totalAmount: number;
 }
@@ -108,7 +109,7 @@ export async function sendBookingConfirmation(details: BookingEmailDetails) {
     return { success: true };
   }
 
-  const { customerName, customerEmail, bookingId, date, time, services, barberName, totalAmount } = details;
+  const { customerName, customerEmail, bookingId, date, time, services, products, barberName, totalAmount } = details;
   const shortId = bookingId.slice(0, 8).toUpperCase();
 
   try {
@@ -164,6 +165,14 @@ export async function sendBookingConfirmation(details: BookingEmailDetails) {
                           <p style="margin:0;font-size:15px;font-weight:700;color:#fff;">${services}</p>
                         </td>
                       </tr>
+                      ${products ? `
+                      <tr>
+                        <td style="padding:20px 24px;border-bottom:1px solid #27272a;">
+                          <p style="margin:0 0 2px;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#52525b;">Products</p>
+                          <p style="margin:0;font-size:15px;font-weight:700;color:#fff;">${products}</p>
+                        </td>
+                      </tr>
+                      ` : ''}
                       <tr>
                         <td style="padding:20px 24px;border-bottom:1px solid #27272a;">
                           <p style="margin:0 0 2px;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#52525b;">Artisan</p>

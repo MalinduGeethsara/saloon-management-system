@@ -2,20 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  UserOutlined, 
-  ClockCircleOutlined, 
+import {
+  UserOutlined,
+  ClockCircleOutlined,
   CheckCircleFilled,
   ArrowLeftOutlined,
   CalendarOutlined,
   CreditCardOutlined,
   LockOutlined,
   ScissorOutlined,
-  HomeOutlined
+  HomeOutlined,
+  ShoppingOutlined
 } from '@ant-design/icons';
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import DatePickerField from "@/components/ui/DatePickerField";
-import { getAllPublicBarbers, getAllPublicServices, getPublicShops } from "@/lib/actions/public";
+import { getAllPublicBarbers, getAllPublicServices, getPublicShops, getPublicProducts } from "@/lib/actions/public";
 import { createBooking, getBookedSlots } from "@/lib/actions/booking";
 
 const timeSlots = ["09:00 AM", "09:45 AM", "10:30 AM", "11:15 AM", "01:00 PM", "01:45 PM", "02:30 PM", "04:00 PM"];
@@ -27,11 +28,13 @@ export default function BookingPage() {
   // Data State
   const [barbers, setBarbers] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Selection State
   const [selectedServices, setSelectedServices] = useState<any[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [selectedBarber, setSelectedBarber] = useState<any | null>(null);
   const [selectedShop, setSelectedShop] = useState<any | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -70,14 +73,16 @@ export default function BookingPage() {
     // Fetch dynamic data
     const fetchInitialData = async () => {
       try {
-        const [fetchedBarbers, fetchedServices, fetchedShops] = await Promise.all([
+        const [fetchedBarbers, fetchedServices, fetchedShops, fetchedProducts] = await Promise.all([
           getAllPublicBarbers(),
           getAllPublicServices(),
-          getPublicShops()
+          getPublicShops(),
+          getPublicProducts()
         ]);
         setBarbers(fetchedBarbers);
         setServices(fetchedServices);
         setShops(fetchedShops);
+        setProducts(fetchedProducts);
       } catch (err) {
         console.error("Failed to load booking data", err);
       } finally {
@@ -120,8 +125,21 @@ export default function BookingPage() {
     });
   };
 
+  const toggleProduct = (product: any) => {
+    if (product.stock <= 0) return;
+    setSelectedProducts(prev => {
+      const exists = prev.find(p => p.id === product.id);
+      if (exists) {
+        return prev.filter(p => p.id !== product.id);
+      }
+      return [...prev, product];
+    });
+  };
+
   const calculateTotalAmount = () => {
-    return selectedServices.reduce((sum, service) => sum + service.price, 0);
+    const servicesTotal = selectedServices.reduce((sum, service) => sum + service.price, 0);
+    const productsTotal = selectedProducts.reduce((sum, product) => sum + product.price, 0);
+    return servicesTotal + productsTotal;
   };
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {
@@ -137,6 +155,7 @@ export default function BookingPage() {
 
     const payload = {
       serviceIds: selectedServices.map(s => s.id),
+      productIds: selectedProducts.map(p => p.id),
       barberId: selectedBarber.id,
       shopId: selectedShop?.id,
       date: bookingDate,
@@ -147,7 +166,7 @@ export default function BookingPage() {
     const result = await createBooking(payload);
 
     if (result.success) {
-      setStep(6);
+      setStep(7);
     } else {
       setErrorMessage(result.message || "Payment failed. Please try again.");
     }
@@ -219,7 +238,8 @@ export default function BookingPage() {
               <div className={`w-4 md:w-5 h-1 rounded-full ${step >= 3 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
               <div className={`w-4 md:w-5 h-1 rounded-full ${step >= 4 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
               <div className={`w-4 md:w-5 h-1 rounded-full ${step >= 5 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
-              <span className="text-[10px] md:text-xs font-bold tracking-widest text-zinc-500 uppercase ml-2">Step {step > 5 ? 5 : step} of 5</span>
+              <div className={`w-4 md:w-5 h-1 rounded-full ${step >= 6 ? 'bg-amber-600 dark:bg-amber-500' : 'bg-zinc-200 dark:bg-zinc-800'} transition-colors duration-500`}></div>
+              <span className="text-[10px] md:text-xs font-bold tracking-widest text-zinc-500 uppercase ml-2">Step {step > 6 ? 6 : step} of 6</span>
             </div>
           </div>
         </ScrollReveal>
@@ -486,20 +506,94 @@ export default function BookingPage() {
                       : 'bg-zinc-300 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed'
                   }`}
                 >
-                  Proceed to Payment
+                  Continue
                 </button>
               </div>
             </div>
           )}
 
-          {/* Step 5: Checkout & Payment */}
+          {/* Step 5: Product Add-ons */}
           {step === 5 && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-2xl mx-auto w-full">
-              <button 
-                onClick={() => setStep(4)} 
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 flex flex-col h-full">
+              <button
+                onClick={() => setStep(4)}
                 className="self-start mb-8 text-xs font-bold text-zinc-500 hover:text-amber-600 dark:hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors"
               >
                 <ArrowLeftOutlined /> Back to Schedule
+              </button>
+              <h2 className="text-xl md:text-2xl font-bold mb-8 flex items-center gap-3 text-zinc-900 dark:text-white">
+                <ShoppingOutlined className="text-amber-600 dark:text-amber-500" />
+                Add Products <span className="text-sm font-normal text-zinc-500 normal-case">(optional)</span>
+              </h2>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">Grooming essentials you can pick up along with your appointment — entirely optional.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xl:gap-6 mb-8">
+                {products.map((p) => {
+                  const isSelected = selectedProducts.some(selected => selected.id === p.id);
+                  const isOutOfStock = p.stock <= 0;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => toggleProduct(p)}
+                      className={`group relative flex flex-col px-6 py-6 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border transition-all duration-300 shadow-sm dark:shadow-none w-full overflow-hidden ${
+                        isOutOfStock
+                          ? 'border-zinc-200 dark:border-zinc-800/60 opacity-50 cursor-not-allowed'
+                          : isSelected
+                            ? 'border-amber-500 shadow-md shadow-amber-500/20 cursor-pointer'
+                            : 'border-zinc-200 dark:border-zinc-800/60 hover:border-amber-500/50 hover:shadow-md cursor-pointer'
+                      }`}
+                    >
+                      <div className="w-full h-40 overflow-hidden mb-6 border border-transparent group-hover:border-amber-500/30 transition-all duration-500 relative bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                        {p.imageUrl ? (
+                          <img
+                            src={p.imageUrl}
+                            alt={p.name}
+                            className={`w-full h-full object-cover transition-all duration-700 ${isSelected ? 'grayscale-0 scale-105' : 'grayscale group-hover:grayscale-0 group-hover:scale-105'}`}
+                          />
+                        ) : (
+                          <span className="text-zinc-500 text-sm font-bold uppercase tracking-widest">No Image</span>
+                        )}
+                        {isOutOfStock && (
+                          <div className="absolute top-3 left-3 bg-zinc-900/90 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1">
+                            Out of Stock
+                          </div>
+                        )}
+                      </div>
+                      <h4 className="text-lg font-bold text-zinc-900 dark:text-white tracking-wide transition-colors">{p.name}</h4>
+                      <p className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mt-2">LKR {p.price}</p>
+
+                      <div className={`absolute top-4 right-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isSelected ? 'border-amber-500 bg-amber-500 text-white' : 'border-zinc-300 dark:border-zinc-700 text-transparent'}`}>
+                        <CheckCircleFilled className="text-sm" />
+                      </div>
+                    </div>
+                  );
+                })}
+                {products.length === 0 && (
+                  <div className="col-span-full py-12 text-center text-zinc-500">
+                    No products currently available.
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-auto flex justify-end">
+                <button
+                  onClick={() => setStep(6)}
+                  className="inline-flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-sm py-5 px-12 transition-all shadow-xl dark:shadow-none bg-amber-600 text-white dark:text-zinc-950 hover:bg-amber-700 dark:hover:bg-amber-500 cursor-pointer hover:scale-105"
+                >
+                  {selectedProducts.length > 0 ? 'Continue to Payment' : 'Skip & Continue to Payment'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 6: Checkout & Payment */}
+          {step === 6 && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-2xl mx-auto w-full">
+              <button
+                onClick={() => setStep(5)}
+                className="self-start mb-8 text-xs font-bold text-zinc-500 hover:text-amber-600 dark:hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors"
+              >
+                <ArrowLeftOutlined /> Back to Products
               </button>
 
               <div className="flex flex-col lg:flex-row gap-8">
@@ -574,7 +668,7 @@ export default function BookingPage() {
                     </div>
 
                     <div className="pt-6 flex justify-between items-center border-t border-zinc-200 dark:border-zinc-800">
-                      <button type="button" onClick={() => setStep(4)} disabled={isProcessing} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">
+                      <button type="button" onClick={() => setStep(5)} disabled={isProcessing} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">
                         Cancel Order
                       </button>
                       <button 
@@ -601,7 +695,18 @@ export default function BookingPage() {
                         </div>
                       ))}
                     </div>
-                    
+
+                    {selectedProducts.length > 0 && (
+                      <div className="flex flex-col gap-3 mb-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                        {selectedProducts.map(p => (
+                          <div key={p.id} className="flex justify-between items-center text-sm">
+                            <span className="text-zinc-500">{p.name}</span>
+                            <span className="font-medium">LKR {p.price.toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center py-4 bg-zinc-200/50 dark:bg-zinc-950 px-4 mt-6">
                       <span className="font-bold text-zinc-900 dark:text-white">Total amount</span>
                       <span className="font-bold text-amber-600 dark:text-amber-500">LKR {totalAmount.toLocaleString()}</span>
@@ -619,7 +724,7 @@ export default function BookingPage() {
           )}
 
           {/* Success Step */}
-          {step === 6 && (
+          {step === 7 && (
             <div className="animate-in zoom-in-95 fade-in duration-700 flex flex-col items-center justify-center py-12">
               <div className="w-full max-w-lg bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/60 p-10 md:p-14 shadow-2xl dark:shadow-none text-center relative overflow-hidden">
                 
@@ -662,6 +767,20 @@ export default function BookingPage() {
                       ))}
                     </div>
                   </div>
+
+                  {selectedProducts.length > 0 && (
+                    <div className="flex justify-between items-start py-2 border-b border-zinc-200 dark:border-zinc-800 border-dashed">
+                      <div className="flex items-center gap-3 mt-1">
+                        <ShoppingOutlined className="text-amber-600 dark:text-amber-500 text-lg" />
+                        <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Products</span>
+                      </div>
+                      <div className="text-right">
+                        {selectedProducts.map(p => (
+                          <div key={p.id} className="text-zinc-900 dark:text-white font-bold text-sm mb-1">{p.name}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex justify-between items-center py-2">
                     <div className="flex items-center gap-3">

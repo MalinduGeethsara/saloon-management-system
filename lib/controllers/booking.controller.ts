@@ -133,19 +133,19 @@ export async function getBookingsForUser(userId: string, role: string) {
   if (role === 'CUSTOMER') {
     return await db.booking.findMany({
       where: { customerId: userId },
-      include: { services: { include: { service: true } }, barber: true, shop: true, payment: true },
+      include: { services: { include: { service: true } }, products: { include: { product: true } }, barber: true, shop: true, payment: true },
       orderBy: { date: 'desc' }
     });
   } else if (role === 'BARBER') {
     return await db.booking.findMany({
       where: { barberId: userId },
-      include: { services: { include: { service: true } }, customer: true, barber: true, shop: true, payment: true },
+      include: { services: { include: { service: true } }, products: { include: { product: true } }, customer: true, barber: true, shop: true, payment: true },
       orderBy: { date: 'desc' }
     });
   } else {
     // Admin, Manager, Owner see all
     return await db.booking.findMany({
-      include: { services: { include: { service: true } }, customer: true, barber: true, shop: true, payment: true },
+      include: { services: { include: { service: true } }, products: { include: { product: true } }, customer: true, barber: true, shop: true, payment: true },
       orderBy: { date: 'desc' }
     });
   }
@@ -154,7 +154,7 @@ export async function getBookingsForUser(userId: string, role: string) {
 export async function getBookingById(id: string) {
   return await db.booking.findUnique({
     where: { id },
-    include: { services: { include: { service: true } }, customer: true, barber: true, shop: true, payment: true }
+    include: { services: { include: { service: true } }, products: { include: { product: true } }, customer: true, barber: true, shop: true, payment: true }
   });
 }
 
@@ -187,6 +187,11 @@ async function finalizeBookingCompletion(tx: any, bookingId: string, paymentMeth
 
   if (booking.barberId && booking.barber) {
     const rateApplied = booking.barber.commissionRate || 0;
+    // Commission is earned on services performed, not on retail products sold in the same
+    // checkout — mirrors the identical fix in lib/actions/payment.ts's createManualBill.
+    // serviceAmount is null on bookings created before products existed (100% services then),
+    // so falling back to totalAmount is exactly correct for those.
+    const commissionBase = booking.serviceAmount ?? booking.totalAmount;
     // Bucket by when the commission was actually earned (completion time), not the booking's
     // originally scheduled appointment date — a booking made today for a future appointment
     // shouldn't make its commission disappear from this month's payroll view.
@@ -195,9 +200,9 @@ async function finalizeBookingCompletion(tx: any, bookingId: string, paymentMeth
       data: {
         bookingId: booking.id,
         barberId: booking.barberId,
-        amount: (booking.totalAmount * rateApplied) / 100,
+        amount: (commissionBase * rateApplied) / 100,
         rateApplied,
-        billedAmount: booking.totalAmount,
+        billedAmount: commissionBase,
         month: completedAt.getMonth(),
         year: completedAt.getFullYear(),
       }

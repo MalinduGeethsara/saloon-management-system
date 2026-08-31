@@ -365,22 +365,9 @@ function ServicesContent() {
         
         {canAdd && (
             <div className="flex gap-3">
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />} 
-                onClick={() => {
-                  setEditingService(null);
-                  setIsServiceModalOpen(true);
-                  // We can optionally set a default category in the modal state if needed, 
-                  // but currently ServiceModal uses an internal state or the record
-                }}
-                className="bg-purple-600 hover:bg-purple-700 shadow-md h-10 px-6 rounded-lg font-semibold tracking-wide border-0 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
-              >
-                Add Product
-              </Button>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />} 
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
                 onClick={handleAdd}
                 className="bg-zinc-900 hover:bg-zinc-800 shadow-md h-10 px-6 rounded-lg font-semibold tracking-wide border-0 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
               >

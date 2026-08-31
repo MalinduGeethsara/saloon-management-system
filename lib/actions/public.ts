@@ -125,6 +125,36 @@ export async function getAllPublicServices() {
   }
 }
 
+export async function getPublicProducts() {
+  try {
+    const products = await db.product.findMany({
+      where: {
+        status: 'Active'
+      },
+      select: {
+        id: true,
+        name: true,
+        brand: true,
+        category: true,
+        description: true,
+        price: true,
+        stock: true,
+        imageUrl: true,
+      },
+      orderBy: { name: 'asc' }
+    });
+    return products.map(product => ({
+      ...product,
+      imageUrl: product.imageUrl && !product.imageUrl.startsWith('/') && !product.imageUrl.startsWith('http')
+        ? `/${product.imageUrl}`
+        : product.imageUrl
+    }));
+  } catch (error) {
+    console.error("Failed to fetch products", error);
+    return [];
+  }
+}
+
 export async function getPublicShops() {
   try {
     const shops = await db.shop.findMany({

@@ -93,6 +93,9 @@ model Product {
   status      String   @default("Active")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Relations
+  bookings    BookingProduct[]
 }
 
 enum BookingStatus {
@@ -108,13 +111,14 @@ enum BookingSource {
 }
 
 model Booking {
-  id          String        @id @default(uuid())
-  date        DateTime
-  status      BookingStatus @default(PENDING)
-  source      BookingSource @default(ADMIN)
-  totalAmount Float
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id            String        @id @default(uuid())
+  date          DateTime
+  status        BookingStatus @default(PENDING)
+  source        BookingSource @default(ADMIN)
+  totalAmount   Float         // services + products at creation time
+  serviceAmount Float?        // services-only subtotal snapshot — commission is computed from this, not totalAmount, so product sales never inflate a barber's commission. Null on pre-existing rows, which are 100% services anyway (fall back to totalAmount).
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   // Foreign Keys
   customerId  String
@@ -125,6 +129,7 @@ model Booking {
   customer    User             @relation("CustomerBookings", fields: [customerId], references: [id])
   barber      User?            @relation("BarberBookings", fields: [barberId], references: [id])
   services    BookingService[]
+  products    BookingProduct[]
   shop        Shop?            @relation(fields: [shopId], references: [id])
   payment     Payment?
   commission  Commission?
@@ -138,9 +143,19 @@ model BookingService {
   id        String  @id @default(uuid())
   bookingId String
   serviceId String
-  
+
   booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+model BookingProduct {
+  id        String  @id @default(uuid())
+  bookingId String
+  productId String
+  quantity  Int     @default(1)
+
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 enum PaymentStatus {
