@@ -36,7 +36,9 @@ model User {
   bookingsAsBarber   Booking[]       @relation("BarberBookings")
   attendance         Attendance[]
   payroll            Payroll[]
-  payments           Payment[]
+  payments           Payment[]        @relation("PaymentCustomer")
+  paymentsAsBarber   Payment[]        @relation("PaymentBarber")
+  commissions        Commission[]     @relation("BarberCommissions")
   permissions        StaffPermission[]
   notifications      Notification[]
   employeeDevices    EmployeeDevice[]
@@ -100,10 +102,16 @@ enum BookingStatus {
   COMPLETED
 }
 
+enum BookingSource {
+  WEBSITE // customer booked it themselves through the public site
+  ADMIN   // staff created it manually (walk-in / phone booking)
+}
+
 model Booking {
   id          String        @id @default(uuid())
   date        DateTime
   status      BookingStatus @default(PENDING)
+  source      BookingSource @default(ADMIN)
   totalAmount Float
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -119,6 +127,7 @@ model Booking {
   services    BookingService[]
   shop        Shop?            @relation(fields: [shopId], references: [id])
   payment     Payment?
+  commission  Commission?
 
   @@index([date, status])
   @@index([shopId])
@@ -154,12 +163,15 @@ model Payment {
   customerId  String?
   clientName  String?
   clientPhone String?
-  barberName  String?
+  barberName  String?  // legacy free-text label — prefer barberId below when present
+  barberId    String?  // real FK to the attributed barber, used for commission tracking
   items       Json?
 
   // Relations
-  booking     Booking?  @relation(fields: [bookingId], references: [id])
-  customer    User?     @relation(fields: [customerId], references: [id])
+  booking     Booking?    @relation(fields: [bookingId], references: [id])
+  customer    User?       @relation("PaymentCustomer", fields: [customerId], references: [id])
+  barber      User?       @relation("PaymentBarber", fields: [barberId], references: [id])
+  commission  Commission?
 
   @@index([createdAt, status])
 }
@@ -214,7 +226,8 @@ model Payroll {
   userId      String
 
   // Relations
-  user        User     @relation(fields: [userId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  commissions Commission[]
 
   @@index([month, year, status])
   @@index([createdAt])
@@ -231,6 +244,32 @@ model StaffPermission {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, pageKey])
+}
+
+model Commission {
+  id            String   @id @default(uuid())
+  amount        Float                // billedAmount * rateApplied / 100
+  rateApplied   Float                // snapshot of User.commissionRate at the time — survives later rate edits
+  billedAmount  Float                // snapshot of the booking's totalAmount OR the manual bill's amount
+  month         Int                  // derived from Booking.date (online) or Payment.createdAt (manual)
+  year          Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Foreign Keys — exactly one of bookingId/paymentId is set, enforced in application code
+  bookingId     String?  @unique
+  paymentId     String?  @unique
+  barberId      String
+  payrollId     String?
+
+  // Relations
+  booking       Booking? @relation(fields: [bookingId], references: [id])
+  payment       Payment? @relation(fields: [paymentId], references: [id])
+  barber        User     @relation("BarberCommissions", fields: [barberId], references: [id])
+  payroll       Payroll? @relation(fields: [payrollId], references: [id])
+
+  @@index([barberId, month, year])
+  @@index([payrollId])
 }
 
 enum OtpPurpose {

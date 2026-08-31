@@ -252,8 +252,52 @@ export default function PayslipPreviewPage() {
                   </div>
                 </div>
               </div>
+
+              {record.unswept > 0 && (
+                <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm font-bold text-amber-700">
+                  +Rs. {record.unswept.toLocaleString()} in commission earned since this payroll was processed — will be included next run.
+                </div>
+              )}
             </div>
           </Card>
+
+          {record.breakdown?.length > 0 && (
+            <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden mb-8">
+              <div className="p-6">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
+                  Commission Breakdown ({record.breakdown.length})
+                </h4>
+                <div className="max-h-96 overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                        <th className="py-2 pr-2 font-bold">Date</th>
+                        <th className="py-2 pr-2 font-bold">Client</th>
+                        <th className="py-2 pr-2 font-bold">Details</th>
+                        <th className="py-2 pr-2 font-bold text-right">Billed</th>
+                        <th className="py-2 pr-2 font-bold text-right">Rate</th>
+                        <th className="py-2 font-bold text-right">Commission</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {record.breakdown.map((row: any) => (
+                        <tr key={row.id} className="border-b border-slate-50 last:border-0">
+                          <td className="py-2 pr-2 text-slate-500 whitespace-nowrap">{row.date ? dayjs(row.date).format('DD MMM') : '-'}</td>
+                          <td className="py-2 pr-2 text-slate-700">{row.customerName}</td>
+                          <td className="py-2 pr-2 text-slate-500 truncate max-w-[180px]">
+                            {row.description || (row.source === 'manual' ? 'Manual bill' : 'Booking')}
+                          </td>
+                          <td className="py-2 pr-2 text-right text-slate-600">Rs. {row.billedAmount.toLocaleString()}</td>
+                          <td className="py-2 pr-2 text-right text-slate-500">{row.rateApplied}%</td>
+                          <td className="py-2 text-right font-bold text-emerald-600">Rs. {row.amount.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* ====================================================================

@@ -158,7 +158,59 @@ export async function getBookingById(id: string) {
   });
 }
 
+// Shared by completePayment() and updateBookingStatus(..., 'COMPLETED') so neither path can
+// skip commission creation. Idempotent — re-completing an already-COMPLETED booking is a no-op.
+async function finalizeBookingCompletion(tx: any, bookingId: string, paymentMethod: string) {
+  const booking = await tx.booking.findUnique({
+    where: { id: bookingId },
+    include: { barber: true, payment: true }
+  });
+  if (!booking) throw new Error('Booking not found');
+  if (booking.status === 'COMPLETED') return booking;
+
+  const updated = await tx.booking.update({
+    where: { id: bookingId },
+    data: { status: 'COMPLETED' }
+  });
+
+  // A booking made online is already paid via the gateway at booking time (Payment.status
+  // already COMPLETED with its real method, e.g. CARD) — don't let this step, which only means
+  // "the appointment/service is done", stomp that with whatever the owner's UI happened to send.
+  if (booking.payment?.status === 'COMPLETED') {
+    // nothing to do — already paid, method already correct
+  } else {
+    await tx.payment.updateMany({
+      where: { bookingId },
+      data: { status: 'COMPLETED', method: paymentMethod as any }
+    });
+  }
+
+  if (booking.barberId && booking.barber) {
+    const rateApplied = booking.barber.commissionRate || 0;
+    // Bucket by when the commission was actually earned (completion time), not the booking's
+    // originally scheduled appointment date — a booking made today for a future appointment
+    // shouldn't make its commission disappear from this month's payroll view.
+    const completedAt = new Date();
+    await tx.commission.create({
+      data: {
+        bookingId: booking.id,
+        barberId: booking.barberId,
+        amount: (booking.totalAmount * rateApplied) / 100,
+        rateApplied,
+        billedAmount: booking.totalAmount,
+        month: completedAt.getMonth(),
+        year: completedAt.getFullYear(),
+      }
+    });
+  }
+
+  return updated;
+}
+
 export async function updateBookingStatus(id: string, status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED') {
+  if (status === 'COMPLETED') {
+    return await withTransaction((tx) => finalizeBookingCompletion(tx, id, 'CASH'));
+  }
   return await db.booking.update({
     where: { id },
     data: { status }
@@ -174,17 +226,5 @@ export async function deleteBooking(id: string) {
 }
 
 export async function completePayment(bookingId: string, paymentMethod: string = 'CARD') {
-  return await withTransaction(async (tx) => {
-    const booking = await tx.booking.update({
-      where: { id: bookingId },
-      data: { status: 'COMPLETED' }
-    });
-
-    await tx.payment.updateMany({
-      where: { bookingId },
-      data: { status: 'COMPLETED', method: paymentMethod as any }
-    });
-
-    return booking;
-  });
+  return await withTransaction((tx) => finalizeBookingCompletion(tx, bookingId, paymentMethod));
 }

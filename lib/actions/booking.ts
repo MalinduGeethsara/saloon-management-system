@@ -49,6 +49,7 @@ export async function createBooking(payload: BookingPayload) {
         data: {
           date: dateObj,
           status: 'CONFIRMED',
+          source: 'WEBSITE',
           totalAmount: totalAmount,
           customerId: session.id,
           barberId: barberId,

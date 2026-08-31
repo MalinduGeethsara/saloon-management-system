@@ -3,9 +3,10 @@
 import React from 'react';
 import { Layout, Menu, Button } from 'antd';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  DashboardOutlined, 
+import {
+  DashboardOutlined,
   CalendarOutlined,
+  DollarOutlined,
   CloseOutlined
 } from '@ant-design/icons';
 import Image from 'next/image';
@@ -26,6 +27,11 @@ export function BarberSidebar({ onClose }: { onClose?: () => void }) {
       key: '/barber/calendar',
       icon: <CalendarOutlined />,
       label: 'My Schedule',
+    },
+    {
+      key: '/barber/earnings',
+      icon: <DollarOutlined />,
+      label: 'My Earnings',
     }
   ];
 

@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
-import { 
-  Card, Typography, Row, Col, Statistic, Tag, Button, Select, Modal, Progress 
+import {
+  Card, Typography, Row, Col, Statistic, Tag, Button, Select, Modal, Progress, Table, Empty
 } from 'antd';
-import { 
-  DollarOutlined, RightOutlined, SyncOutlined, SettingOutlined 
+import {
+  DollarOutlined, RightOutlined, SyncOutlined, SettingOutlined, EyeOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
@@ -103,6 +103,8 @@ function PayrollContent() {
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isCommissionModalOpen, setIsCommissionModalOpen] = useState(false);
+  const [commissionEmployee, setCommissionEmployee] = useState<any>(null);
 
   // --- KPI Calculations ---
   const totalPayout = payrollList.reduce((sum, item) => sum + item.netSalary, 0);
@@ -118,6 +120,12 @@ function PayrollContent() {
     e.stopPropagation(); // prevent card click
     setSelectedStaff(record);
     setIsConfigModalOpen(true);
+  };
+
+  const handleViewCommissions = (e: React.MouseEvent, record: any) => {
+    e.stopPropagation(); // prevent card click (which navigates to the payslip)
+    setCommissionEmployee(record);
+    setIsCommissionModalOpen(true);
   };
 
   const startPayrollProcessing = async () => {
@@ -242,14 +250,26 @@ function PayrollContent() {
                     <span className="text-slate-500">Base Salary:</span>
                     <span className="font-bold text-slate-700">Rs. {(employee.basicSalary ?? 0).toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-xs items-center">
                     <span className="text-slate-500">Commission:</span>
                     <span className="font-bold text-emerald-600">+Rs. {(employee.commissions ?? 0).toLocaleString()}</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleViewCommissions(e, employee)}
+                    className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#7C4DFF] hover:underline"
+                  >
+                    <EyeOutlined /> View Commissions {employee.breakdown?.length > 0 ? `(${employee.breakdown.length})` : ''}
+                  </button>
                   <div className="flex justify-between text-xs mt-2 font-bold">
                     <span className="text-slate-800">Net Salary:</span>
                     <span className="text-[#7C4DFF]">Rs. {(employee.netSalary ?? 0).toLocaleString()}</span>
                   </div>
+                  {employee.unswept > 0 && (
+                    <div className="mt-2 px-2 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-[10px] font-bold text-amber-700">
+                      +Rs. {employee.unswept.toLocaleString()} earned since payroll was processed
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -335,12 +355,49 @@ function PayrollContent() {
       </Modal>
 
       {/* 3. Configuration Modal */}
-      <PayrollConfigModal 
+      <PayrollConfigModal
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}
         staff={selectedStaff}
         onSaveSuccess={() => fetchPayroll()}
       />
+
+      {/* 4. Commission Breakdown Modal */}
+      <Modal
+        title={commissionEmployee ? `${commissionEmployee.name}'s Commissions — ${selectedMonth}` : 'Commissions'}
+        open={isCommissionModalOpen}
+        onCancel={() => setIsCommissionModalOpen(false)}
+        footer={null}
+        width={800}
+      >
+        {commissionEmployee?.breakdown?.length > 0 ? (
+          <>
+            <Table
+              dataSource={commissionEmployee.breakdown}
+              rowKey="id"
+              pagination={{ pageSize: 8 }}
+              size="small"
+              columns={[
+                { title: 'Date', dataIndex: 'date', key: 'date', render: (d: string) => d ? dayjs(d).format('DD MMM YYYY') : '-' },
+                { title: 'Client', dataIndex: 'customerName', key: 'customerName' },
+                {
+                  title: 'Source', dataIndex: 'source', key: 'source',
+                  render: (s: string) => <Tag color={s === 'manual' ? 'gold' : 'purple'} className="rounded-full border-0 font-bold">{s === 'manual' ? 'Walk-in' : 'Booking'}</Tag>
+                },
+                { title: 'Details', dataIndex: 'description', key: 'description' },
+                { title: 'Billed', dataIndex: 'billedAmount', key: 'billedAmount', align: 'right' as const, render: (v: number) => `Rs. ${v.toLocaleString()}` },
+                { title: 'Rate', dataIndex: 'rateApplied', key: 'rateApplied', align: 'right' as const, render: (v: number) => `${v}%` },
+                { title: 'Commission', dataIndex: 'amount', key: 'amount', align: 'right' as const, render: (v: number) => <span className="font-bold text-emerald-600">Rs. {v.toLocaleString()}</span> },
+              ]}
+            />
+            <div className="flex justify-end mt-3 pr-2">
+              <Text strong>Total: Rs. {commissionEmployee.breakdown.reduce((s: number, c: any) => s + c.amount, 0).toLocaleString()}</Text>
+            </div>
+          </>
+        ) : (
+          <Empty description={`No commissions recorded for ${selectedMonth}.`} />
+        )}
+      </Modal>
 
     </div>
   );

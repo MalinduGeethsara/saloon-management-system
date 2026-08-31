@@ -95,7 +95,14 @@ function ManageBookingsContent() {
           branch: b.shop?.name || 'Global / All',
           status: b.status === 'CONFIRMED' ? 'Confirmed' : b.status === 'COMPLETED' ? 'Paid' : b.status === 'CANCELLED' ? 'Cancelled' : 'Pending',
           total: b.totalAmount,
-          date: b.date
+          date: b.date,
+          // Already paid online (e.g. via the payment gateway at booking time) vs. still needs
+          // payment collected in person — determines whether Payment Method is editable later.
+          paymentStatus: b.payment?.status,
+          paymentMethod: b.payment?.method,
+          source: b.source, // 'WEBSITE' (customer booked it themselves) or 'ADMIN' (staff-created)
+          // Real booked services (name/price), for showing what was actually paid instead of a fake line item
+          services: b.services?.map((bs: any) => ({ name: bs.service?.name, price: bs.service?.price })) || [],
         })));
       }
     } catch (e) {
@@ -211,11 +218,11 @@ function ManageBookingsContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          serviceId: newBookingData.extendedProps.service,
+          serviceIds: newBookingData.extendedProps.serviceIds,
           barberId: newBookingData.extendedProps.barberId,
           shopId: newBookingData.extendedProps.shopId || null,
           date: newBookingData.start,
-          amount: 0, // Should be fetched from service, backend can handle or update later
+          amount: newBookingData.extendedProps.amount,
           clientName: newBookingData.title, // Pass the client name for walk-in creation
         })
       });
@@ -233,12 +240,20 @@ function ManageBookingsContent() {
   };
 
   const handleGenerateBill = (record: any) => {
+    const realItems = record.services?.length > 0
+      ? record.services.map((s: any) => ({ type: 'Service', name: s.name, price: s.price }))
+      : [{ type: 'Service', name: 'Salon Service Booking', price: record.total }]; // fallback for legacy bookings with no linked services
+
     setPaymentData({
-      bookingId: record.id, 
-      client: record.client === 'Unknown' ? '' : record.client, 
-      barber: record.barber, 
+      bookingId: record.id,
+      client: record.client === 'Unknown' ? '' : record.client,
+      barber: record.barber,
       date: record.date,
-      items: [{ type: 'Service', name: 'Salon Service Booking', price: record.total }] 
+      items: realItems,
+      // Booked via the public site (already paid + services fixed at booking time) vs. a manual/walk-in bill
+      source: record.source,
+      alreadyPaid: record.paymentStatus === 'COMPLETED',
+      paymentMethod: record.paymentMethod,
     });
     setIsPaymentModalOpen(true);
   };
@@ -314,6 +329,19 @@ function ManageBookingsContent() {
         <div className="flex items-center gap-2 text-slate-600">
           <Avatar size="small" icon={<UserOutlined />} className="bg-slate-100" /> {text}
         </div>
+      ),
+    },
+    {
+      title: 'Source',
+      dataIndex: 'source',
+      key: 'source',
+      width: 120,
+      filters: [{ text: 'Website', value: 'WEBSITE' }, { text: 'Walk-in / Admin', value: 'ADMIN' }],
+      onFilter: (value: any, record: any) => record.source === value,
+      render: (source: string) => (
+        <Tag color={source === 'WEBSITE' ? 'purple' : 'default'} className="rounded-full px-3 font-semibold border-0">
+          {source === 'WEBSITE' ? 'Website' : 'Walk-in / Admin'}
+        </Tag>
       ),
     },
     {
@@ -425,7 +453,13 @@ function ManageBookingsContent() {
           // x: 1200 ensures it is wider than mobile screens to force swiping
           scroll={{ x: 1200 }} 
           className="booking-swipe-table cursor-pointer"
-          rowClassName={(record) => record.status === 'Pending' ? 'bg-amber-50/50 hover:bg-amber-100/50' : 'hover:bg-slate-50 transition-colors'}
+          rowClassName={(record) =>
+            record.status === 'Pending'
+              ? 'bg-amber-50/50 hover:bg-amber-100/50'
+              : record.source === 'WEBSITE'
+                ? '!bg-purple-50/60 hover:!bg-purple-100/50 transition-colors'
+                : 'hover:bg-slate-50 transition-colors'
+          }
           onRow={(record) => ({
             onClick: () => {
               setSelectedRow(record);

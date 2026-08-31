@@ -82,6 +82,7 @@ function PaymentsContent() {
       clientName: paymentData.client,
       clientPhone: paymentData.contact,
       barberName: paymentData.barber,
+      barberId: paymentData.barberId,
       items: paymentData.items,
       amount: paymentData.amount,
       method: paymentData.method,

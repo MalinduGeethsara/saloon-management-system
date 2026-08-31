@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/lib/db';
+import { db, withTransaction } from '@/lib/db';
 import { verifySession } from '@/lib/session';
 
 export async function getAllPayments() {
@@ -13,6 +13,7 @@ export async function getAllPayments() {
     const payments = await db.payment.findMany({
       include: {
         customer: true,
+        barber: true,
         booking: {
           include: {
             barber: true,
@@ -30,7 +31,8 @@ export async function getAllPayments() {
       id: `INV-${p.id.slice(0, 6).toUpperCase()}`,
       client: p.booking ? (p.customer?.name || 'Customer') : (p.clientName || 'Walk-in'),
       contact: p.booking ? (p.customer?.phone || 'N/A') : (p.clientPhone || 'N/A'),
-      barber: p.booking?.barber?.name || p.barberName || 'N/A',
+      barber: p.booking?.barber?.name || p.barber?.name || p.barberName || 'N/A',
+      barberId: p.booking?.barberId || p.barberId || undefined,
       items: p.booking?.services?.map(bs => ({
         name: bs.service?.name,
         type: 'Service',
@@ -54,6 +56,7 @@ export async function createManualBill(data: {
   clientName: string;
   clientPhone?: string;
   barberName?: string;
+  barberId?: string;
   items: { name: string; type: string; price: number }[];
   amount: number;
   method: string;
@@ -65,15 +68,42 @@ export async function createManualBill(data: {
       return { success: false, message: 'Unauthorized' };
     }
 
-    await db.payment.create({
-      data: {
-        amount: data.amount,
-        method: data.method,
-        status: 'COMPLETED',
-        clientName: data.clientName,
-        clientPhone: data.clientPhone,
-        barberName: data.barberName,
-        items: data.items,
+    await withTransaction(async (tx) => {
+      const payment = await tx.payment.create({
+        data: {
+          amount: data.amount,
+          method: data.method,
+          status: 'COMPLETED',
+          clientName: data.clientName,
+          clientPhone: data.clientPhone,
+          barberName: data.barberName,
+          barberId: data.barberId || null,
+          items: data.items,
+        }
+      });
+
+      // Commission is earned on services performed, not on retail products sold alongside them
+      const serviceAmount = data.items
+        .filter(item => item.type === 'Service')
+        .reduce((sum, item) => sum + (item.price || 0), 0);
+
+      if (data.barberId && serviceAmount > 0) {
+        const barber = await tx.user.findUnique({ where: { id: data.barberId } });
+        if (barber) {
+          const rateApplied = barber.commissionRate || 0;
+          const now = payment.createdAt;
+          await tx.commission.create({
+            data: {
+              paymentId: payment.id,
+              barberId: data.barberId,
+              amount: (serviceAmount * rateApplied) / 100,
+              rateApplied,
+              billedAmount: serviceAmount,
+              month: now.getMonth(),
+              year: now.getFullYear(),
+            }
+          });
+        }
       }
     });
 
