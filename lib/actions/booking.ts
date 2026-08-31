@@ -100,6 +100,27 @@ export async function createBooking(payload: BookingPayload) {
         }
       }
 
+      // Products bought alongside a booking are also tracked as an Order for pickup-management
+      // purposes — separate from the booking/payment/commission concerns above.
+      if (products.length > 0) {
+        await tx.order.create({
+          data: {
+            source: 'WEBSITE',
+            totalAmount: productAmount,
+            customerId: session.id,
+            bookingId: newBooking.id,
+            items: {
+              create: products.map(p => ({
+                productId: p.id,
+                name: p.name,
+                price: p.price,
+                quantity: 1,
+              }))
+            }
+          }
+        });
+      }
+
       await tx.payment.create({
         data: {
           amount: totalAmount,

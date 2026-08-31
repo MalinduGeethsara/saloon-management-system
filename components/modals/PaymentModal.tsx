@@ -125,7 +125,10 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
         ...currentItems[fieldNameIndex],
         name: selectedItem.label,
         type: selectedItem.type,
-        price: selectedItem.price
+        price: selectedItem.price,
+        // Carried through to createManualBill so a walk-in product sale can link back to the
+        // real Product row (needed for Order Management), the same way a website booking does.
+        productId: selectedItem.type === 'Product' ? selectedItem.value : undefined
       };
       form.setFieldsValue({ items: currentItems });
     }
@@ -137,6 +140,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
     if (currentItems[fieldNameIndex]) {
       currentItems[fieldNameIndex].name = undefined;
       currentItems[fieldNameIndex].price = 0;
+      currentItems[fieldNameIndex].productId = undefined;
       form.setFieldsValue({ items: currentItems });
     }
   };
@@ -227,6 +231,7 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
 
                     return (
                       <div key={key} className="bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-xl mb-3 border border-slate-200 md:border-none">
+                        <Form.Item {...restField} name={[name, 'productId']} hidden><Input /></Form.Item>
                         <div className="flex flex-col md:flex-row gap-2 md:gap-3 items-start md:items-center w-full">
 
                           <div className="flex gap-2 w-full md:flex-1">
@@ -269,10 +274,10 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
                   })}
 
                   <div className="flex gap-2 mb-4 mt-2">
-                    <Button type="dashed" onClick={() => add({ type: 'Service', name: undefined, price: 0 })} icon={<ScissorOutlined />}>
+                    <Button type="dashed" onClick={() => add({ type: 'Service', name: undefined, price: 0, productId: undefined })} icon={<ScissorOutlined />}>
                       Add Service
                     </Button>
-                    <Button type="dashed" onClick={() => add({ type: 'Product', name: undefined, price: 0 })} icon={<ShoppingOutlined />}>
+                    <Button type="dashed" onClick={() => add({ type: 'Product', name: undefined, price: 0, productId: undefined })} icon={<ShoppingOutlined />}>
                       Add Product
                     </Button>
                   </div>

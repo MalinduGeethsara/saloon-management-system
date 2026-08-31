@@ -1,17 +1,18 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { Layout, Menu } from 'antd';
-import { 
-  DashboardOutlined, 
-  CalendarOutlined, 
-  TeamOutlined, 
+import {
+  DashboardOutlined,
+  CalendarOutlined,
+  TeamOutlined,
   ShopOutlined,
   DollarCircleOutlined,
   BarChartOutlined,
   CarryOutOutlined,
   SolutionOutlined,
   UsergroupAddOutlined,
-  ScissorOutlined
+  ScissorOutlined,
+  ShoppingCartOutlined
 } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -74,6 +75,7 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
     { key: '/owner/services', icon: <ScissorOutlined />, label: 'Services', allowedRoles: ['owner', 'admin', 'manager'] },
     { key: '/owner/products', icon: <TeamOutlined />, label: 'Products', allowedRoles: ['owner', 'admin', 'manager'] },
     { key: '/owner/payments', icon: <DollarCircleOutlined />, label: 'Payments', allowedRoles: ['owner', 'admin', 'manager'] },
+    { key: '/owner/orders', icon: <ShoppingCartOutlined />, label: 'Orders', allowedRoles: ['owner', 'admin', 'manager'] },
     { key: '/owner/reports', icon: <BarChartOutlined />, label: 'Reports', allowedRoles: ['owner', 'admin'] },
   ];
 

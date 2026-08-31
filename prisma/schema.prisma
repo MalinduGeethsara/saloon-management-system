@@ -39,6 +39,7 @@ model User {
   payments           Payment[]        @relation("PaymentCustomer")
   paymentsAsBarber   Payment[]        @relation("PaymentBarber")
   commissions        Commission[]     @relation("BarberCommissions")
+  orders             Order[]          @relation("CustomerOrders")
   permissions        StaffPermission[]
   notifications      Notification[]
   employeeDevices    EmployeeDevice[]
@@ -96,6 +97,7 @@ model Product {
 
   // Relations
   bookings    BookingProduct[]
+  orderItems  OrderItem[]
 }
 
 enum BookingStatus {
@@ -133,6 +135,7 @@ model Booking {
   shop        Shop?            @relation(fields: [shopId], references: [id])
   payment     Payment?
   commission  Commission?
+  order       Order?
 
   @@index([date, status])
   @@index([shopId])
@@ -187,6 +190,7 @@ model Payment {
   customer    User?       @relation("PaymentCustomer", fields: [customerId], references: [id])
   barber      User?       @relation("PaymentBarber", fields: [barberId], references: [id])
   commission  Commission?
+  order       Order?
 
   @@index([createdAt, status])
 }
@@ -285,6 +289,52 @@ model Commission {
 
   @@index([barberId, month, year])
   @@index([payrollId])
+}
+
+enum OrderStatus {
+  PENDING_PICKUP
+  COLLECTED
+}
+
+model Order {
+  id            String       @id @default(uuid())
+  status        OrderStatus  @default(PENDING_PICKUP)
+  totalAmount   Float                       // products only — this is a product-purchase record, not the whole sale
+  source        BookingSource @default(WEBSITE)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  collectedAt   DateTime?
+
+  // nullable — walk-in orders (from a manual bill) have no registered customer account
+  customerId    String?
+  clientName    String?
+  clientPhone   String?
+
+  // exactly one of bookingId/paymentId is set, enforced in application code (same convention as Commission)
+  bookingId     String?      @unique
+  paymentId     String?      @unique
+
+  // Relations
+  customer      User?        @relation("CustomerOrders", fields: [customerId], references: [id])
+  booking       Booking?     @relation(fields: [bookingId], references: [id])
+  payment       Payment?     @relation(fields: [paymentId], references: [id])
+  items         OrderItem[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String?
+  name      String                         // snapshot — survives product deletion/rename
+  price     Float                          // snapshot unit price at time of sale
+  quantity  Int      @default(1)
+
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product? @relation(fields: [productId], references: [id])
 }
 
 enum OtpPurpose {

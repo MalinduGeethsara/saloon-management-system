@@ -77,7 +77,7 @@ function PaymentsContent() {
   const handleSavePayment = async (paymentData: any) => {
     const finalRecord = { ...paymentData, key: Date.now().toString() };
 
-    await createManualBill({
+    const billRes = await createManualBill({
       invoiceNo: paymentData.id,
       clientName: paymentData.client,
       clientPhone: paymentData.contact,
@@ -87,6 +87,11 @@ function PaymentsContent() {
       amount: paymentData.amount,
       method: paymentData.method,
     });
+
+    if (!billRes.success) {
+      showAlert('error', billRes.message || 'Failed to record payment.');
+      return;
+    }
 
     const res = await getAllPayments();
     if (res.success && res.data) setPayments(res.data);

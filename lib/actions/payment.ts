@@ -61,7 +61,7 @@ export async function createManualBill(data: {
   clientPhone?: string;
   barberName?: string;
   barberId?: string;
-  items: { name: string; type: string; price: number }[];
+  items: { name: string; type: string; price: number; productId?: string }[];
   amount: number;
   method: string;
   branch?: string;
@@ -109,11 +109,51 @@ export async function createManualBill(data: {
           });
         }
       }
+
+      // Products sold on a walk-in bill are also tracked as an Order for pickup-management —
+      // mirrors the same thing createBooking does for products bought through the website.
+      const productItems = data.items.filter(item => item.type === 'Product');
+      if (productItems.length > 0) {
+        // Decrement stock now, atomically — same conditional-update pattern as createBooking,
+        // so a race against the last unit is rejected instead of overselling.
+        for (const item of productItems) {
+          if (!item.productId) continue; // no catalog link to decrement against
+          const stockResult = await tx.product.updateMany({
+            where: { id: item.productId, stock: { gte: 1 } },
+            data: { stock: { decrement: 1 } }
+          });
+          if (stockResult.count === 0) {
+            throw new Error(`STOCK_UNAVAILABLE: ${item.name} just went out of stock. Please remove it and try again.`);
+          }
+        }
+
+        const productAmount = productItems.reduce((sum, item) => sum + (item.price || 0), 0);
+        await tx.order.create({
+          data: {
+            source: 'ADMIN',
+            totalAmount: productAmount,
+            clientName: data.clientName,
+            clientPhone: data.clientPhone,
+            paymentId: payment.id,
+            items: {
+              create: productItems.map(item => ({
+                productId: item.productId || null,
+                name: item.name,
+                price: item.price,
+                quantity: 1,
+              }))
+            }
+          }
+        });
+      }
     });
 
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating manual bill:', error);
+    if (typeof error?.message === 'string' && error.message.startsWith('STOCK_UNAVAILABLE:')) {
+      return { success: false, message: error.message.replace('STOCK_UNAVAILABLE: ', '') };
+    }
     return { success: false, message: 'Server Error' };
   }
 }

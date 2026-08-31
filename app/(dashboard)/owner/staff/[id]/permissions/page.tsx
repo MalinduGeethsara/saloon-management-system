@@ -14,7 +14,8 @@ import {
   SolutionOutlined,
   DashboardOutlined,
   ShopOutlined,
-  UsergroupAddOutlined
+  UsergroupAddOutlined,
+  ShoppingCartOutlined
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 
@@ -29,6 +30,7 @@ const AVAILABLE_PERMISSIONS = [
   { key: '/owner/services', label: 'Services', icon: <ScissorOutlined /> },
   { key: '/owner/products', label: 'Products', icon: <TeamOutlined /> },
   { key: '/owner/payments', label: 'Payments', icon: <DollarCircleOutlined /> },
+  { key: '/owner/orders', label: 'Orders', icon: <ShoppingCartOutlined /> },
   { key: '/owner/reports', label: 'Reports', icon: <BarChartOutlined /> },
   { key: '/owner/hr/attendance', label: 'HR & Attendance', icon: <SolutionOutlined /> },
   { key: '/owner/hr/payroll', label: 'Payroll', icon: <DollarCircleOutlined /> },
