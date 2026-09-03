@@ -2,22 +2,24 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import {
   UserOutlined,
   ClockCircleOutlined,
   CheckCircleFilled,
   ArrowLeftOutlined,
   CalendarOutlined,
-  CreditCardOutlined,
   LockOutlined,
   ScissorOutlined,
   HomeOutlined,
-  ShoppingOutlined
+  ShoppingOutlined,
+  EnvironmentOutlined,
+  LoadingOutlined
 } from '@ant-design/icons';
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import DatePickerField from "@/components/ui/DatePickerField";
 import { getAllPublicBarbers, getAllPublicServices, getPublicShops, getPublicProducts } from "@/lib/actions/public";
-import { createBooking, getBookedSlots } from "@/lib/actions/booking";
+import { createBooking, getBookedSlots, getBookingPaymentStatus } from "@/lib/actions/booking";
 
 const timeSlots = ["09:00 AM", "09:45 AM", "10:30 AM", "11:15 AM", "01:00 PM", "01:45 PM", "02:30 PM", "04:00 PM"];
 
@@ -45,12 +47,13 @@ export default function BookingPage() {
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
 
   // Payment state
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryMonth, setExpiryMonth] = useState("");
-  const [expiryYear, setExpiryYear] = useState("");
-  const [cvv, setCvv] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  // 'form' = collecting address/starting checkout, 'confirming' = PayHere popup closed and we're
+  // waiting for the server-side webhook to confirm, 'timeout' = webhook hasn't landed yet
+  const [paymentPhase, setPaymentPhase] = useState<'form' | 'confirming' | 'timeout'>('form');
 
   useEffect(() => {
     // Client-side guard check
@@ -142,16 +145,59 @@ export default function BookingPage() {
     return servicesTotal + productsTotal;
   };
 
+  // Polls the server for the webhook-confirmed outcome after the PayHere popup closes. The
+  // popup's own onCompleted callback is never trusted as proof of payment — only this
+  // server-verified status (ultimately set by the signed PayHere notify webhook) can advance
+  // the booking to the success screen.
+  const pollPaymentStatus = async (bookingId: string) => {
+    const maxAttempts = 15; // ~30s at 2s intervals
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      try {
+        const res = await getBookingPaymentStatus(bookingId);
+        if (res.success) {
+          if (res.bookingStatus === 'CONFIRMED') {
+            setIsProcessing(false);
+            setStep(7);
+            return;
+          }
+          if (res.bookingStatus === 'CANCELLED') {
+            setIsProcessing(false);
+            setPaymentPhase('form');
+            setErrorMessage("Payment was not completed. Please try again.");
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to poll payment status", err);
+      }
+    }
+    // Still PENDING after the poll window — the webhook may just be delayed, not necessarily failed
+    setIsProcessing(false);
+    setPaymentPhase('timeout');
+  };
+
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsProcessing(true);
     setErrorMessage("");
 
     if (selectedServices.length === 0 || !selectedBarber || !selectedSlot) {
       setErrorMessage("Please complete all previous steps.");
-      setIsProcessing(false);
       return;
     }
+
+    if (!address.trim() || !city.trim()) {
+      setErrorMessage("Please enter your address and city to continue to payment.");
+      return;
+    }
+
+    const payhere = (window as any).payhere;
+    if (!payhere) {
+      setErrorMessage("Payment system is still loading. Please wait a moment and try again.");
+      return;
+    }
+
+    setIsProcessing(true);
 
     const payload = {
       serviceIds: selectedServices.map(s => s.id),
@@ -160,18 +206,39 @@ export default function BookingPage() {
       shopId: selectedShop?.id,
       date: bookingDate,
       time: selectedSlot,
-      paymentMethod: "Card"
+      address,
+      city,
     };
 
     const result = await createBooking(payload);
 
-    if (result.success) {
-      setStep(7);
-    } else {
-      setErrorMessage(result.message || "Payment failed. Please try again.");
+    if (!result.success || !result.payhere) {
+      setErrorMessage(result.message || "Could not start payment. Please try again.");
+      setIsProcessing(false);
+      return;
     }
-    
-    setIsProcessing(false);
+
+    const bookingId = result.bookingId;
+
+    payhere.onCompleted = function () {
+      // Only drives UI state — the actual confirmation comes from the poll below, which reflects
+      // the server-verified webhook outcome, not this client-side callback.
+      setPaymentPhase('confirming');
+      pollPaymentStatus(bookingId);
+    };
+
+    payhere.onDismissed = function () {
+      setIsProcessing(false);
+      setErrorMessage("Payment was not completed.");
+    };
+
+    payhere.onError = function (error: string) {
+      console.error("PayHere error:", error);
+      setIsProcessing(false);
+      setErrorMessage("Something went wrong with the payment. Please try again.");
+    };
+
+    payhere.startPayment(result.payhere);
   };
 
   if (loading) {
@@ -215,7 +282,9 @@ export default function BookingPage() {
 
   return (
     <div className="relative flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 overflow-hidden">
-      
+
+      <Script src="https://www.payhere.lk/lib/payhere-2.0.js" strategy="afterInteractive" />
+
       {/* Decorative Background Glows */}
       <div className="absolute top-[10%] left-[5%] w-[400px] h-[400px] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[10%] right-[5%] w-[400px] h-[400px] bg-blue-500/5 blur-[150px] rounded-full pointer-events-none"></div>
@@ -589,21 +658,46 @@ export default function BookingPage() {
           {/* Step 6: Checkout & Payment */}
           {step === 6 && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-2xl mx-auto w-full">
-              <button
-                onClick={() => setStep(5)}
-                className="self-start mb-8 text-xs font-bold text-zinc-500 hover:text-amber-600 dark:hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors"
-              >
-                <ArrowLeftOutlined /> Back to Products
-              </button>
+              {paymentPhase === 'form' && (
+                <button
+                  onClick={() => setStep(5)}
+                  className="self-start mb-8 text-xs font-bold text-zinc-500 hover:text-amber-600 dark:hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors"
+                >
+                  <ArrowLeftOutlined /> Back to Products
+                </button>
+              )}
 
+              {paymentPhase === 'confirming' && (
+                <div className="flex-1 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/60 p-10 md:p-14 shadow-lg dark:shadow-none text-center">
+                  <LoadingOutlined className="text-4xl text-amber-500 mb-6" />
+                  <h2 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mb-3">Confirming your payment...</h2>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">Please don't close this page — this only takes a few seconds.</p>
+                </div>
+              )}
+
+              {paymentPhase === 'timeout' && (
+                <div className="flex-1 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/60 p-10 md:p-14 shadow-lg dark:shadow-none text-center">
+                  <ClockCircleOutlined className="text-4xl text-amber-500 mb-6" />
+                  <h2 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mb-3">Still confirming your payment</h2>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">This is taking longer than usual. If the payment succeeded, it'll show up in My Bookings shortly.</p>
+                  <button
+                    onClick={() => router.push('/profile')}
+                    className="border border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 py-3 px-8 font-bold uppercase tracking-widest text-xs hover:bg-zinc-900 hover:text-white dark:hover:bg-zinc-100 dark:hover:text-zinc-950 transition-colors"
+                  >
+                    Go to My Bookings
+                  </button>
+                </div>
+              )}
+
+              {paymentPhase === 'form' && (
               <div className="flex flex-col lg:flex-row gap-8">
-                
-                {/* Payment Form (Mock HNB IPG Styled) */}
+
+                {/* Delivery details + Pay with PayHere */}
                 <div className="flex-1 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/60 p-8 md:p-10 shadow-lg dark:shadow-none">
                   <div className="flex items-center justify-between mb-8 pb-6 border-b border-zinc-200 dark:border-zinc-800">
                     <h2 className="text-xl md:text-2xl font-bold flex items-center gap-3 text-zinc-900 dark:text-white">
-                      <CreditCardOutlined className="text-amber-600 dark:text-amber-500" /> 
-                      Payment Details
+                      <EnvironmentOutlined className="text-amber-600 dark:text-amber-500" />
+                      Your Details
                     </h2>
                     <LockOutlined className="text-xl text-emerald-500" title="Secure Payment" />
                   </div>
@@ -616,67 +710,43 @@ export default function BookingPage() {
 
                   <form onSubmit={handlePaymentSubmit} className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">Card Number <span className="text-red-500">*</span></label>
-                      <input 
-                        type="text" 
+                      <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">Address <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
                         required
-                        placeholder="0000 0000 0000 0000" 
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 outline-none focus:border-amber-500 transition-colors font-mono"
+                        placeholder="123 Galle Road"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 outline-none focus:border-amber-500 transition-colors"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">Expiration <span className="text-red-500">*</span></label>
-                        <div className="flex gap-3">
-                          <input 
-                            type="text" 
-                            required
-                            placeholder="MM" 
-                            maxLength={2}
-                            value={expiryMonth}
-                            onChange={(e) => setExpiryMonth(e.target.value)}
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 outline-none focus:border-amber-500 transition-colors font-mono text-center"
-                          />
-                          <input 
-                            type="text" 
-                            required
-                            placeholder="YY" 
-                            maxLength={2}
-                            value={expiryYear}
-                            onChange={(e) => setExpiryYear(e.target.value)}
-                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 outline-none focus:border-amber-500 transition-colors font-mono text-center"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">CVN <span className="text-red-500">*</span></label>
-                        <input 
-                          type="password" 
-                          required
-                          placeholder="123" 
-                          maxLength={4}
-                          value={cvv}
-                          onChange={(e) => setCvv(e.target.value)}
-                          className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 outline-none focus:border-amber-500 transition-colors font-mono"
-                        />
-                        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 leading-tight">This code is a three or four digit number printed on the back or front of credit cards.</p>
-                      </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">City <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Colombo"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white px-4 py-3 outline-none focus:border-amber-500 transition-colors"
+                      />
                     </div>
+
+                    <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-tight">
+                      Clicking "Pay" opens PayHere's secure checkout — your card details are entered there, never on this page.
+                    </p>
 
                     <div className="pt-6 flex justify-between items-center border-t border-zinc-200 dark:border-zinc-800">
                       <button type="button" onClick={() => setStep(5)} disabled={isProcessing} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">
                         Cancel Order
                       </button>
-                      <button 
+                      <button
                         type="submit"
                         disabled={isProcessing}
                         className="inline-flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-sm py-4 px-10 bg-amber-600 text-white dark:text-zinc-950 hover:bg-amber-700 dark:hover:bg-amber-500 transition-all shadow-md hover:scale-105 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed disabled:active:scale-100 disabled:shadow-none"
                       >
-                        {isProcessing ? 'Processing...' : `Pay LKR ${totalAmount.toLocaleString()}`}
+                        {isProcessing ? 'Opening PayHere...' : `Pay LKR ${totalAmount.toLocaleString()}`}
                       </button>
                     </div>
                   </form>
@@ -686,7 +756,7 @@ export default function BookingPage() {
                 <div className="w-full lg:w-80 flex flex-col gap-6">
                   <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6">
                     <h3 className="font-bold text-lg mb-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">Your Order</h3>
-                    
+
                     <div className="flex flex-col gap-3 mb-4">
                       {selectedServices.map(s => (
                         <div key={s.id} className="flex justify-between items-center text-sm">
@@ -712,14 +782,16 @@ export default function BookingPage() {
                       <span className="font-bold text-amber-600 dark:text-amber-500">LKR {totalAmount.toLocaleString()}</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-center gap-2 p-4 border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50">
-                    <span className="text-xs font-bold text-zinc-400">SECURE PAYMENT BY</span>
-                    <span className="text-sm font-black text-[#0063A6]">HNB<span className="text-[#FDB913]">IPG</span></span>
+                    <LockOutlined className="text-emerald-500" />
+                    <span className="text-xs font-bold text-zinc-400">SECURED BY</span>
+                    <span className="text-sm font-black text-[#122b78]">Pay<span className="text-[#00a651]">Here</span></span>
                   </div>
                 </div>
 
               </div>
+              )}
             </div>
           )}
 

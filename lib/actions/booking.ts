@@ -1,9 +1,8 @@
 'use server';
 
-import { db } from '@/lib/db';
+import { db, withTransaction } from '@/lib/db';
 import { verifySession } from '@/lib/session';
-import { sendBookingConfirmation } from '@/lib/services/email.service';
-import { sendSms } from '@/lib/services/sms.service';
+import { generateCheckoutHash, formatAmount, getMerchantId, isSandbox } from '@/lib/services/payhere.service';
 
 interface BookingPayload {
   serviceIds: string[];
@@ -11,10 +10,15 @@ interface BookingPayload {
   barberId: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:MM AM/PM
-  paymentMethod: string;
   shopId?: string;
+  address: string;
+  city: string;
 }
 
+// Creates a booking as PENDING and returns PayHere checkout parameters — nothing is confirmed,
+// no stock is touched, and no notifications go out until the PayHere notify webhook verifies the
+// payment actually succeeded. The client's report of payment completion is never trusted for
+// anything that grants value; only the signed server-to-server webhook can confirm a booking.
 export async function createBooking(payload: BookingPayload) {
   try {
     const session = await verifySession();
@@ -23,10 +27,14 @@ export async function createBooking(payload: BookingPayload) {
       return { success: false, message: 'You must be logged in to book an appointment.' };
     }
 
-    const { serviceIds, productIds, barberId, date, time, paymentMethod, shopId } = payload;
+    const { serviceIds, productIds, barberId, date, time, shopId, address, city } = payload;
 
     if (!serviceIds || serviceIds.length === 0) {
       return { success: false, message: 'No services selected.' };
+    }
+
+    if (!address?.trim() || !city?.trim()) {
+      return { success: false, message: 'Address and city are required to proceed to payment.' };
     }
 
     // Fetch the services to get the correct prices
@@ -48,7 +56,8 @@ export async function createBooking(payload: BookingPayload) {
       return { success: false, message: 'One or more products not found.' };
     }
 
-    // Fast, friendly rejection before touching the transaction
+    // Fast, friendly rejection before touching the transaction — the real, race-safe stock
+    // decrement happens later, only once PayHere actually confirms payment.
     const outOfStock = products.find(p => p.stock < 1);
     if (outOfStock) {
       return { success: false, message: `${outOfStock.name} is out of stock.` };
@@ -57,17 +66,15 @@ export async function createBooking(payload: BookingPayload) {
     // Parse the date and time to a real DateTime object
     const dateObj = new Date(date + ' ' + time);
 
-    // Create the booking and payment using Prisma transaction
-    const bookingResult = await db.$transaction(async (tx) => {
+    const serviceAmount = services.reduce((sum, s) => sum + s.price, 0);
+    const productAmount = products.reduce((sum, p) => sum + p.price, 0);
+    const totalAmount = serviceAmount + productAmount;
 
-      const serviceAmount = services.reduce((sum, s) => sum + s.price, 0);
-      const productAmount = products.reduce((sum, p) => sum + p.price, 0);
-      const totalAmount = serviceAmount + productAmount;
-
-      const newBooking = await tx.booking.create({
+    const newBooking = await withTransaction(async (tx) => {
+      const booking = await tx.booking.create({
         data: {
           date: dateObj,
-          status: 'CONFIRMED',
+          status: 'PENDING',
           source: 'WEBSITE',
           totalAmount: totalAmount,
           serviceAmount: serviceAmount,
@@ -87,118 +94,52 @@ export async function createBooking(payload: BookingPayload) {
         }
       });
 
-      // Decrement stock now — the product is sold and paid for at booking time, regardless of
-      // when the appointment itself later happens. Atomic conditional update so a race against
-      // the last unit is rejected instead of overselling (no need to bump isolation level for this).
-      for (const p of products) {
-        const stockResult = await tx.product.updateMany({
-          where: { id: p.id, stock: { gte: 1 } },
-          data: { stock: { decrement: 1 } }
-        });
-        if (stockResult.count === 0) {
-          throw new Error(`STOCK_UNAVAILABLE: ${p.name} just went out of stock. Please remove it and try again.`);
-        }
-      }
-
-      // Products bought alongside a booking are also tracked as an Order for pickup-management
-      // purposes — separate from the booking/payment/commission concerns above.
-      if (products.length > 0) {
-        await tx.order.create({
-          data: {
-            source: 'WEBSITE',
-            totalAmount: productAmount,
-            customerId: session.id,
-            bookingId: newBooking.id,
-            items: {
-              create: products.map(p => ({
-                productId: p.id,
-                name: p.name,
-                price: p.price,
-                quantity: 1,
-              }))
-            }
-          }
-        });
-      }
-
       await tx.payment.create({
         data: {
           amount: totalAmount,
-          status: 'COMPLETED',
-          method: paymentMethod || 'CARD',
-          bookingId: newBooking.id,
+          status: 'PENDING',
+          method: 'PAYHERE',
+          bookingId: booking.id,
           customerId: session.id,
         }
       });
 
-      // Find staff members to notify
-      const staffToNotify = await tx.user.findMany({
-        where: {
-          OR: [
-            { role: { in: ['OWNER', 'MANAGER'] } },
-            { id: barberId }
-          ]
-        },
-        select: { id: true, phone: true }
-      });
-
-      const serviceNames = services.map(s => s.name).join(', ');
-
-      // Create notifications for all these staff members
-      const notifications = staffToNotify.map(staff => ({
-        userId: staff.id,
-        title: 'New Booking Confirmed',
-        desc: `A new booking for ${serviceNames} has been made by ${session.name || 'a customer'} on ${date} at ${time}.`,
-        read: false,
-      }));
-
-      if (notifications.length > 0) {
-        await tx.notification.createMany({
-          data: notifications
-        });
-      }
-
-      return { newBooking, staffToNotify };
+      return booking;
     });
 
-    const { newBooking: createdBooking, staffToNotify } = bookingResult;
-    const barber = await db.user.findUnique({ where: { id: barberId }, select: { name: true } });
+    // Build the PayHere checkout payload — the hash is computed here, server-side, only. The
+    // merchant secret never reaches the client; only this final hash does.
+    const nameParts = (session.name || 'Customer').trim().split(/\s+/);
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0];
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const itemsDescription = [...services.map(s => s.name), ...products.map(p => p.name)].join(', ');
 
-    // Send booking confirmation email (fire-and-forget — don't block the response)
-    if (session.email) {
-      const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      sendBookingConfirmation({
-        customerName: session.name || 'Valued Customer',
-        customerEmail: session.email,
-        bookingId: createdBooking.id,
-        date: formattedDate,
-        time,
-        services: services.map(s => s.name).join(', '),
-        products: products.length > 0 ? products.map(p => p.name).join(', ') : undefined,
-        barberName: barber?.name || 'Our Artisan',
-        totalAmount: createdBooking.totalAmount,
-      }).catch(err => console.error('[Email] Booking confirmation failed silently:', err));
-    }
-
-    // SMS confirmation to the customer (fire-and-forget — don't block the response)
-    if (session.phone) {
-      sendSms(session.phone, `Your booking on ${date} at ${time} is confirmed. See you soon!`)
-        .catch(err => console.error('[SMS] Booking confirmation failed silently:', err));
-    }
-
-    // Alert owners/managers and the assigned barber by SMS — the in-app notification bell
-    // above only reaches someone with the dashboard open.
-    for (const staffMember of staffToNotify) {
-      if (staffMember.phone) {
-        sendSms(staffMember.phone, `New booking: ${session.name || 'a customer'} on ${date} at ${time}.`)
-          .catch(err => console.error('[SMS] Staff booking alert failed silently:', err));
-      }
-    }
+    const payhere = {
+      sandbox: isSandbox(),
+      merchant_id: getMerchantId(),
+      return_url: `${appUrl}/booking?step=7&bookingId=${newBooking.id}`,
+      cancel_url: `${appUrl}/booking?step=6&cancelled=1`,
+      notify_url: `${appUrl}/api/v1/payments/payhere/notify`,
+      order_id: newBooking.id,
+      items: itemsDescription.slice(0, 250),
+      amount: formatAmount(totalAmount),
+      currency: 'LKR',
+      hash: generateCheckoutHash(newBooking.id, totalAmount, 'LKR'),
+      first_name: firstName,
+      last_name: lastName,
+      email: session.email || '',
+      phone: session.phone || '',
+      address,
+      city,
+      country: 'Sri Lanka',
+    };
 
     return {
       success: true,
-      bookingId: createdBooking.id,
-      message: 'Booking completed successfully.'
+      bookingId: newBooking.id,
+      payhere,
+      message: 'Booking created — complete payment to confirm.'
     };
 
   } catch (error: any) {
@@ -208,6 +149,26 @@ export async function createBooking(payload: BookingPayload) {
     }
     return { success: false, message: 'Server error processing your booking. Please try again.' };
   }
+}
+
+// Polled by the booking wizard after the PayHere popup closes, waiting for the notify webhook to
+// land server-side. Session-scoped so a customer can only ever poll their own booking.
+export async function getBookingPaymentStatus(bookingId: string) {
+  const session = await verifySession();
+  if (!session || !session.id) return { success: false, message: 'Unauthorized' };
+
+  const booking = await db.booking.findFirst({
+    where: { id: bookingId, customerId: session.id },
+    include: { payment: true }
+  });
+
+  if (!booking) return { success: false, message: 'Booking not found' };
+
+  return {
+    success: true,
+    bookingStatus: booking.status,
+    paymentStatus: booking.payment?.status || 'PENDING',
+  };
 }
 
 export async function getBookedSlots(barberId: string, dateStr: string) {
@@ -221,11 +182,17 @@ export async function getBookedSlots(barberId: string, dateStr: string) {
     const bookings = await db.booking.findMany({
       where: {
         barberId: barberId,
-        status: { not: 'CANCELLED' },
         date: {
           gte: startOfDay,
           lte: endOfDay
-        }
+        },
+        // A confirmed/completed booking always blocks the slot. A PENDING booking (payment not
+        // yet confirmed by PayHere) only blocks it briefly — otherwise an abandoned checkout
+        // would squat on the slot forever with no cron job to release it.
+        OR: [
+          { status: { in: ['CONFIRMED', 'COMPLETED'] } },
+          { status: 'PENDING', createdAt: { gte: new Date(Date.now() - 25 * 60 * 1000) } }
+        ]
       },
       select: {
         date: true
@@ -316,20 +283,24 @@ export async function cancelBooking(bookingId: string) {
     const session = await verifySession();
     if (!session || !session.id) return { success: false, message: 'Unauthorized' };
 
-    await db.$transaction(async (tx) => {
+    await withTransaction(async (tx) => {
       await tx.booking.update({
         where: { id: bookingId },
         data: { status: 'CANCELLED' }
       });
-      
+
       const payment = await tx.payment.findUnique({
         where: { bookingId }
       });
-      
+
       if (payment) {
+        // A COMPLETED payment was actually captured by PayHere — cancelling flags it as
+        // REFUNDED here (no real gateway refund is triggered by this, it's a status label only).
+        // A PENDING payment was never captured at all, so cancelling it is a FAILED/abandoned
+        // attempt, not a refund — claiming REFUNDED here would be factually wrong.
         await tx.payment.update({
           where: { id: payment.id },
-          data: { status: 'REFUNDED' }
+          data: { status: payment.status === 'COMPLETED' ? 'REFUNDED' : 'FAILED' }
         });
       }
     });

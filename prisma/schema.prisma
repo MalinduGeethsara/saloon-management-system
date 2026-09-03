@@ -184,6 +184,7 @@ model Payment {
   barberName  String?  // legacy free-text label — prefer barberId below when present
   barberId    String?  // real FK to the attributed barber, used for commission tracking
   items       Json?
+  gatewayPaymentId String? // PayHere's own payment_id from the notify payload, for reconciliation
 
   // Relations
   booking     Booking?    @relation(fields: [bookingId], references: [id])
