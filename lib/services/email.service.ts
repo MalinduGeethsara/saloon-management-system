@@ -2,7 +2,10 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM = 'MR POLAA <onboarding@resend.dev>';
+// Defaults to Resend's shared sandbox sender, which can only deliver to your own Resend account
+// email until a real domain is verified. Once mr-polaa.com is verified in Resend, set
+// RESEND_FROM_EMAIL="MR POLAA <bookings@mr-polaa.com>" in .env — no code change needed.
+const FROM = process.env.RESEND_FROM_EMAIL || 'MR POLAA <onboarding@resend.dev>';
 const BRAND_COLOR = '#d97706'; // amber-600
 
 function isConfigured() {
