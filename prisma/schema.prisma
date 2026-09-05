@@ -1,0 +1,372 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  phone     String?  @unique
+  password  String
+  name      String
+  imageUrl  String?
+  googleId  String?  @unique
+  role      String   @default("CUSTOMER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Payroll & Commission Fields
+  salaryType     String   @default("Commission") // Fixed, Commission, Hybrid
+  baseSalary     Float    @default(0)
+  commissionRate Float    @default(0) // Percentage (e.g., 50 for 50%)
+  allowances     Float    @default(0) // Fixed monthly allowances (LKR)
+
+  // Foreign Keys
+  shopId    String?
+
+  // Relations
+  shop               Shop?           @relation("ShopStaff", fields: [shopId], references: [id])
+  bookingsAsCustomer Booking[]       @relation("CustomerBookings")
+  bookingsAsBarber   Booking[]       @relation("BarberBookings")
+  attendance         Attendance[]
+  payroll            Payroll[]
+  payments           Payment[]        @relation("PaymentCustomer")
+  paymentsAsBarber   Payment[]        @relation("PaymentBarber")
+  commissions        Commission[]     @relation("BarberCommissions")
+  orders             Order[]          @relation("CustomerOrders")
+  permissions        StaffPermission[]
+  notifications      Notification[]
+  employeeDevices    EmployeeDevice[]
+}
+
+model Shop {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  phone     String?
+  imageUrl  String?
+  status           String   @default("Open") // Open, Closed, Renovating
+  operatingHours   Json?    // e.g. { "Monday": { "open": "09:00", "close": "18:00", "isClosed": false }, ... }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  bookings  Booking[]
+  staff     User[]    @relation("ShopStaff")
+  services  Service[]
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  duration    Int      // Duration in minutes
+  imageUrl    String?
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Keys
+  shopId      String?
+
+  // Relations
+  shop        Shop?    @relation(fields: [shopId], references: [id])
+  bookings    BookingService[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  brand       String?
+  category    String?
+  sku         String?  @unique
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  imageUrl    String?
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  bookings    BookingProduct[]
+  orderItems  OrderItem[]
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum BookingSource {
+  WEBSITE // customer booked it themselves through the public site
+  ADMIN   // staff created it manually (walk-in / phone booking)
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  date          DateTime
+  status        BookingStatus @default(PENDING)
+  source        BookingSource @default(ADMIN)
+  totalAmount   Float         // services + products at creation time
+  serviceAmount Float?        // services-only subtotal snapshot — commission is computed from this, not totalAmount, so product sales never inflate a barber's commission. Null on pre-existing rows, which are 100% services anyway (fall back to totalAmount).
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Foreign Keys
+  customerId  String
+  barberId    String?
+  shopId      String?
+
+  // Relations
+  customer    User             @relation("CustomerBookings", fields: [customerId], references: [id])
+  barber      User?            @relation("BarberBookings", fields: [barberId], references: [id])
+  services    BookingService[]
+  products    BookingProduct[]
+  shop        Shop?            @relation(fields: [shopId], references: [id])
+  payment     Payment?
+  commission  Commission?
+  order       Order?
+
+  @@index([date, status])
+  @@index([shopId])
+  @@index([createdAt])
+}
+
+model BookingService {
+  id        String  @id @default(uuid())
+  bookingId String
+  serviceId String
+
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+model BookingProduct {
+  id        String  @id @default(uuid())
+  bookingId String
+  productId String
+  quantity  Int     @default(1)
+
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  amount      Float
+  status      PaymentStatus @default(PENDING)
+  method      String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // nullable — walk-in payments have no booking or registered customer
+  bookingId   String?  @unique
+  customerId  String?
+  clientName  String?
+  clientPhone String?
+  barberName  String?  // legacy free-text label — prefer barberId below when present
+  barberId    String?  // real FK to the attributed barber, used for commission tracking
+  items       Json?
+  gatewayPaymentId String? // PayHere's own payment_id from the notify payload, for reconciliation
+
+  // Relations
+  booking     Booking?    @relation(fields: [bookingId], references: [id])
+  customer    User?       @relation("PaymentCustomer", fields: [customerId], references: [id])
+  barber      User?       @relation("PaymentBarber", fields: [barberId], references: [id])
+  commission  Commission?
+  order       Order?
+
+  @@index([createdAt, status])
+}
+
+model Attendance {
+  id          String   @id @default(uuid())
+  date        DateTime
+  checkIn     DateTime
+  checkOut    DateTime?
+  method      String   @default("MANUAL")  // MANUAL | FINGERPRINT
+  deviceId    String?
+  recordedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Keys
+  userId      String
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model EmployeeDevice {
+  id            String   @id @default(uuid())
+  fingerprintId String   @db.VarChar(100)
+  deviceId      String   @db.VarChar(100)
+  deviceName    String?
+  status        String   @default("ACTIVE")  // ACTIVE | REVOKED
+  registeredAt  DateTime @default(now())
+
+  // Foreign Keys
+  userId        String
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@unique([fingerprintId, deviceId])
+}
+
+model Payroll {
+  id          String   @id @default(uuid())
+  month       Int
+  year        Int
+  baseSalary  Float
+  bonus       Float?   @default(0)
+  totalAmount Float
+  status      String   @default("PENDING") // PENDING, PAID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Keys
+  userId      String
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id])
+  commissions Commission[]
+
+  @@index([month, year, status])
+  @@index([createdAt])
+}
+
+model StaffPermission {
+  id        String   @id @default(uuid())
+  userId    String
+  pageKey   String   @db.VarChar(50)
+  canView   Boolean  @default(false)
+  canAdd    Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pageKey])
+}
+
+model Commission {
+  id            String   @id @default(uuid())
+  amount        Float                // billedAmount * rateApplied / 100
+  rateApplied   Float                // snapshot of User.commissionRate at the time — survives later rate edits
+  billedAmount  Float                // snapshot of the booking's totalAmount OR the manual bill's amount
+  month         Int                  // derived from Booking.date (online) or Payment.createdAt (manual)
+  year          Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Foreign Keys — exactly one of bookingId/paymentId is set, enforced in application code
+  bookingId     String?  @unique
+  paymentId     String?  @unique
+  barberId      String
+  payrollId     String?
+
+  // Relations
+  booking       Booking? @relation(fields: [bookingId], references: [id])
+  payment       Payment? @relation(fields: [paymentId], references: [id])
+  barber        User     @relation("BarberCommissions", fields: [barberId], references: [id])
+  payroll       Payroll? @relation(fields: [payrollId], references: [id])
+
+  @@index([barberId, month, year])
+  @@index([payrollId])
+}
+
+enum OrderStatus {
+  PENDING_PICKUP
+  COLLECTED
+}
+
+model Order {
+  id            String       @id @default(uuid())
+  status        OrderStatus  @default(PENDING_PICKUP)
+  totalAmount   Float                       // products only — this is a product-purchase record, not the whole sale
+  source        BookingSource @default(WEBSITE)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  collectedAt   DateTime?
+
+  // nullable — walk-in orders (from a manual bill) have no registered customer account
+  customerId    String?
+  clientName    String?
+  clientPhone   String?
+
+  // exactly one of bookingId/paymentId is set, enforced in application code (same convention as Commission)
+  bookingId     String?      @unique
+  paymentId     String?      @unique
+
+  // Relations
+  customer      User?        @relation("CustomerOrders", fields: [customerId], references: [id])
+  booking       Booking?     @relation(fields: [bookingId], references: [id])
+  payment       Payment?     @relation(fields: [paymentId], references: [id])
+  items         OrderItem[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String?
+  name      String                         // snapshot — survives product deletion/rename
+  price     Float                          // snapshot unit price at time of sale
+  quantity  Int      @default(1)
+
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product? @relation(fields: [productId], references: [id])
+}
+
+enum OtpPurpose {
+  REGISTER
+  LOGIN
+  PASSWORD_RESET
+  ADD_PHONE
+}
+
+model OtpCode {
+  id         String     @id @default(uuid())
+  identifier String     @db.VarChar(191) // normalized email or phone
+  purpose    OtpPurpose
+  codeHash   String     @db.VarChar(191) // HMAC-SHA256(code, SESSION_SECRET) — raw code is never stored
+  attempts   Int        @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([identifier, purpose])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  desc      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+

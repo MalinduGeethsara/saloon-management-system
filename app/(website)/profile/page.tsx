@@ -1,13 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  HomeOutlined, 
-  CalendarOutlined, 
+import {
+  HomeOutlined,
+  CalendarOutlined,
   LogoutOutlined,
-  EyeOutlined
+  EyeOutlined,
+  ShoppingOutlined
 } from '@ant-design/icons';
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import { getCustomerBookings, cancelBooking } from "@/lib/actions/booking";
+import { getMyOrders } from "@/lib/actions/orders";
 
 interface Appointment {
   id: string;
@@ -20,58 +23,64 @@ interface Appointment {
   paymentStatus: string;
   barberName?: string;
   barberRole?: string;
+  serviceName?: string;
+  productNames?: string;
+}
+
+interface OrderItemView {
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface CustomerOrder {
+  id: string;
+  code: string;
+  items: OrderItemView[];
+  totalAmount: number;
+  amount: string;
+  status: 'PENDING_PICKUP' | 'COLLECTED';
+  statusLabel: string;
+  date: string;
 }
 
 export default function ProfileDashboard() {
   const [activeTab, setActiveTab] = useState("appointments");
+  const [appointmentFilter, setAppointmentFilter] = useState<"upcoming" | "past">("upcoming");
   const [mounted, setMounted] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<CustomerOrder | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [user, setUser] = useState({
-    name: "malindu",
-    phone: "713307710",
-    initials: "M"
+    name: "",
+    phone: "",
+    initials: ""
   });
 
   useEffect(() => {
     // Check if user role is present, otherwise redirect immediately to login
     const roleCookie = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    const userRole = roleCookie ? roleCookie[2] : null;
+    const userRole = roleCookie ? roleCookie[2].toLowerCase() : null;
     
     if (!userRole) {
       window.location.href = '/login?callbackUrl=/profile';
       return;
     }
 
-    setMounted(true);
+    const loadData = async () => {
+      const [bookingsData, ordersData] = await Promise.all([
+        getCustomerBookings(),
+        getMyOrders()
+      ]);
+      setAppointments(bookingsData);
+      setOrders(ordersData);
+      setMounted(true);
+    };
 
-    // Load or initialize appointments from localStorage
-    const existing = localStorage.getItem("appointments");
-    if (existing) {
-      try {
-        setAppointments(JSON.parse(existing));
-      } catch (err) {
-        console.error("Failed to parse appointments:", err);
-      }
-    } else {
-      const initial = [
-        {
-          id: "1",
-          code: "SLAD70507",
-          date: "2026-09-24",
-          time: "4:00 PM",
-          status: "Pending",
-          amount: "LKR 4,000.00",
-          paymentMethod: "Card",
-          paymentStatus: "Paid",
-          barberName: "Mahesh Madushanka",
-          barberRole: "Senior Barber"
-        }
-      ];
-      localStorage.setItem("appointments", JSON.stringify(initial));
-      setAppointments(initial);
-    }
+    loadData();
 
     // Load logged in user's role/name if available
     if (roleCookie) {
@@ -99,16 +108,16 @@ export default function ProfileDashboard() {
     }
   }, []);
 
-  const handleCancelAppointment = (id: string) => {
+  const handleCancelAppointment = async (id: string) => {
     if (window.confirm("Are you sure you want to cancel this appointment?")) {
-      const updated = appointments.map(app => {
-        if (app.id === id) {
-          return { ...app, status: "Cancelled", paymentStatus: "Refunded" };
-        }
-        return app;
-      });
-      localStorage.setItem("appointments", JSON.stringify(updated));
-      setAppointments(updated);
+      const result = await cancelBooking(id);
+      if (result.success) {
+        setAppointments(appointments.map(app => 
+          app.id === id ? { ...app, status: "Cancelled", paymentStatus: "Refunded" } : app
+        ));
+      } else {
+        alert(result.message || "Failed to cancel booking.");
+      }
       setIsModalOpen(false);
     }
   };
@@ -143,7 +152,10 @@ export default function ProfileDashboard() {
     );
   }
 
-  const upcomingCount = appointments.filter(app => app.status === "Pending" || app.status === "Confirmed").length;
+  const upcomingAppointments = appointments.filter(app => app.status === "Pending" || app.status === "Confirmed");
+  const pastAppointments = appointments.filter(app => app.status === "Completed" || app.status === "Cancelled");
+  
+  const displayedAppointments = appointmentFilter === "upcoming" ? upcomingAppointments : pastAppointments;
 
   return (
     <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24 pb-32">
@@ -160,7 +172,7 @@ export default function ProfileDashboard() {
               </div>
               <div className="flex flex-col items-start lg:items-center">
                 <h2 className="text-lg lg:text-xl font-bold text-zinc-900 dark:text-white tracking-wide capitalize">{user.name}</h2>
-                <p className="text-zinc-500 dark:text-zinc-400 font-mono text-xs lg:text-sm mt-1">{user.phone}</p>
+                <p className="text-zinc-500 dark:text-zinc-400 font-mono text-xs lg:text-sm mt-1">{user.phone || "No phone added"}</p>
               </div>
             </div>
 
@@ -186,8 +198,19 @@ export default function ProfileDashboard() {
               >
                 <CalendarOutlined className="text-base lg:text-lg" /> <span>Appointments ({appointments.length})</span>
               </button>
-              
-              <button 
+
+              <button
+                onClick={() => setActiveTab("orders")}
+                className={`flex-1 flex items-center justify-center lg:justify-start gap-2 lg:gap-3 px-3 py-4 lg:px-6 lg:py-5 font-bold text-xs lg:text-sm transition-all border-b-2 lg:border-b-0 lg:border-l-4 cursor-pointer ${
+                  activeTab === "orders"
+                    ? "bg-zinc-50 dark:bg-zinc-900 border-amber-600 dark:border-amber-500 text-amber-600 dark:text-amber-500"
+                    : "border-transparent text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900"
+                }`}
+              >
+                <ShoppingOutlined className="text-base lg:text-lg" /> <span>Orders ({orders.length})</span>
+              </button>
+
+              <button
                 onClick={handleLogout}
                 className="flex-1 flex items-center justify-center lg:justify-start gap-2 lg:gap-3 px-3 py-4 lg:px-6 lg:py-5 font-bold text-xs lg:text-sm text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900 transition-all border-b-2 lg:border-b-0 border-transparent lg:border-t lg:border-zinc-200 lg:dark:border-zinc-800 lg:border-l-4 lg:border-l-transparent cursor-pointer"
               >
@@ -206,12 +229,34 @@ export default function ProfileDashboard() {
                     <CalendarOutlined className="text-amber-600 dark:text-amber-500" />
                     Appointments History
                   </h2>
+                  <div className="flex bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1">
+                    <button 
+                      onClick={() => setAppointmentFilter("upcoming")}
+                      className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
+                        appointmentFilter === "upcoming" 
+                          ? "bg-white dark:bg-zinc-700 text-amber-600 dark:text-amber-500 shadow-sm" 
+                          : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                      }`}
+                    >
+                      Upcoming ({upcomingAppointments.length})
+                    </button>
+                    <button 
+                      onClick={() => setAppointmentFilter("past")}
+                      className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
+                        appointmentFilter === "past" 
+                          ? "bg-white dark:bg-zinc-700 text-amber-600 dark:text-amber-500 shadow-sm" 
+                          : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                      }`}
+                    >
+                      Past ({pastAppointments.length})
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="p-0 overflow-x-auto">
-                  {appointments.length === 0 ? (
-                    <div className="p-12 text-center text-zinc-500 dark:text-zinc-400">
-                      No appointments found.
+                  {displayedAppointments.length === 0 ? (
+                    <div className="p-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">
+                      No {appointmentFilter} appointments found.
                     </div>
                   ) : (
                     <table className="w-full text-left border-collapse min-w-[800px]">
@@ -220,7 +265,8 @@ export default function ProfileDashboard() {
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">#</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Code</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Date/Time</th>
-                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Status</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Service</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Artisan</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Amount</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Payment Method</th>
                           <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Payment Status</th>
@@ -228,23 +274,21 @@ export default function ProfileDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {appointments.map((app, index) => (
+                        {displayedAppointments.map((app, index) => (
                           <tr key={app.id || index} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
-                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400">{index + 1}</td>
-                            <td className="py-5 px-6 text-sm font-bold text-zinc-900 dark:text-white">{app.code}</td>
-                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400">{app.date} / {app.time}</td>
-                            <td className="py-5 px-6">
-                              <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
-                                app.status === "Pending" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500" :
-                                app.status === "Cancelled" ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500" :
-                                "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500"
-                              }`}>
-                                {app.status}
-                              </span>
+                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{index + 1}</td>
+                            <td className="py-5 px-6 text-sm font-bold text-zinc-900 dark:text-white align-top">{app.code}</td>
+                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{app.date} / {app.time}</td>
+                            <td className="py-5 px-6 text-sm font-medium text-zinc-800 dark:text-zinc-200 align-top">
+                              {app.serviceName}
+                              {app.productNames && (
+                                <div className="text-xs font-normal text-zinc-400 mt-0.5 max-w-[200px] truncate" title={app.productNames}>+ {app.productNames}</div>
+                              )}
                             </td>
-                            <td className="py-5 px-6 text-sm font-medium text-zinc-600 dark:text-zinc-400">{app.amount}</td>
-                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400">{app.paymentMethod}</td>
-                            <td className="py-5 px-6">
+                            <td className="py-5 px-6 text-sm font-bold text-amber-600 dark:text-amber-500 align-top">{app.barberName}</td>
+                            <td className="py-5 px-6 text-sm font-medium text-zinc-600 dark:text-zinc-400 align-top">{app.amount}</td>
+                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{app.paymentMethod}</td>
+                            <td className="py-5 px-6 align-top">
                               <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
                                 app.paymentStatus === "Paid" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500" :
                                 app.paymentStatus === "Refunded" ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500" :
@@ -253,13 +297,78 @@ export default function ProfileDashboard() {
                                 {app.paymentStatus}
                               </span>
                             </td>
-                            <td className="py-5 px-6 flex justify-center">
-                              <button 
+                            <td className="py-5 px-6 align-top">
+                              <button
                                 onClick={() => {
                                   setSelectedAppointment(app);
                                   setIsModalOpen(true);
                                 }}
-                                className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-500 hover:text-amber-600 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all cursor-pointer"
+                                className="w-8 h-8 mx-auto rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-500 hover:text-amber-600 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all cursor-pointer"
+                              >
+                                <EyeOutlined />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "orders" && (
+              <div className="animate-in fade-in duration-500">
+                <div className="p-6 md:p-8 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50">
+                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
+                    <ShoppingOutlined className="text-amber-600 dark:text-amber-500" />
+                    My Orders
+                  </h2>
+                </div>
+
+                <div className="p-0 overflow-x-auto">
+                  {orders.length === 0 ? (
+                    <div className="p-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">
+                      No product orders yet.
+                    </div>
+                  ) : (
+                    <table className="w-full text-left border-collapse min-w-[700px]">
+                      <thead>
+                        <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">#</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Code</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Date</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Items</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Total</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Status</th>
+                          <th className="py-5 px-6 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.map((order, index) => (
+                          <tr key={order.id || index} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
+                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{index + 1}</td>
+                            <td className="py-5 px-6 text-sm font-bold text-zinc-900 dark:text-white align-top">{order.code}</td>
+                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{order.date}</td>
+                            <td className="py-5 px-6 text-sm font-medium text-zinc-800 dark:text-zinc-200 align-top max-w-[240px] truncate" title={order.items.map(i => i.name).join(', ')}>
+                              {order.items.map(i => i.name).join(', ')}
+                            </td>
+                            <td className="py-5 px-6 text-sm font-medium text-zinc-600 dark:text-zinc-400 align-top">{order.amount}</td>
+                            <td className="py-5 px-6 align-top">
+                              <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
+                                order.status === "COLLECTED" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500" :
+                                "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500"
+                              }`}>
+                                {order.statusLabel}
+                              </span>
+                            </td>
+                            <td className="py-5 px-6 align-top">
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setIsOrderModalOpen(true);
+                                }}
+                                className="w-8 h-8 mx-auto rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-500 hover:text-amber-600 hover:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all cursor-pointer"
                               >
                                 <EyeOutlined />
                               </button>
@@ -279,7 +388,7 @@ export default function ProfileDashboard() {
                   <CalendarOutlined className="text-3xl" />
                 </div>
                 <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2 tracking-wide">Welcome back, <span className="capitalize font-bold text-amber-600 dark:text-amber-500">{user.name}</span></h3>
-                <p className="text-lg">You have <span className="font-bold text-amber-600 dark:text-amber-500">{upcomingCount}</span> upcoming {upcomingCount === 1 ? "appointment" : "appointments"}.</p>
+                <p className="text-lg">You have <span className="font-bold text-amber-600 dark:text-amber-500">{upcomingAppointments.length}</span> upcoming {upcomingAppointments.length === 1 ? "appointment" : "appointments"}.</p>
               </div>
             )}
 
@@ -317,6 +426,20 @@ export default function ProfileDashboard() {
                     <p className="font-bold text-zinc-900 dark:text-white">{selectedAppointment.barberName}</p>
                     <p className="text-xs text-amber-600 dark:text-amber-500 tracking-wide uppercase font-semibold">{selectedAppointment.barberRole}</p>
                   </div>
+                </div>
+              )}
+
+              {selectedAppointment.serviceName && (
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500 text-sm">Service</span>
+                  <span className="font-bold text-zinc-900 dark:text-white text-right max-w-[200px] truncate" title={selectedAppointment.serviceName}>{selectedAppointment.serviceName}</span>
+                </div>
+              )}
+
+              {selectedAppointment.productNames && (
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500 text-sm">Products</span>
+                  <span className="font-bold text-zinc-900 dark:text-white text-right max-w-[200px] truncate" title={selectedAppointment.productNames}>{selectedAppointment.productNames}</span>
                 </div>
               )}
 
@@ -370,6 +493,69 @@ export default function ProfileDashboard() {
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="flex-1 py-3 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-bold uppercase tracking-widest transition-all text-center cursor-pointer font-semibold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order Detail Modal Overlay */}
+      {isOrderModalOpen && selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 shadow-2xl animate-in zoom-in-95 duration-300 text-zinc-900 dark:text-white">
+            <h3 className="text-xl font-bold mb-6 pb-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center tracking-wide">
+              <span>Order Details</span>
+              <button
+                onClick={() => setIsOrderModalOpen(false)}
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-sm font-bold cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </h3>
+
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-500 text-sm">Order Code</span>
+                <span className="font-mono font-bold text-zinc-900 dark:text-white">{selectedOrder.code}</span>
+              </div>
+
+              <div className="py-3 border-y border-zinc-100 dark:border-zinc-800/50 space-y-3">
+                <span className="text-zinc-500 text-sm font-medium block">Items</span>
+                {selectedOrder.items.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-700 dark:text-zinc-300">{item.name} <span className="text-zinc-400">× {item.quantity}</span></span>
+                    <span className="font-bold text-zinc-900 dark:text-white">Rs. {item.price.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-500 text-sm">Date</span>
+                <span className="font-bold text-zinc-900 dark:text-white">{selectedOrder.date}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-500 text-sm">Status</span>
+                <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
+                  selectedOrder.status === "COLLECTED" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500" :
+                  "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500"
+                }`}>
+                  {selectedOrder.statusLabel}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-500 text-sm">Total</span>
+                <span className="font-bold text-zinc-900 dark:text-white">{selectedOrder.amount}</span>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+              <button
+                onClick={() => setIsOrderModalOpen(false)}
+                className="w-full py-3 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-bold uppercase tracking-widest transition-all text-center cursor-pointer font-semibold"
               >
                 Close
               </button>

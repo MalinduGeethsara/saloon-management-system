@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Card, Typography, Row, Col, Statistic, Tag, Button, Select, Modal, Progress 
+import dayjs from 'dayjs';
+import {
+  Card, Typography, Row, Col, Statistic, Tag, Button, Select, Modal, Progress, Table, Empty
 } from 'antd';
-import { 
-  DollarOutlined, RightOutlined, SyncOutlined 
+import {
+  DollarOutlined, RightOutlined, SyncOutlined, SettingOutlined, EyeOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { PayrollConfigModal } from "@/components/modals/PayrollConfigModal";
+import { getMonthlyPayroll, processPayroll, markPayrollPaid } from '@/lib/actions/payroll';
 
 const { Title, Text } = Typography;
 
@@ -19,30 +22,6 @@ const EPF_EMPLOYER_RATE = 0.12;
 const ETF_EMPLOYER_RATE = 0.03; 
 const LEAVE_ALLOWANCE = 4;
 const NO_PAY_RATE = 1000; 
-
-// --- Mock Data ---
-const PAYROLL_DATA = [
-  { 
-    key: '1', id: 'EMP-001', name: 'Mahesh Madushanka', role: 'Senior Barber', 
-    basicSalary: 75000, allowances: 5000, commissions: 15000, 
-    leavesTaken: 2, status: 'Paid', method: 'Bank Transfer' 
-  },
-  { 
-    key: '2', id: 'EMP-002', name: 'Malith Sandaruwan', role: 'Senior Barber', 
-    basicSalary: 55000, allowances: 2000, commissions: 8000, 
-    leavesTaken: 5, status: 'Pending', method: 'Cash' 
-  },
-  { 
-    key: '3', id: 'EMP-003', name: 'Vindana Lakmal', role: 'Senior Barber', 
-    basicSalary: 65000, allowances: 3000, commissions: 12000, 
-    leavesTaken: 1, status: 'Paid', method: 'Bank Transfer' 
-  },
-  { 
-    key: '4', id: 'EMP-004', name: 'Nimesh Haththasingha', role: 'Master Stylist', 
-    basicSalary: 40000, allowances: 1000, commissions: 4000, 
-    leavesTaken: 6, status: 'Pending', method: 'Cash' 
-  },
-];
 
 // --- Payroll Calculation Engine ---
 const calculatePayroll = (record: any) => {
@@ -69,17 +48,63 @@ const calculatePayroll = (record: any) => {
 };
 
 function PayrollContent() {
-  const router = useRouter(); 
+  const router = useRouter();
   const { showAlert } = useAlert();
-  
-  const [selectedMonth, setSelectedMonth] = useState('March 2026');
-  const processedData = PAYROLL_DATA.map(calculatePayroll);
-  const [payrollList] = useState(processedData);
+
+  const monthOptions = useMemo(() =>
+    Array.from({ length: 12 }, (_, i) => {
+      const label = dayjs().subtract(i, 'month').format('MMMM YYYY');
+      return { value: label, label };
+    }), []);
+
+  const [selectedMonth, setSelectedMonth] = useState(() => dayjs().format('MMMM YYYY'));
+  const [payrollList, setPayrollList] = useState<any[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  const fetchPayroll = async () => {
+    setIsLoadingData(true);
+    const res = await getMonthlyPayroll(selectedMonth);
+    if (res.success && res.data) {
+      setPayrollList(res.data.map(calculatePayroll));
+    }
+    setIsLoadingData(false);
+  };
+
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+
+  useEffect(() => {
+    fetchPayroll();
+
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/hr/payroll');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+  }, [selectedMonth]);
 
   // --- Processing States ---
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isCommissionModalOpen, setIsCommissionModalOpen] = useState(false);
+  const [commissionEmployee, setCommissionEmployee] = useState<any>(null);
 
   // --- KPI Calculations ---
   const totalPayout = payrollList.reduce((sum, item) => sum + item.netSalary, 0);
@@ -91,32 +116,45 @@ function PayrollContent() {
     router.push(`/owner/hr/payroll/${record.id}`); 
   };
 
-  const startPayrollProcessing = () => {
+  const handleOpenConfig = (e: React.MouseEvent, record: any) => {
+    e.stopPropagation(); // prevent card click
+    setSelectedStaff(record);
+    setIsConfigModalOpen(true);
+  };
+
+  const handleViewCommissions = (e: React.MouseEvent, record: any) => {
+    e.stopPropagation(); // prevent card click (which navigates to the payslip)
+    setCommissionEmployee(record);
+    setIsCommissionModalOpen(true);
+  };
+
+  const startPayrollProcessing = async () => {
     setIsConfirmModalOpen(false); // Close the confirmation modal
     setIsProcessing(true); // Open the loading modal
     setProgress(0);
 
-    // Simulate a complex background calculation (takes ~3.5 seconds)
-    const totalTime = 3500; 
-    const intervalTime = 50; 
-    let currentProgress = 0;
+    // Simulate progress bar for better UX
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) return 90;
+        return prev + 10;
+      });
+    }, 200);
 
-    const timer = setInterval(() => {
-      currentProgress += (100 / (totalTime / intervalTime));
-      
-      if (currentProgress >= 100) {
-        clearInterval(timer);
-        setProgress(100);
-        
-        // Small delay at 100% so it feels complete before closing
-        setTimeout(() => {
-          setIsProcessing(false);
-          showAlert('success', `Payroll for ${selectedMonth} has been successfully processed!`);
-        }, 400);
+    const res = await processPayroll(selectedMonth);
+    clearInterval(interval);
+    setProgress(100);
+
+    setTimeout(() => {
+      setIsProcessing(false);
+      setProgress(0);
+      if (res.success) {
+        showAlert('success', res.message || `Payroll for ${selectedMonth} processed successfully!`);
+        fetchPayroll(); // Refresh the list
       } else {
-        setProgress(Math.floor(currentProgress));
+        showAlert('error', res.message || 'Failed to process payroll.');
       }
-    }, intervalTime);
+    }, 500);
   };
 
   return (
@@ -130,26 +168,25 @@ function PayrollContent() {
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <Select 
+            id="month-select"
             value={selectedMonth} 
             onChange={setSelectedMonth}
             size="large"
             className="w-full sm:w-40"
-            options={[
-              { value: 'January 2026', label: 'January 2026' },
-              { value: 'February 2026', label: 'February 2026' },
-              { value: 'March 2026', label: 'March 2026' },
-            ]}
+            options={monthOptions}
           />
           {/* Re-Added the Run Payroll Button */}
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<DollarOutlined />} 
-            onClick={() => setIsConfirmModalOpen(true)}
-            className="bg-[#1A1A1B] hover:bg-black rounded-xl font-bold border-none shadow-md w-full sm:w-auto"
-          >
-            Run Payroll
-          </Button>
+          {canAdd && (
+            <Button 
+              type="primary" 
+              size="large" 
+              icon={<DollarOutlined />} 
+              onClick={() => setIsConfirmModalOpen(true)}
+              className="bg-[#1A1A1B] hover:bg-black rounded-xl font-bold border-none shadow-md w-full sm:w-auto"
+            >
+              Run Payroll
+            </Button>
+          )}
         </div>
       </div>
 
@@ -208,9 +245,60 @@ function PayrollContent() {
               <div className="mb-6 flex-grow">
                 <h3 className="text-xl font-black text-slate-800 m-0 truncate group-hover:text-[#7C4DFF] transition-colors">{employee.name}</h3>
                 <span className="text-xs text-[#7C4DFF] font-bold uppercase tracking-wider">{employee.role}</span>
+                <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Base Salary:</span>
+                    <span className="font-bold text-slate-700">Rs. {(employee.basicSalary ?? 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs items-center">
+                    <span className="text-slate-500">Commission:</span>
+                    <span className="font-bold text-emerald-600">+Rs. {(employee.commissions ?? 0).toLocaleString()}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleViewCommissions(e, employee)}
+                    className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#7C4DFF] hover:underline"
+                  >
+                    <EyeOutlined /> View Commissions {employee.breakdown?.length > 0 ? `(${employee.breakdown.length})` : ''}
+                  </button>
+                  <div className="flex justify-between text-xs mt-2 font-bold">
+                    <span className="text-slate-800">Net Salary:</span>
+                    <span className="text-[#7C4DFF]">Rs. {(employee.netSalary ?? 0).toLocaleString()}</span>
+                  </div>
+                  {employee.unswept > 0 && (
+                    <div className="mt-2 px-2 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-[10px] font-bold text-amber-700">
+                      +Rs. {employee.unswept.toLocaleString()} earned since payroll was processed
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex justify-end items-end mt-auto">
+              <div className="flex justify-between items-center mt-auto gap-2">
+                <div className="flex gap-1">
+                  {canEdit && (
+                    <Button
+                      type="text"
+                      shape="circle"
+                      icon={<SettingOutlined />}
+                      onClick={(e) => handleOpenConfig(e, employee)}
+                      className="hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                    />
+                  )}
+                  {canEdit && employee.status === 'Pending' && employee.payrollId && (
+                    <Button
+                      size="small"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const res = await markPayrollPaid(employee.payrollId);
+                        if (res.success) { showAlert('success', 'Marked as paid.'); fetchPayroll(); }
+                        else showAlert('error', res.message || 'Failed.');
+                      }}
+                      className="text-xs font-bold border-emerald-300 text-emerald-600 hover:bg-emerald-50"
+                    >
+                      Mark Paid
+                    </Button>
+                  )}
+                </div>
                 <div className="w-8 h-8 rounded-full bg-[#F3E8FF] flex items-center justify-center text-[#7C4DFF] group-hover:bg-[#7C4DFF] group-hover:text-white transition-colors duration-300">
                   <RightOutlined className="text-xs" />
                 </div>
@@ -254,7 +342,7 @@ function PayrollContent() {
               strokeColor="#7C4DFF" 
               railColor="#F3E8FF"
               status="active" 
-              strokeWidth={12}
+              size="small"
               showInfo={false}
             />
           </div>
@@ -264,6 +352,51 @@ function PayrollContent() {
             <span>EST. TIME: {Math.ceil((100 - progress) * 0.035)}s</span>
           </div>
         </div>
+      </Modal>
+
+      {/* 3. Configuration Modal */}
+      <PayrollConfigModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        staff={selectedStaff}
+        onSaveSuccess={() => fetchPayroll()}
+      />
+
+      {/* 4. Commission Breakdown Modal */}
+      <Modal
+        title={commissionEmployee ? `${commissionEmployee.name}'s Commissions — ${selectedMonth}` : 'Commissions'}
+        open={isCommissionModalOpen}
+        onCancel={() => setIsCommissionModalOpen(false)}
+        footer={null}
+        width={800}
+      >
+        {commissionEmployee?.breakdown?.length > 0 ? (
+          <>
+            <Table
+              dataSource={commissionEmployee.breakdown}
+              rowKey="id"
+              pagination={{ pageSize: 8 }}
+              size="small"
+              columns={[
+                { title: 'Date', dataIndex: 'date', key: 'date', render: (d: string) => d ? dayjs(d).format('DD MMM YYYY') : '-' },
+                { title: 'Client', dataIndex: 'customerName', key: 'customerName' },
+                {
+                  title: 'Source', dataIndex: 'source', key: 'source',
+                  render: (s: string) => <Tag color={s === 'manual' ? 'gold' : 'purple'} className="rounded-full border-0 font-bold">{s === 'manual' ? 'Walk-in' : 'Booking'}</Tag>
+                },
+                { title: 'Details', dataIndex: 'description', key: 'description' },
+                { title: 'Billed', dataIndex: 'billedAmount', key: 'billedAmount', align: 'right' as const, render: (v: number) => `Rs. ${v.toLocaleString()}` },
+                { title: 'Rate', dataIndex: 'rateApplied', key: 'rateApplied', align: 'right' as const, render: (v: number) => `${v}%` },
+                { title: 'Commission', dataIndex: 'amount', key: 'amount', align: 'right' as const, render: (v: number) => <span className="font-bold text-emerald-600">Rs. {v.toLocaleString()}</span> },
+              ]}
+            />
+            <div className="flex justify-end mt-3 pr-2">
+              <Text strong>Total: Rs. {commissionEmployee.breakdown.reduce((s: number, c: any) => s + c.amount, 0).toLocaleString()}</Text>
+            </div>
+          </>
+        ) : (
+          <Empty description={`No commissions recorded for ${selectedMonth}.`} />
+        )}
       </Modal>
 
     </div>

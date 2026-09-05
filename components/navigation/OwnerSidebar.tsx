@@ -1,17 +1,18 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { Layout, Menu } from 'antd';
-import { 
-  DashboardOutlined, 
-  CalendarOutlined, 
-  TeamOutlined, 
+import {
+  DashboardOutlined,
+  CalendarOutlined,
+  TeamOutlined,
   ShopOutlined,
   DollarCircleOutlined,
   BarChartOutlined,
   CarryOutOutlined,
   SolutionOutlined,
   UsergroupAddOutlined,
-  ScissorOutlined
+  ScissorOutlined,
+  ShoppingCartOutlined
 } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -28,9 +29,20 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
   const [attendanceId, setAttendanceId] = useState<string>('1');
   const [empId, setEmpId] = useState<string>('EMP-001');
 
+  const [userPermissions, setUserPermissions] = useState<any[]>([]);
+
   useEffect(() => {
     const matchRole = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (matchRole) setUserRole(matchRole[2]);
+    if (matchRole) setUserRole(matchRole[2].toLowerCase());
+
+    const matchPerms = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+    if (matchPerms) {
+      try {
+        setUserPermissions(JSON.parse(decodeURIComponent(matchPerms[2])));
+      } catch (e) {
+        setUserPermissions([]);
+      }
+    }
 
     const matchAttendance = document.cookie.match(new RegExp('(^| )attendance_id=([^;]+)'));
     if (matchAttendance) setAttendanceId(matchAttendance[2]);
@@ -39,7 +51,7 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
     if (matchEmp) setEmpId(matchEmp[2]);
   }, []);
 
-  const hrChildrenLinks = userRole === 'barber' ? [
+  const hrChildrenLinks = (userRole !== 'owner' && userRole !== 'admin') ? [
     { key: `/owner/hr/attendance/${attendanceId}`, label: 'My Attendance' },
     { key: `/owner/hr/payroll/${empId}`, label: 'My Payroll' },
   ] : [
@@ -48,26 +60,45 @@ export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
   ];
 
   const rawMenuItems = [
-    { key: '/owner', icon: <DashboardOutlined />, label: 'Intelligence', allowedRoles: ['owner'] },
-    { key: '/owner/calendar', icon: <CalendarOutlined />, label: 'Calendar', allowedRoles: ['owner', 'manager', 'barber'] },
-    { key: '/owner/bookings/manage', icon: <CarryOutOutlined />, label: 'Bookings', allowedRoles: ['owner', 'manager'] },
-    { key: '/owner/staff', icon: <UsergroupAddOutlined />, label: 'Staff', allowedRoles: ['owner'] },
+    { key: '/owner', icon: <DashboardOutlined />, label: 'Intelligence', allowedRoles: ['owner', 'admin'] },
+    { key: '/owner/calendar', icon: <CalendarOutlined />, label: 'Calendar', allowedRoles: ['owner', 'admin', 'manager', 'barber'] },
+    { key: '/owner/bookings/manage', icon: <CarryOutOutlined />, label: 'Bookings', allowedRoles: ['owner', 'admin', 'manager'] },
+    { key: '/owner/staff', icon: <UsergroupAddOutlined />, label: 'Staff', allowedRoles: ['owner', 'admin'] },
     { 
       key: 'hr', 
       icon: <SolutionOutlined />, 
       label: 'Human Resources',
-      allowedRoles: ['owner', 'barber'],
+      allowedRoles: ['owner', 'admin', 'barber'],
       children: hrChildrenLinks  
     },
-    { key: '/owner/shops', icon: <ShopOutlined />, label: 'My Shops', allowedRoles: ['owner'] },
-    { key: '/owner/services', icon: <ScissorOutlined />, label: 'Services', allowedRoles: ['owner', 'manager'] },
-    { key: '/owner/products', icon: <TeamOutlined />, label: 'Products', allowedRoles: ['owner', 'manager'] },
-    { key: '/owner/payments', icon: <DollarCircleOutlined />, label: 'Payments', allowedRoles: ['owner', 'manager'] },
-    { key: '/owner/reports', icon: <BarChartOutlined />, label: 'Reports', allowedRoles: ['owner'] },
+    { key: '/owner/shops', icon: <ShopOutlined />, label: 'My Shops', allowedRoles: ['owner', 'admin'] },
+    { key: '/owner/services', icon: <ScissorOutlined />, label: 'Services', allowedRoles: ['owner', 'admin', 'manager'] },
+    { key: '/owner/products', icon: <TeamOutlined />, label: 'Products', allowedRoles: ['owner', 'admin', 'manager'] },
+    { key: '/owner/payments', icon: <DollarCircleOutlined />, label: 'Payments', allowedRoles: ['owner', 'admin', 'manager'] },
+    { key: '/owner/orders', icon: <ShoppingCartOutlined />, label: 'Orders', allowedRoles: ['owner', 'admin', 'manager'] },
+    { key: '/owner/reports', icon: <BarChartOutlined />, label: 'Reports', allowedRoles: ['owner', 'admin'] },
   ];
 
- const filteredMenuItems = rawMenuItems
-  .filter(item => item.allowedRoles.includes(userRole))
+  const filteredMenuItems = rawMenuItems
+  .filter(item => {
+    // Admin and Owner see everything they are hardcoded to see
+    if (userRole === 'admin' || userRole === 'owner') {
+      return item.allowedRoles.includes(userRole);
+    }
+    
+    // Dynamic permission check for custom roles
+    if (userRole !== 'admin' && userRole !== 'owner') {
+      // If it's the 'hr' group, check if any child is allowed
+      if (item.key === 'hr') {
+        return userPermissions.some((p: any) => p.pageKey?.startsWith('/owner/hr') && p.canView);
+      }
+      
+      // Exact check
+      const perm = userPermissions.find((p: any) => p.pageKey === item.key);
+      return perm ? perm.canView : false;
+    }
+    return false;
+  })
   .map(({ allowedRoles, ...cleanItem }) => cleanItem);
 
   return (

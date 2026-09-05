@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { 
   Card, Typography, Row, Col, Button, Divider, Select 
@@ -20,63 +20,52 @@ const ETF_EMPLOYER_RATE = 0.03;
 const LEAVE_ALLOWANCE = 4;
 const NO_PAY_RATE = 1000; 
 
-// --- Mock Data Fetcher (Now reacts to the selected month) ---
-const fetchEmployeePayroll = (id: string, month: string) => {
-  // Simulating different data for different months so you can see the UI update
-  let leavesTaken = 2;
-  let commissions = 15000;
-  let status = 'Paid';
-
-  if (month === 'February 2026') {
-    leavesTaken = 6; // Exceeds allowance, triggers No Pay
-    commissions = 12000;
-  } else if (month === 'January 2026') {
-    leavesTaken = 0; // Perfect attendance
-    commissions = 18000;
-  } else if (month === 'March 2026') {
-    status = 'Pending';
-  }
-
-  let name = 'Mahesh Madushanka';
-  let role = 'Senior Barber';
-  if (id === 'EMP-002') {
-    name = 'Malith Sandaruwan';
-    role = 'Senior Barber';
-  } else if (id === 'EMP-003') {
-    name = 'Vindana Lakmal';
-    role = 'Senior Barber';
-  } else if (id === 'EMP-004') {
-    name = 'Nimesh Haththasingha';
-    role = 'Master Stylist';
-  }
-
-  return { 
-    id: id || 'EMP-001', 
-    name, 
-    role, 
-    department: 'Hair Styling',
-    basicSalary: 75000, 
-    allowances: 5000, 
-    commissions: commissions, 
-    leavesTaken: leavesTaken, 
-    status: status, 
-    method: 'Bank Transfer',
-    bankDetails: 'BOC - 123456789',
-    month: month
-  };
-};
+import { getMonthlyPayroll } from '@/lib/actions/payroll';
 
 export default function PayslipPreviewPage() {
   const router = useRouter();
   const params = useParams();
   const employeeId = params?.id as string;
 
-  // New State for Month Selection
-  const [selectedMonth, setSelectedMonth] = useState('March 2026');
+  const monthOptions = useMemo(() =>
+    Array.from({ length: 12 }, (_, i) => {
+      const label = dayjs().subtract(i, 'month').format('MMMM YYYY');
+      return { value: label, label };
+    }), []);
+
+  const [selectedMonth, setSelectedMonth] = useState(() => dayjs().format('MMMM YYYY'));
+  const [record, setRecord] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   // Fetch and Calculate based on the currently selected month
-  const record = fetchEmployeePayroll(employeeId, selectedMonth);
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const res = await getMonthlyPayroll(selectedMonth);
+      if (res.success && res.data) {
+        // Find the employee by generated ID (EMP-XXXX) or fallback UUID
+        const emp = res.data.find(e => e.id === employeeId || e.key === employeeId);
+        if (emp) {
+          setRecord({
+            ...emp,
+            department: emp.role,
+            month: selectedMonth
+          });
+        }
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [selectedMonth, employeeId]);
   
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading Payslip...</div>;
+  }
+
+  if (!record) {
+    return <div className="flex justify-center items-center h-screen">Employee not found for this month.</div>;
+  }
+
   const grossEarnings = record.basicSalary + record.allowances + record.commissions;
   const epfDeduction = record.basicSalary * EPF_EMPLOYEE_RATE;
   const excessLeaves = Math.max(0, record.leavesTaken - LEAVE_ALLOWANCE);
@@ -156,11 +145,7 @@ export default function PayslipPreviewPage() {
                 onChange={setSelectedMonth}
                 size="large"
                 className="w-full sm:w-48"
-                options={[
-                  { value: 'January 2026', label: 'January 2026' },
-                  { value: 'February 2026', label: 'February 2026' },
-                  { value: 'March 2026', label: 'March 2026' },
-                ]}
+                options={monthOptions}
               />
               <Button 
                 type="primary" 
@@ -245,7 +230,7 @@ export default function PayslipPreviewPage() {
                 <div>
                   <h4 className="text-xs font-bold text-[#7C4DFF] uppercase tracking-widest m-0">Net Salary Payable</h4>
                   <div className="text-sm text-slate-500 font-medium flex items-center gap-2 mt-1">
-                    <BankOutlined /> {record.method} ({record.bankDetails})
+                    <BankOutlined /> {record.method}
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
@@ -267,8 +252,52 @@ export default function PayslipPreviewPage() {
                   </div>
                 </div>
               </div>
+
+              {record.unswept > 0 && (
+                <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm font-bold text-amber-700">
+                  +Rs. {record.unswept.toLocaleString()} in commission earned since this payroll was processed — will be included next run.
+                </div>
+              )}
             </div>
           </Card>
+
+          {record.breakdown?.length > 0 && (
+            <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden mb-8">
+              <div className="p-6">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
+                  Commission Breakdown ({record.breakdown.length})
+                </h4>
+                <div className="max-h-96 overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                        <th className="py-2 pr-2 font-bold">Date</th>
+                        <th className="py-2 pr-2 font-bold">Client</th>
+                        <th className="py-2 pr-2 font-bold">Details</th>
+                        <th className="py-2 pr-2 font-bold text-right">Billed</th>
+                        <th className="py-2 pr-2 font-bold text-right">Rate</th>
+                        <th className="py-2 font-bold text-right">Commission</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {record.breakdown.map((row: any) => (
+                        <tr key={row.id} className="border-b border-slate-50 last:border-0">
+                          <td className="py-2 pr-2 text-slate-500 whitespace-nowrap">{row.date ? dayjs(row.date).format('DD MMM') : '-'}</td>
+                          <td className="py-2 pr-2 text-slate-700">{row.customerName}</td>
+                          <td className="py-2 pr-2 text-slate-500 truncate max-w-[180px]">
+                            {row.description || (row.source === 'manual' ? 'Manual bill' : 'Booking')}
+                          </td>
+                          <td className="py-2 pr-2 text-right text-slate-600">Rs. {row.billedAmount.toLocaleString()}</td>
+                          <td className="py-2 pr-2 text-right text-slate-500">{row.rateApplied}%</td>
+                          <td className="py-2 text-right font-bold text-emerald-600">Rs. {row.amount.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* ====================================================================
@@ -302,7 +331,7 @@ export default function PayslipPreviewPage() {
                 <span className="font-bold uppercase">Designation:</span> <span>{record.role}</span>
               </div>
               <div className="w-1/2 p-3 flex justify-between">
-                <span className="font-bold uppercase">Department:</span> <span>{record.department}</span>
+                <span className="font-bold uppercase">Department:</span> <span>{record.role}</span>
               </div>
             </div>
             <div className="flex">
@@ -344,7 +373,7 @@ export default function PayslipPreviewPage() {
           <div className="flex justify-between items-center p-3 border-2 border-black mb-8">
             <div>
               <span className="text-xl font-bold uppercase tracking-widest block mb-1">Net Salary Payable</span>
-              <span className="text-xs font-medium italic">Transfer to: {record.bankDetails}</span>
+              <span className="text-xs font-medium italic">Payment Method: {record.method}</span>
             </div>
             <span className="text-3xl font-black border-l-2 border-black pl-6 py-1">Rs. {netSalary.toLocaleString()}.00</span>
           </div>

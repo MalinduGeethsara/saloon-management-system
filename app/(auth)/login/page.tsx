@@ -3,9 +3,9 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import {
-  UserOutlined,
-  LockOutlined,
+import { 
+  UserOutlined, 
+  LockOutlined, 
   MailOutlined,
   PhoneOutlined,
   ArrowLeftOutlined,
@@ -43,7 +43,6 @@ function LoginFormContent() {
 
   const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email');
   const [signupStep, setSignupStep] = useState<'input' | 'verify'>('input');
-  const [sentCode, setSentCode] = useState('');
   const [enteredCode, setEnteredCode] = useState('');
   const [resendCountdown, setResendCountdown] = useState(0);
   const [showNotification, setShowNotification] = useState<{
@@ -51,7 +50,6 @@ function LoginFormContent() {
     type: 'sms' | 'email';
     title: string;
     message: string;
-    code: string;
   } | null>(null);
 
   // Resend timer countdown
@@ -66,14 +64,20 @@ function LoginFormContent() {
 
   // Clear message and verification state on tab switch
   useEffect(() => {
-    if (activeTab === 'login' && searchParams.get('reset') === 'success') {
+    const googleError = searchParams.get('error');
+    if (googleError === 'google_cancelled') {
+      setMessage({ type: 'error', text: 'Google sign-in was cancelled.' });
+    } else if (googleError === 'google_auth_failed') {
+      setMessage({ type: 'error', text: 'Google sign-in failed. Please try again.' });
+    } else if (googleError === 'server_error') {
+      setMessage({ type: 'error', text: 'A server error occurred. Please try again.' });
+    } else if (activeTab === 'login' && searchParams.get('reset') === 'success') {
       setMessage({ type: 'success', text: 'Password reset successfully. Please sign in with your new password.' });
     } else {
       setMessage(null);
     }
     setSignupStep('input');
     setEnteredCode('');
-    setSentCode('');
     setShowNotification(null);
   }, [activeTab, searchParams]);
 
@@ -93,29 +97,27 @@ function LoginFormContent() {
       const response = await fetch('/api/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier }),
+        body: JSON.stringify({ identifier, purpose: 'REGISTER' }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setSentCode(data.code);
         setSignupStep('verify');
         setResendCountdown(30);
 
         setShowNotification({
           show: true,
           type: data.type,
-          title: data.type === 'sms' ? 'New Message from MR POLAA' : 'Verification Code Inbox',
+          title: data.type === 'sms' ? 'Verification code sent' : 'Verification code sent',
           message: data.type === 'sms'
-            ? `Your verification OTP for MR POLAA Premium Grooming is: ${data.code}`
-            : `Please verify your email address to complete registration. Your verification code is: ${data.code}`,
-          code: data.code
+            ? `We sent a 6-digit code by SMS to ${identifier}.`
+            : `We sent a 6-digit code to ${identifier}. Check your inbox.`,
         });
 
         setTimeout(() => {
-          setShowNotification(prev => prev?.code === data.code ? null : prev);
-        }, 15000);
+          setShowNotification(null);
+        }, 8000);
       } else {
         setMessage({ type: 'error', text: data.message || 'Failed to send verification code.' });
       }
@@ -131,13 +133,22 @@ function LoginFormContent() {
     setLoading(true);
     setMessage(null);
 
-    if (enteredCode !== sentCode) {
-      setMessage({ type: 'error', text: 'Invalid verification code. Please check the code and try again.' });
-      setLoading(false);
-      return;
-    }
+    const identifier = signupMethod === 'email' ? email : phone;
 
     try {
+      const verifyRes = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, purpose: 'REGISTER', code: enteredCode }),
+      });
+      const verifyData = await verifyRes.json();
+
+      if (!verifyRes.ok) {
+        setMessage({ type: 'error', text: verifyData.message || 'Invalid verification code.' });
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         name,
         password,
@@ -162,7 +173,6 @@ function LoginFormContent() {
 
         setTimeout(() => {
           router.push(callbackUrl);
-          router.refresh();
         }, 1200);
       } else {
         setMessage({
@@ -201,7 +211,6 @@ function LoginFormContent() {
 
         setTimeout(() => {
           router.push(callbackUrl);
-          router.refresh();
         }, 1200);
       } else {
         setMessage({
@@ -226,7 +235,7 @@ function LoginFormContent() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
 
       {/* Slide-down Notification Bubble */}
       {showNotification && showNotification.show && (
@@ -238,21 +247,6 @@ function LoginFormContent() {
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white uppercase tracking-wider">{showNotification.title}</p>
               <p className="text-[11px] text-zinc-400 mt-1 leading-normal">{showNotification.message}</p>
-              <div className="mt-2.5 flex items-center gap-2">
-                <span className="text-[10px] bg-zinc-950 px-2.5 py-1 font-mono font-bold text-white border border-zinc-800/80 rounded">
-                  Code: {showNotification.code}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEnteredCode(showNotification.code);
-                    setShowNotification(null);
-                  }}
-                  className="text-[9px] text-amber-500 hover:text-amber-400 font-bold uppercase tracking-wider underline cursor-pointer ml-auto"
-                >
-                  Auto-fill
-                </button>
-              </div>
             </div>
             <button
               type="button"
@@ -266,13 +260,13 @@ function LoginFormContent() {
       )}
 
       {/* Left Column: Ambient branding (hidden on mobile/tablet) */}
-      <div className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-16 overflow-hidden">
-
+      <div className="hidden lg:flex lg:col-span-7 relative flex-col justify-between p-10 xl:p-16 overflow-hidden lg:h-screen">
+        
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0 bg-zinc-900">
-          <img
-            src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop"
-            alt="Salon Background"
+          <img 
+            src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop" 
+            alt="Salon Background" 
             className="w-full h-full object-cover opacity-30 grayscale"
           />
           <div className="absolute inset-0 bg-linear-to-tr from-zinc-950 via-zinc-950/80 to-transparent"></div>
@@ -310,8 +304,8 @@ function LoginFormContent() {
       </div>
 
       {/* Right Column: Authentication Card */}
-      <div className="col-span-1 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-12 md:p-16 relative bg-zinc-900 border-l border-zinc-800/50">
-
+      <div className="col-span-1 lg:col-span-5 flex flex-col justify-center items-center p-6 sm:p-12 lg:p-10 xl:p-16 relative bg-zinc-900 border-l border-zinc-800/50 lg:h-screen lg:overflow-y-auto">
+        
         {/* Mobile Logo Branding (visible only on mobile) */}
         <div className="lg:hidden mb-8 text-center flex flex-col items-center">
           <Link href="/" className="flex flex-col items-center gap-1 group">
@@ -325,8 +319,8 @@ function LoginFormContent() {
         </div>
 
         {/* Back Link */}
-        <Link
-          href="/"
+        <Link 
+          href="/" 
           className="absolute top-6 left-6 text-xs font-bold text-zinc-500 hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors duration-300"
         >
           <ArrowLeftOutlined /> Back to home
@@ -334,34 +328,36 @@ function LoginFormContent() {
 
         <div className="w-full max-w-md">
           {/* Headline */}
-          <div className="mb-8">
+          <div className="mb-8 lg:mb-5">
             <h2 className="text-2xl font-black text-white tracking-wide">
               {activeTab === 'login' ? 'Welcome Back' : 'Create Account'}
             </h2>
             <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed">
-              {activeTab === 'login'
-                ? 'Sign in to access your grooming history & details.'
+              {activeTab === 'login' 
+                ? 'Sign in to access your grooming history & details.' 
                 : 'Join MR POLAA to secure premium slots instantly.'}
             </p>
           </div>
 
           {/* Form Tabs Switcher */}
-          <div className="grid grid-cols-2 bg-zinc-950/80 p-1 mb-8 border border-zinc-800/80">
+          <div className="grid grid-cols-2 bg-zinc-950/80 p-1 mb-8 lg:mb-5 border border-zinc-800/80">
             <button
               onClick={() => setActiveTab('login')}
-              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${activeTab === 'login'
-                ? 'bg-amber-600 text-white shadow-lg'
-                : 'text-zinc-500 hover:text-zinc-300'
-                }`}
+              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${
+                activeTab === 'login' 
+                  ? 'bg-amber-600 text-white shadow-lg' 
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
             >
               Sign In
             </button>
             <button
               onClick={() => setActiveTab('signup')}
-              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${activeTab === 'signup'
-                ? 'bg-amber-600 text-white shadow-lg'
-                : 'text-zinc-500 hover:text-zinc-300'
-                }`}
+              className={`py-3 text-xs font-bold tracking-widest uppercase transition-all duration-300 ${
+                activeTab === 'signup' 
+                  ? 'bg-amber-600 text-white shadow-lg' 
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
             >
               Sign Up
             </button>
@@ -369,10 +365,11 @@ function LoginFormContent() {
 
           {/* Message Alert */}
           {message && (
-            <div className={`p-4 mb-6 text-xs font-bold tracking-wide border ${message.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
-              : 'bg-red-500/10 border-red-500/30 text-red-500'
-              }`}>
+            <div className={`p-4 mb-6 text-xs font-bold tracking-wide border ${
+              message.type === 'success' 
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' 
+                : 'bg-red-500/10 border-red-500/30 text-red-500'
+            }`}>
               {message.text}
             </div>
           )}
@@ -404,8 +401,8 @@ function LoginFormContent() {
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Password</label>
-                  <Link
-                    href="/forgot-password"
+                  <Link 
+                    href="/forgot-password" 
                     className="text-[10px] font-bold uppercase tracking-widest text-amber-500/85 hover:text-amber-500 underline transition-colors"
                   >
                     Forgot Password?
@@ -456,20 +453,22 @@ function LoginFormContent() {
                   <button
                     type="button"
                     onClick={() => setSignupMethod('email')}
-                    className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${signupMethod === 'email'
-                      ? 'bg-zinc-800 text-white shadow'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                      }`}
+                    className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${
+                      signupMethod === 'email' 
+                        ? 'bg-zinc-800 text-white shadow' 
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
                   >
                     Email Address
                   </button>
                   <button
                     type="button"
                     onClick={() => setSignupMethod('phone')}
-                    className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${signupMethod === 'phone'
-                      ? 'bg-zinc-800 text-white shadow'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                      }`}
+                    className={`py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${
+                      signupMethod === 'phone' 
+                        ? 'bg-zinc-800 text-white shadow' 
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
                   >
                     Phone Number
                   </button>
@@ -535,7 +534,7 @@ function LoginFormContent() {
             <form onSubmit={handleVerifyAndRegister} className="space-y-5">
               <div className="p-4 bg-zinc-950/60 border border-zinc-800/60 text-xs text-zinc-400 leading-relaxed font-light">
                 <span className="font-bold text-amber-500 block mb-1">Verify Identity</span>
-                We simulated sending a 6-digit verification code to: <br />
+                We sent a 6-digit verification code to: <br />
                 <span className="font-mono font-bold text-white mt-1 block">
                   {signupMethod === 'email' ? email : phone}
                 </span>
@@ -587,44 +586,19 @@ function LoginFormContent() {
           )}
 
           {/* Social Logins */}
-          <div className="mt-8 pt-8 border-t border-zinc-800/50 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => fillDemoCredentials(false)}
-                className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                Demo Email
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillDemoCredentials(true)}
-                className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 hover:text-white py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                Demo Phone
-              </button>
-            </div>
-
-            <button
-              type="button"
-              className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white py-3.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 cursor-not-allowed opacity-50"
-              disabled
+          <div className="mt-8 pt-8 lg:mt-5 lg:pt-5 border-t border-zinc-800/50 space-y-4">
+            <a
+              href={`/api/auth/google?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+              className="w-full bg-zinc-950 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white py-3.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3"
             >
               <GoogleOutlined className="text-sm" />
               Continue with Google
-            </button>
+            </a>
           </div>
 
           {/* Assistance details */}
-          <div className="mt-8 p-5 bg-zinc-950/60 border border-zinc-800/60 text-[11px] text-zinc-500 leading-relaxed font-light">
-            <span className="font-bold text-amber-500 uppercase tracking-widest block mb-2">Demo Credentials</span>
-            <span className="font-bold text-zinc-400">Email:</span> customer@salon.com <br />
-            <span className="font-bold text-zinc-400">Phone:</span> +94 77 123 4567 <br />
-            <span className="font-bold text-zinc-400">Password:</span> password123 <br />
-            <span className="block mt-3 text-[10px] text-zinc-600 border-t border-zinc-900 pt-2">
+          <div className="mt-8 lg:mt-5 p-5 bg-zinc-950/60 border border-zinc-800/60 text-[11px] text-zinc-500 leading-relaxed font-light">
+            <span className="block text-[10px] text-zinc-600">
               Are you a staff member? <Link href="/staff-login" className="text-amber-500/80 hover:text-amber-500 underline font-bold uppercase tracking-wider text-[9px] ml-1">Staff Portal</Link>
             </span>
           </div>

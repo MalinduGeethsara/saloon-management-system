@@ -1,94 +1,31 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowRightOutlined } from '@ant-design/icons';
 import Magnetic from "@/components/ui/Magnetic";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-
-const services = [
-  {
-    title: "Hair Cutting",
-    price: "LKR 500",
-    description: "A precision haircut tailored to your preferences, complete with styling.",
-    img: "images/website/services/1.jpg"
-  },
-  {
-    title: "Beard Cutting",
-    price: "LKR 400",
-    description: "Expert beard shaping, trimming, and lineup to compliment your face structure.",
-    img: "images/website/services/2.jpg"
-  },
-  {
-    title: "Quick Head Massage",
-    price: "LKR 400",
-    description: "A relaxing head massage to ease tension, soothe stress, and improve circulation.",
-    img: "images/website/services/3.jpg"
-  },
-  {
-    title: "Oil Treatment",
-    price: "LKR 1,500",
-    description: "Nourishing hot oil hair treatment to condition your scalp and strengthen hair follicles.",
-    img: "images/website/services/4.jpg"
-  },
-  {
-    title: "Gray Hair Cover",
-    price: "LKR 1,200",
-    description: "Seamless coverage of gray hairs using premium, natural-looking coloring solutions.",
-    img: "images/website/services/5.jpg"
-  },
-  {
-    title: "Full Facial Treatment",
-    price: "LKR 6,000",
-    description: "Complete premium multi-step skin therapy including cleansing, scrub, mask, and deep hydration.",
-    img: "images/website/services/6.jpg"
-  },
-  {
-    title: "Gold Facial Treatment",
-    price: "LKR 5,000",
-    description: "Luxury skin rejuvenation infused with active gold elements for a bright, healthy glow.",
-    img: "images/website/services/7.jpg"
-  },
-  {
-    title: "Normal Facial Treatment",
-    price: "LKR 3,500",
-    description: "Standard facial cleansing and masking to refresh and clear your skin.",
-    img: "images/website/services/8.jpg"
-  },
-  {
-    title: "Gold Cleanup",
-    price: "LKR 4,000",
-    description: "Quick skin cleansing and tan removal treatment using premium gold scrubs and packs.",
-    img: "images/website/services/9.jpg"
-  },
-  {
-    title: "Scrub",
-    price: "LKR 1,000",
-    description: "Deep exfoliating facial scrub to clear dead skin cells and blackheads.",
-    img: "images/website/services/10.jpg"
-  },
-  {
-    title: "Ear Piercing",
-    price: "LKR 500",
-    description: "Safe, quick, and hygienic ear piercing using sterile, premium studs.",
-    img: "images/website/services/11.jpg"
-  },
-  {
-    title: "Nose Piercing",
-    price: "LKR 1,000",
-    description: "Professional nose piercing performed under strict sterile conditions.",
-    img: "images/website/services/12.jpg"
-  },
-  {
-    title: "Tongue Piercing",
-    price: "LKR 2,000",
-    description: "Hygiene-first professional tongue piercing using medical-grade titanium bars.",
-    img: "images/website/services/13.jpg"
-  }
-];
+import Image from "next/image";
+import { Spin } from 'antd';
 
 export default function ServicesPage() {
+  const [services, setServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/v1/services')
+      .then(res => res.json())
+      .then(data => {
+        if (data.services) {
+          setServices(data.services);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to fetch services:", err);
+        setLoading(false);
+      });
+  }, []);
   return (
     <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24 pb-32">
 
@@ -101,37 +38,50 @@ export default function ServicesPage() {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service, index) => (
-            <ScrollReveal key={index} direction="down" delay={(index % 3) * 0.15} className="flex flex-col h-full">
-              <div className="group bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 shadow-sm hover:shadow-md dark:shadow-none flex flex-col h-full w-full">
-                <div className="h-64 overflow-hidden relative w-full">
-                  <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
-                  <Image
-                    src={`/${service.img}`}
-                    alt={service.title}
-                    width={500}
-                    height={350}
-                    className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
-                    loading="lazy"
-                  />
-                  <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-linear-to-t from-white dark:from-zinc-900/90 to-transparent">
-                    <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">{service.price}</div>
-                    <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">{service.title}</h4>
+        {loading ? (
+          <div className="flex justify-center items-center h-64 w-full">
+            <Spin size="large" />
+          </div>
+        ) : services.length === 0 ? (
+          <div className="text-center text-zinc-500 py-20 w-full">
+            <p>No services available at the moment.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {services.map((service, index) => (
+              <ScrollReveal key={service.id || index} direction="down" delay={(index % 3) * 0.15} className="flex flex-col h-full">
+                <div className="group bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition-colors duration-500 shadow-sm hover:shadow-md dark:shadow-none flex flex-col h-full w-full">
+                  <div className="h-64 overflow-hidden relative w-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950">
+                    <div className="absolute inset-0 bg-black/20 dark:bg-black/40 group-hover:bg-transparent transition-colors duration-500 z-10"></div>
+                    {service.imageUrl ? (
+                      <Image
+                        src={service.imageUrl.startsWith('http') ? service.imageUrl : (service.imageUrl.startsWith('/') ? service.imageUrl : `/${service.imageUrl}`)}
+                        alt={service.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover transition-all duration-1000 group-hover:scale-105 xl:grayscale group-hover:grayscale-0"
+                      />
+                    ) : (
+                      <div className="text-zinc-400">No Image</div>
+                    )}
+                    <div className="absolute bottom-0 left-0 w-full p-6 z-20 bg-linear-to-t from-white dark:from-zinc-900/90 to-transparent">
+                      <div className="text-amber-600 dark:text-amber-500 font-mono tracking-widest text-sm mb-2 drop-shadow-md">LKR {service.price?.toLocaleString()}</div>
+                      <h4 className="text-2xl font-bold text-zinc-900 dark:text-white drop-shadow-md">{service.name}</h4>
+                    </div>
+                  </div>
+                  <div className="p-6 grow flex flex-col w-full">
+                    <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors grow line-clamp-2">{service.description || "Premium salon service."}</p>
+                    <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
+                      <Link href="/booking" className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors w-fit">
+                        Reserve <ArrowRightOutlined />
+                      </Link>
+                    </Magnetic>
                   </div>
                 </div>
-                <div className="p-6 grow flex flex-col w-full">
-                  <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors grow">{service.description}</p>
-                  <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
-                    <Link href="/booking" className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-widest flex items-center gap-2 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors w-fit">
-                      Reserve <ArrowRightOutlined />
-                    </Link>
-                  </Magnetic>
-                </div>
-              </div>
-            </ScrollReveal>
-          ))}
-        </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        )}
       </div>
 
     </div>

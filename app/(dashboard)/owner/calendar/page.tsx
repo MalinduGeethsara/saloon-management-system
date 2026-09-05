@@ -40,13 +40,15 @@ import { Modal, Descriptions } from 'antd';
 const { Title, Text } = Typography;
 const { useToken } = theme;
 
-// --- Sri Lankan Staff Data ---
-const BARBERS = [
-  { id: 1, name: 'Malith Sandaruwan', color: '#18181b', role: 'Senior Barber' }, 
-  { id: 2, name: 'Mahesh Madushanka', color: '#7C4DFF', role: 'Senior Barber' }, 
-  { id: 3, name: 'Vindana Lakmal', color: '#2563eb', role: 'Senior Barber' },
-  { id: 4, name: 'Nimesh Haththasingha', color: '#059669', role: 'Master Stylist' },
-];
+// --- Predefined Colors for Dynamic Staff ---
+const COLOR_PALETTE = ['#7C4DFF', '#059669', '#2563eb', '#d97706', '#dc2626', '#4f46e5', '#db2777', '#18181b'];
+
+interface Barber {
+  id: string;
+  name: string;
+  color: string;
+  role: string;
+}
 
 // --- Helper: Generate Dates ---
 const getRelativeDate = (days: number, hours: number, minutes: number) => {
@@ -56,44 +58,13 @@ const getRelativeDate = (days: number, hours: number, minutes: number) => {
   return d;
 };
 
-// --- Mock Events ---
-const INITIAL_EVENTS = [
-  {
-    id: '1',
-    title: 'Amila Bandara',
-    start: getRelativeDate(0, 10, 0), 
-    end: getRelativeDate(0, 11, 0),
-    backgroundColor: '#18181b',
-    borderColor: '#18181b',
-    extendedProps: { barberId: 1, service: 'Haircut', status: 'Confirmed', client: 'Amila Bandara' }
-  },
-  {
-    id: '2',
-    title: 'Ruwan Kumara',
-    start: getRelativeDate(0, 14, 30), 
-    end: getRelativeDate(0, 15, 15),
-    backgroundColor: '#7C4DFF',
-    borderColor: '#7C4DFF',
-    textColor: '#ffffff',
-    extendedProps: { barberId: 2, service: 'Beard Trim', status: 'Confirmed', client: 'Ruwan Kumara' }
-  },
-  {
-    id: '3',
-    title: 'Sanjeewa Perera',
-    start: getRelativeDate(-1, 9, 0), 
-    end: getRelativeDate(-1, 10, 0),
-    backgroundColor: '#059669',
-    borderColor: '#059669',
-    extendedProps: { barberId: 4, service: 'Full Service', status: 'Completed', client: 'Sanjeewa Perera' }
-  }
-];
-
 function ScheduleContent() {
   const { token } = useToken();
   const calendarRef = useRef<FullCalendar>(null);
-  const [events, setEvents] = useState(INITIAL_EVENTS);
+  const [events, setEvents] = useState<any[]>([]);
+  const [barbers, setBarbers] = useState<Barber[]>([]);
   const { showAlert } = useAlert();
-
+  
   // --- States ---
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -102,10 +73,72 @@ function ScheduleContent() {
   const [editingBooking, setEditingBooking] = useState<any>(null);
   
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [activeBarberId, setActiveBarberId] = useState<number | undefined>(undefined);
+  const [activeBarberId, setActiveBarberId] = useState<string | undefined>(undefined);
   const [currentView, setCurrentView] = useState('timeGridDay');
   const [viewTitle, setViewTitle] = useState("");
   const [userRole, setUserRole] = useState<string>('owner');
+  
+  const fetchBookingsAndStaff = async () => {
+    try {
+      // Fetch Staff first to map colors
+      const staffRes = await fetch('/api/v1/staff');
+      const staffData = await staffRes.json();
+      let staffList: Barber[] = [];
+      
+      if (staffData.staff) {
+        staffList = staffData.staff.map((s: any, idx: number) => ({
+          id: String(s.id),
+          name: s.name,
+          color: COLOR_PALETTE[idx % COLOR_PALETTE.length],
+          role: s.role
+        }));
+        setBarbers(staffList);
+      }
+
+      // Fetch Bookings
+      const res = await fetch('/api/v1/bookings');
+      const data = await res.json();
+      if (data.bookings) {
+        setEvents(data.bookings.map((b: any) => {
+          const mainDuration = b.services?.[0]?.service?.duration || 60;
+          const endDate = new Date(new Date(b.date).getTime() + mainDuration * 60000);
+          const assignedBarber = staffList.find(s => s.id === String(b.barberId));
+          const eventColor = assignedBarber?.color || '#7C4DFF';
+          
+          return {
+            id: b.id,
+            title: b.customer?.name || 'Walk-in Client',
+            start: new Date(b.date),
+            end: endDate,
+            backgroundColor: b.status === 'PENDING' ? '#f97316' : eventColor,
+            borderColor: b.status === 'PENDING' ? '#ea580c' : eventColor,
+            textColor: '#ffffff',
+            classNames: b.status === 'PENDING' ? ['animate-pulse', 'shadow-md', 'shadow-orange-400/50'] : [],
+            extendedProps: {
+              barberId: String(b.barberId),
+              service: b.services?.map((s: any) => s.service?.name).filter(Boolean).join(', ') || 'Service',
+              status: b.status,
+              shop: b.shop?.name,
+              color: eventColor
+            }
+          };
+        }));
+      }
+    } catch (e) {
+      showAlert('error', 'Failed to load calendar events');
+    }
+  };
+
+  useEffect(() => {
+    fetchBookingsAndStaff();
+    
+    // Poll every 30 seconds
+    const interval = setInterval(() => {
+      fetchBookingsAndStaff();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // --- Initialize Title & Cookies ---
   useEffect(() => {
@@ -117,14 +150,14 @@ function ScheduleContent() {
     const barberMatch = document.cookie.match(new RegExp('(^| )barber_id=([^;]+)'));
     
     let currentRole = 'owner';
-    let currentBarberId: number | undefined = undefined;
+    let currentBarberId: string | undefined = undefined;
 
     if (roleMatch) {
       currentRole = roleMatch[2];
       setUserRole(currentRole);
     }
     if (barberMatch) {
-      currentBarberId = parseInt(barberMatch[2], 10);
+      currentBarberId = barberMatch[2];
     }
 
     if (currentRole === 'barber' && currentBarberId) {
@@ -202,10 +235,31 @@ function ScheduleContent() {
     setIsDetailsModalOpen(true);
   };
 
-  const handleSaveBooking = (newBooking: any) => {
-    setEvents(prev => [...prev, newBooking]);
-    setIsNewModalOpen(false);
-    showAlert('success', 'Appointment booked successfully!');
+  const handleSaveBooking = async (newBookingData: any) => {
+    try {
+      const res = await fetch('/api/v1/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceId: newBookingData.extendedProps.service,
+          barberId: newBookingData.extendedProps.barberId,
+          shopId: newBookingData.extendedProps.shopId || null,
+          date: newBookingData.start,
+          amount: 0, 
+          clientName: newBookingData.title, 
+        })
+      });
+      if (res.ok) {
+        showAlert('success', 'Appointment booked successfully!');
+        fetchBookingsAndStaff();
+        setIsNewModalOpen(false);
+      } else {
+        const errorData = await res.json();
+        showAlert('error', errorData.error || 'Failed to save booking');
+      }
+    } catch(e) {
+      showAlert('error', 'Error creating booking');
+    }
   };
 
   // 6. Trigger Edit from Details Modal
@@ -274,18 +328,18 @@ function ScheduleContent() {
                 {!activeBarberId && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
               </div>
 
-              {BARBERS.map(b => (
+              {barbers.map(b => (
                 <div 
                   key={b.id}
-                  className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${activeBarberId === b.id ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
-                  onClick={() => setActiveBarberId(b.id)}
+                  className={`p-2 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${activeBarberId === String(b.id) ? 'bg-purple-50 border border-purple-100' : 'hover:bg-slate-50'}`}
+                  onClick={() => setActiveBarberId(String(b.id))}
                 >
                   <Avatar style={{ backgroundColor: b.color }}>{b.name[0]}</Avatar>
                   <div className="flex-1">
                     <div className="text-sm font-bold text-slate-700">{b.name}</div>
                     <div className="text-xs text-slate-400">{b.role}</div>
                   </div>
-                  {activeBarberId === b.id && <div className="h-2 w-2 rounded-full bg-[#7C4DFF]" />}
+                  {activeBarberId === String(b.id) && <div className="h-2 w-2 rounded-full" style={{ backgroundColor: b.color }} />}
                 </div>
               ))}
             </div>
@@ -305,7 +359,7 @@ function ScheduleContent() {
                     <div className="text-lg font-black text-slate-800">{dayjs(evt.start).format('DD')}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-[#7C4DFF] mb-0.5">{dayjs(evt.start).format('h:mm A')}</div>
+                    <div className="text-xs font-bold mb-0.5" style={{ color: evt.extendedProps.color }}>{dayjs(evt.start).format('h:mm A')}</div>
                     <div className="text-sm font-bold text-slate-800 leading-tight">{evt.title}</div>
                     <div className="text-xs text-slate-400 mt-1">{evt.extendedProps.service}</div>
                   </div>
@@ -324,7 +378,7 @@ function ScheduleContent() {
           <div className="flex items-center gap-4">
             <div className="flex items-center bg-slate-100 rounded-lg p-1">
               <Button type="text" size="small" icon={<LeftOutlined />} onClick={() => handleCalendarNav('prev')} />
-              <Button type="text" size="small" className="font-bold w-24">Today</Button>
+              <Button type="text" size="small" className="font-bold w-24" onClick={() => handleCalendarNav('today')}>Today</Button>
               <Button type="text" size="small" icon={<RightOutlined />} onClick={() => handleCalendarNav('next')} />
             </div>
             <Title level={4} style={{ margin: 0 }}>{viewTitle}</Title>
@@ -415,14 +469,14 @@ function ScheduleContent() {
       {/* --- MODALS --- */}
       
       {/* 1. New Booking (Uses your provided component) */}
-      <NewBookingModal 
-        isOpen={isNewModalOpen}
-        onClose={() => setIsNewModalOpen(false)}
-        onSave={handleSaveBooking}
-        barbers={BARBERS}
-        defaultDate={selectedDate}
-        defaultBarberId={activeBarberId}
-      />
+        <NewBookingModal 
+          isOpen={isNewModalOpen}
+          onClose={() => setIsNewModalOpen(false)}
+          onSave={editingBooking ? async (data) => {/* Implement PUT here if needed */ setIsNewModalOpen(false); fetchBookingsAndStaff();} : handleSaveBooking}
+          barbers={barbers}
+          defaultDate={selectedDate}
+          defaultBarberId={activeBarberId || undefined}
+        />
 
       {/* 2. Simple Event Details (Inline for simplicity) */}
       <Modal
@@ -439,6 +493,7 @@ function ScheduleContent() {
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="Client">{selectedEvent.title}</Descriptions.Item>
             <Descriptions.Item label="Service">{selectedEvent.extendedProps.service}</Descriptions.Item>
+            <Descriptions.Item label="Branch">{selectedEvent.extendedProps.shop || 'Not specified'}</Descriptions.Item>
             <Descriptions.Item label="Time">
               {dayjs(selectedEvent.start).format('MMM D, h:mm A')} - {dayjs(selectedEvent.end).format('h:mm A')}
             </Descriptions.Item>

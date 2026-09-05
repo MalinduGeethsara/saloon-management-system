@@ -1,8 +1,9 @@
 "use client";
 
 import React from 'react';
-import { Modal, Button, Form, Input, Select, Divider, Tag, Avatar, Tabs } from 'antd';
+import { Modal, Button, Form, Input, Select, Divider, Tag, Avatar, Tabs, AutoComplete } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, SafetyCertificateOutlined, DollarOutlined } from '@ant-design/icons';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 const { Option } = Select;
 
@@ -13,37 +14,43 @@ interface StaffModalProps {
   mode: 'add' | 'edit';
 }
 
-export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
+export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalProps & { onSave: (values: any) => Promise<void> }) {
   const [form] = Form.useForm();
-  const [mounted, setMounted] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [imageUrl, setImageUrl] = React.useState<string>('');
+  const [shops, setShops] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    setMounted(true);
+    fetch('/api/v1/shops').then(res => res.json()).then(data => {
+      if (data.shops) setShops(data.shops);
+    });
   }, []);
 
-  // Reset or Set form values when modal opens
   React.useEffect(() => {
-    if (!mounted) return;
     if (isOpen && staff && mode === 'edit') {
-      form.setFieldsValue(staff);
-    } else {
+      form.setFieldsValue({
+        ...staff,
+        password: '' // empty password on edit unless they want to change it
+      });
+      setImageUrl(staff.imageUrl || '');
+    } else if (isOpen && mode === 'add') {
       form.resetFields();
+      setImageUrl('');
     }
   }, [isOpen, staff, mode, form]);
 
-  const handleFinish = (values: any) => {
-    console.log('Form values:', values);
-    onClose();
+  const handleFinish = async (values: any) => {
+    setLoading(true);
+    await onSave({ ...values, imageUrl });
+    setLoading(false);
   };
-
-  if (!mounted) return null;
 
   return (
     <Modal
       open={isOpen}
       onCancel={onClose}
       footer={null}
-      forceRender
+      destroyOnHidden
       centered
       width={650}
       title={
@@ -60,27 +67,43 @@ export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
         </div>
       }
     >
-      <Tabs defaultActiveKey="1" items={[
-        {
-          key: '1',
-          label: 'Profile & Role',
-          children: (
-            <Form form={form} layout="vertical" onFinish={handleFinish} style={{ marginTop: 16 }}>
+      <Form form={form} layout="vertical" onFinish={handleFinish} style={{ marginTop: 16 }}>
+              <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                <div style={{ width: 120 }}>
+                  <Form.Item label="Profile Photo" style={{ marginBottom: 0 }}>
+                    <div className="flex justify-center border-2 border-dashed border-gray-200 bg-slate-50 rounded-xl overflow-hidden w-[120px] h-[120px]">
+                      <ImageUpload 
+                        value={imageUrl} 
+                        onChange={(url) => {
+                          setImageUrl(url);
+                          form.setFieldValue('imageUrl', url);
+                        }}
+                        folder="salon/staff"
+                      />
+                    </div>
+                  </Form.Item>
+                  <Form.Item name="imageUrl" hidden><Input /></Form.Item>
+                </div>
+                
+                <div style={{ flex: 1 }}>
+                  <Form.Item name="name" label="Full Name" rules={[{ required: true }]}>
+                    <Input prefix={<UserOutlined />} placeholder="John Doe" size="large" />
+                  </Form.Item>
+                  <Form.Item name="email" label="Email Address" rules={[{ required: true, type: 'email' }]}>
+                    <Input prefix={<MailOutlined />} placeholder="john@salon.com" size="large" />
+                  </Form.Item>
+                </div>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Form.Item name="name" label="Full Name" rules={[{ required: true }]}>
-                  <Input prefix={<UserOutlined />} placeholder="John Doe" size="large" />
-                </Form.Item>
-                <Form.Item name="email" label="Email Address" rules={[{ required: true, type: 'email' }]}>
-                  <Input prefix={<MailOutlined />} placeholder="john@salon.com" size="large" />
-                </Form.Item>
                 <Form.Item name="phone" label="Phone Number">
                   <Input prefix={<PhoneOutlined />} placeholder="+94 77 123 4567" size="large" />
                 </Form.Item>
-                <Form.Item name="branch" label="Assigned Branch">
-                  <Select placeholder="Select Branch" size="large">
-                    <Option value="Walasmulla">Walasmulla Studio</Option>
-                    <Option value="Colombo">Colombo Branch</Option>
-                    <Option value="Galle">Galle Branch</Option>
+                <Form.Item name="shopId" label="Assigned Branch" rules={[{ required: true, message: 'Please select a branch' }]}>
+                  <Select placeholder="Select Branch" size="large" allowClear>
+                    {shops.map(shop => (
+                      <Option key={shop.id} value={shop.id}>{shop.name}</Option>
+                    ))}
                   </Select>
                 </Form.Item>
               </div>
@@ -89,72 +112,27 @@ export function StaffModal({ isOpen, onClose, staff, mode }: StaffModalProps) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Form.Item name="role" label="Job Role" rules={[{ required: true }]}>
-                  <Select placeholder="Select Role" size="large">
-                    <Option value="Master Stylist">Master Stylist</Option>
-                    <Option value="Senior Barber">Senior Barber</Option>
-                    <Option value="Barber">Barber</Option>
-                    <Option value="Manager">Manager</Option>
-                    <Option value="Receptionist">Receptionist</Option>
-                  </Select>
+                  <AutoComplete 
+                    options={[{ value: 'MANAGER' }, { value: 'BARBER' }, { value: 'CASHIER' }]}
+                    placeholder="e.g. CASHIER, RECEPTIONIST"
+                    size="large"
+                    filterOption={(inputValue, option) =>
+                      option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                  />
                 </Form.Item>
-                <Form.Item name="status" label="Employment Status">
-                  <Select placeholder="Status" size="large"> {/* <-- FIXED */}
-                    <Option value="Active"><Tag color="green">Active</Tag></Option>
-                    <Option value="Leave"><Tag color="orange">On Leave</Tag></Option>
-                    <Option value="Inactive"><Tag color="red">Inactive</Tag></Option>
-                  </Select>
+                <Form.Item name="password" label="Password (leave blank to keep)">
+                  <Input.Password placeholder="Secure password" size="large" />
                 </Form.Item>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
                 <Button onClick={onClose} size="large">Cancel</Button>
-                <Button type="primary" htmlType="submit" size="large" style={{ backgroundColor: '#7C4DFF' }}>
+                <Button type="primary" htmlType="submit" size="large" loading={loading} style={{ backgroundColor: '#7C4DFF' }}>
                   Save Changes
                 </Button>
               </div>
             </Form>
-          )
-        },
-        {
-          key: '2',
-          label: 'Payroll & Commission',
-          children: (
-            <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Form.Item name="salaryType" label="Salary Structure">
-  <               Select size="large">
-                    <Option value="Commission">Commission Based</Option>
-                    <Option value="Fixed">Fixed Salary</Option>
-                    <Option value="Hybrid">Fixed + Commission</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item name="comm" label="Commission Rate (%)">
-                  <Input suffix="%" size="large" />
-                </Form.Item>
-              </div>
-              
-              <Form.Item name="baseSalary" label="Base Salary (LKR)">
-                <Input prefix="Rs." size="large" />
-              </Form.Item>
-
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex items-start gap-3">
-                <SafetyCertificateOutlined style={{ color: '#2563eb', fontSize: '20px', marginTop: '4px' }} />
-                <div>
-                  <h4 className="font-bold text-blue-900 m-0">Payroll Note</h4>
-                  <p className="text-blue-700 text-xs m-0">Changes to commission rates will apply from the next billing cycle automatically.</p>
-                </div>
-              </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
-                <Button onClick={onClose} size="large">Cancel</Button>
-                <Button type="primary" size="large" style={{ backgroundColor: '#7C4DFF' }}>
-                  Update Payroll
-                </Button>
-              </div>
-            </Form>
-          )
-        }
-      ]} />
     </Modal>
   );
 }

@@ -14,8 +14,12 @@ import {
   Col,
   Input,
   Space,
-  Switch
+  Switch,
+  Avatar,
+  Segmented,
+  Empty
 } from 'antd';
+import Image from 'next/image';
 import type { InputRef, TableColumnType } from 'antd';
 import { 
   PlusOutlined, 
@@ -33,26 +37,69 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-// --- Mock Initial Data Updated for Service/Product ---
-const INITIAL_SERVICES = [
-  { key: '1', name: "Classic Haircut", category: "Service", price: 2500, status: "Active", description: "Standard haircut with wash and styling." },
-  { key: '2', name: "Beard Trim & Shape", category: "Service", price: 1500, status: "Active", description: "Professional beard grooming." },
-  { key: '3', name: "Hair Coloring", category: "Service", price: 5000, status: "Active", description: "Full head coloring or highlights." },
-  { key: '4', name: "Matte Clay Wax", category: "Product", price: 1800, status: "Active", description: "Premium styling wax." },
-  { key: '5', name: "Beard Oil", category: "Product", price: 1200, status: "Inactive", description: "Nourishing oil for beard growth." },
-];
+// No initial mock data, loaded dynamically from DB
 
 function ServicesContent() {
-  const [services, setServices] = useState(INITIAL_SERVICES);
+  const [services, setServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState('owner');
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
   
   // Modal States
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
-  const [serviceToDelete, setServiceToDelete] = useState<string | null>(null);
+  const [serviceToDelete, setServiceToDelete] = useState<any>(null);
 
   const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
+
+  const fetchCatalog = async () => {
+    setLoading(true);
+    try {
+      const [resSvc, resProd] = await Promise.all([
+        fetch('/api/v1/services').then(r => r.json()),
+        fetch('/api/v1/products').then(r => r.json())
+      ]);
+      const formattedServices = (resSvc.services || []).map((s: any) => ({ ...s, key: s.id, category: 'Service' }));
+      const formattedProducts = (resProd.products || []).map((p: any) => ({ ...p, key: p.id, category: 'Product' }));
+      setServices([...formattedServices, ...formattedProducts]);
+    } catch (e) {
+      showAlert('error', 'Failed to load catalog');
+    }
+    setLoading(false);
+  };
+
+  React.useEffect(() => {
+    fetchCatalog();
+    
+    // Check Permissions
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      setUserRole(roleMatch[2].toLowerCase());
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            // Check permissions for the catalog page
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/services');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+  }, []);
 
   const handleAdd = () => {
     setEditingService(null);
@@ -64,43 +111,71 @@ function ServicesContent() {
     setIsServiceModalOpen(true);
   };
 
-  const handleDeleteClick = (key: string) => {
-    setServiceToDelete(key);
+  const handleDeleteClick = (record: any) => {
+    setServiceToDelete(record);
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (serviceToDelete) {
-      setServices(prev => prev.filter(s => s.key !== serviceToDelete));
-      showAlert('success', 'Item removed successfully.');
+      const endpoint = serviceToDelete.category === 'Service' ? '/api/v1/services' : '/api/v1/products';
+      try {
+        const res = await fetch(`${endpoint}?id=${serviceToDelete.key}`, { method: 'DELETE' });
+        if (res.ok) {
+          showAlert('success', 'Item removed successfully.');
+          fetchCatalog();
+        } else {
+          showAlert('error', 'Failed to delete item.');
+        }
+      } catch (e) {
+        showAlert('error', 'An error occurred.');
+      }
       setIsDeleteModalOpen(false);
       setServiceToDelete(null);
     }
   };
 
-  const handleSaveService = (serviceData: any) => {
-    if (serviceData.key) {
-      setServices(prev => 
-        prev.map(s => s.key === serviceData.key ? { ...s, ...serviceData } : s)
-      );
-      showAlert('success', `${serviceData.name} updated successfully.`);
-    } else {
-      const newService = {
-        ...serviceData,
-        key: String(Date.now()), 
-      };
-      setServices(prev => [newService, ...prev]);
-      showAlert('success', 'New item added to catalog.');
+  const handleSaveService = async (serviceData: any) => {
+    const isEdit = !!serviceData.key;
+    const endpoint = serviceData.category === 'Service' ? '/api/v1/services' : '/api/v1/products';
+    const payload = isEdit ? { ...serviceData, id: serviceData.key } : serviceData;
+    
+    try {
+      const res = await fetch(endpoint, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        showAlert('success', `${serviceData.name} saved successfully.`);
+        fetchCatalog();
+        setIsServiceModalOpen(false);
+      } else {
+        const err = await res.json();
+        showAlert('error', err.message || 'Failed to save item.');
+      }
+    } catch (e) {
+      showAlert('error', 'An error occurred.');
     }
-    setIsServiceModalOpen(false);
   };
 
-  const handleToggleStatus = (key: string, checked: boolean) => {
-    setServices(prev => 
-      prev.map(s => s.key === key ? { ...s, status: checked ? "Active" : "Inactive" } : s)
-    );
-    // FIX: Changed 'info' to 'success' to match your AlertType
-    showAlert('success', `Status updated successfully.`);
+  const handleToggleStatus = async (record: any, checked: boolean) => {
+    const endpoint = record.category === 'Service' ? '/api/v1/services' : '/api/v1/products';
+    try {
+      const res = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: record.key, status: checked ? "Active" : "Inactive" })
+      });
+      if (res.ok) {
+        showAlert('success', `Status updated successfully.`);
+        fetchCatalog();
+      } else {
+        showAlert('error', 'Failed to update status.');
+      }
+    } catch (e) {
+      showAlert('error', 'An error occurred.');
+    }
   };
 
   // --- Column Search Setup ---
@@ -159,9 +234,30 @@ function ServicesContent() {
       align: 'left' as const, // Anchor to left
       ...getColumnSearchProps('name', 'Name'), 
       render: (text: string, record: any) => (
-        <div className="flex flex-col">
-          <span className="font-bold text-slate-800 text-[14px]">{text}</span>
-          <span className="text-[11px] text-slate-500 truncate max-w-[240px]">{record.description}</span>
+        <div className="flex items-center gap-3">
+          {record.imageUrl ? (
+            <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 bg-slate-50 relative">
+              <Image 
+                src={record.imageUrl.startsWith('http') ? record.imageUrl : (record.imageUrl.startsWith('/') ? record.imageUrl : `/${record.imageUrl}`)}
+                alt={text} 
+                fill
+                sizes="48px"
+                className="object-cover" 
+              />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center flex-shrink-0">
+              {record.category === 'Service' ? (
+                <ScissorOutlined className="text-slate-400 text-lg" />
+              ) : (
+                <ShoppingOutlined className="text-slate-400 text-lg" />
+              )}
+            </div>
+          )}
+          <div className="flex flex-col">
+            <span className="font-bold text-slate-800 text-[14px]">{text}</span>
+            <span className="text-[11px] text-slate-500 truncate max-w-[200px]">{record.description}</span>
+          </div>
         </div>
       ),
     },
@@ -183,6 +279,17 @@ function ServicesContent() {
       },
     },
     {
+      title: 'Branch',
+      dataIndex: 'shopId',
+      key: 'branch',
+      width: 140,
+      align: 'center' as const,
+      render: (_: any, record: any) => {
+        if (record.category === 'Product') return <span className="text-xs text-slate-400">N/A</span>;
+        return <span className="text-[12px] font-semibold text-slate-600">{record.shop?.name || 'Global / All'}</span>;
+      }
+    },
+    {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
@@ -202,14 +309,13 @@ function ServicesContent() {
       ],
       onFilter: (value: any, record: any) => record.status === value,
       render: (status: string, record: any) => (
-        // FIX: Added whitespace-nowrap to prevent text dropping to next line
         <div className="flex items-center justify-center gap-2 whitespace-nowrap">
           <Switch 
             size="small" 
             checked={status === 'Active'} 
-            onChange={(checked) => handleToggleStatus(record.key, checked)} 
+            onChange={(checked) => handleToggleStatus(record, checked)} 
+            disabled={!canEdit}
           />
-          {/* FIX: Replaced w-12 with min-w-[65px] to fit "INACTIVE" perfectly */}
           <Text type={status === 'Active' ? 'success' : 'secondary'} className="text-[10px] font-bold uppercase inline-block min-w-[65px] text-left">
             {status}
           </Text>
@@ -219,14 +325,22 @@ function ServicesContent() {
     {
       title: 'Action',
       key: 'action',
-      align: 'right' as const, // Push actions to the far right edge
+      align: 'right' as const,
       width: 80,
       render: (_: any, record: any) => {
-        const items: MenuProps['items'] = [
-          { key: '1', label: 'Edit Item', icon: <EditOutlined />, onClick: () => handleEdit(record) },
-          { type: 'divider' },
-          { key: '2', label: 'Remove Item', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) },
-        ];
+        const items: MenuProps['items'] = [];
+        if (canEdit) {
+          items.push({ key: '1', label: 'Edit Item', icon: <EditOutlined />, onClick: () => handleEdit(record) });
+        }
+        if (canEdit && canDelete) {
+          items.push({ type: 'divider' });
+        }
+        if (canDelete) {
+          items.push({ key: '2', label: 'Remove Item', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record) });
+        }
+        
+        if (items.length === 0) return null;
+
         return (
           <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
             <Button type="text" shape="circle" icon={<MoreOutlined className="text-lg" />} />
@@ -249,15 +363,18 @@ function ServicesContent() {
           <Text type="secondary">Manage services and products. Swipe table to see all details.</Text>
         </div>
         
-        <Button 
-          type="primary" 
-          size="large" 
-          icon={<PlusOutlined />} 
-          onClick={handleAdd}
-          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold shadow-md shadow-purple-100 border-none w-full md:w-auto h-12"
-        >
-          Add Item
-        </Button>
+        {canAdd && (
+            <div className="flex gap-3">
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+                className="bg-zinc-900 hover:bg-zinc-800 shadow-md h-10 px-6 rounded-lg font-semibold tracking-wide border-0 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+              >
+                Add Service
+              </Button>
+            </div>
+          )}
       </div>
 
       {/* KPI Stats - Centered layout for mobile */}

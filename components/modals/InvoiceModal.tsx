@@ -39,6 +39,7 @@ export const InvoiceModal = ({ isOpen, onClose, data }: InvoiceModalProps) => {
       printWindow.document.write('</body></html>');
       printWindow.document.close();
       printWindow.print();
+      setTimeout(() => printWindow.close(), 500);
     }
   };
 
@@ -65,12 +66,12 @@ export const InvoiceModal = ({ isOpen, onClose, data }: InvoiceModalProps) => {
           <span>Time: {dayjs().format('HH:mm')}</span>
         </div>
         <div className="info-row flex justify-between text-xs text-slate-600 mb-1">
-          <span>Client: {data.client}</span>
+          <span>Client: {data.client ?? 'Walk-in Client'}</span>
           <span>Specialist: {data.barber || 'N/A'}</span>
         </div>
         <div className="info-row flex justify-between text-xs text-slate-600 mb-4">
           <span>Contact: {data.contact || 'N/A'}</span>
-          <span>Method: {data.method}</span>
+          <span>Method: {data.method ?? 'Cash'}</span>
         </div>
 
         <div className="divider border-b border-dashed border-slate-300 my-3"></div>

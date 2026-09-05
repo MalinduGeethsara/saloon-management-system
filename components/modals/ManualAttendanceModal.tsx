@@ -5,71 +5,66 @@ import { Modal, Form, Select, DatePicker, TimePicker, Button, Input } from 'antd
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
-// Extend dayjs with the plugin to parse "08:30 AM" format
 dayjs.extend(customParseFormat);
 
 const { Option } = Select;
 const { TextArea } = Input;
 
+interface StaffMember { id: string; name: string; }
+
 interface ManualAttendanceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (record: any) => void;
-  staffList: string[];
-  recordToEdit?: any; // New prop for editing
+  staffList: StaffMember[];
+  recordToEdit?: any;
 }
 
-export function ManualAttendanceModal({ 
-  isOpen, 
-  onClose, 
-  onSave, 
+export function ManualAttendanceModal({
+  isOpen,
+  onClose,
+  onSave,
   staffList,
-  recordToEdit 
+  recordToEdit
 }: ManualAttendanceModalProps) {
   const [form] = Form.useForm();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
-  // Populate form when modal opens or recordToEdit changes
   useEffect(() => {
     if (!mounted) return;
     if (isOpen) {
       if (recordToEdit) {
-        // Parse the existing data into Dayjs objects for Ant Design inputs
         form.setFieldsValue({
-          name: recordToEdit.name,
+          userId: recordToEdit.userId,
           status: recordToEdit.status,
-          date: dayjs(), // Assuming current date for demo, or parse record date if available
-          clockIn: recordToEdit.clockIn !== '-' ? dayjs(recordToEdit.clockIn, 'h:mm A') : undefined,
-          clockOut: recordToEdit.clockOut !== '-' ? dayjs(recordToEdit.clockOut, 'h:mm A') : undefined,
-          reason: "Correction", // Default reason for edits
+          date: recordToEdit.checkInRaw ? dayjs(recordToEdit.checkInRaw) : dayjs(),
+          clockIn: recordToEdit.checkInRaw ? dayjs(recordToEdit.checkInRaw) : undefined,
+          clockOut: recordToEdit.checkOutRaw ? dayjs(recordToEdit.checkOutRaw) : undefined,
+          reason: 'Correction',
         });
       } else {
-        form.resetFields(); // Clear form for "Add New" mode
-        form.setFieldsValue({
-          date: dayjs(),
-          status: 'Present'
-        });
+        form.resetFields();
+        form.setFieldsValue({ date: dayjs(), status: 'Present' });
       }
     }
-  }, [isOpen, recordToEdit, form]);
+  }, [isOpen, recordToEdit, form, mounted]);
 
   const handleFinish = (values: any) => {
-    const newRecord = {
-      // Preserve ID if editing, otherwise allow parent to generate one
-      key: recordToEdit?.key, 
-      name: values.name,
-      shop: "Walasmulla", 
+    const staff = staffList.find(s => s.id === values.userId);
+    const record = {
+      key: recordToEdit?.key,
+      userId: values.userId,
+      name: staff?.name || 'Unknown',
       status: values.status,
       clockIn: values.clockIn ? values.clockIn.format('h:mm A') : '-',
       clockOut: values.clockOut ? values.clockOut.format('h:mm A') : '-',
+      clockInRaw: values.clockIn ? values.date.format('YYYY-MM-DD') + 'T' + values.clockIn.format('HH:mm:ss') : null,
+      clockOutRaw: values.clockOut ? values.date.format('YYYY-MM-DD') + 'T' + values.clockOut.format('HH:mm:ss') : null,
       date: values.date.format('YYYY-MM-DD'),
     };
-
-    onSave(newRecord);
+    onSave(record);
     onClose();
   };
 
@@ -82,19 +77,13 @@ export function ManualAttendanceModal({
       footer={null}
       forceRender
       centered
-      title={recordToEdit ? "Edit Attendance Record" : "Manual Attendance Entry"}
+      title={recordToEdit ? 'Edit Attendance Record' : 'Manual Attendance Entry'}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleFinish}
-        style={{ marginTop: 20 }}
-      >
-        <Form.Item name="name" label="Staff Member" rules={[{ required: true }]}>
-          <Select placeholder="Select Employee" disabled={!!recordToEdit}> 
-            {/* Disable name change in edit mode if desired */}
-            {staffList.map(name => (
-              <Option key={name} value={name}>{name}</Option>
+      <Form form={form} layout="vertical" onFinish={handleFinish} style={{ marginTop: 20 }}>
+        <Form.Item name="userId" label="Staff Member" rules={[{ required: true, message: 'Select a staff member' }]}>
+          <Select placeholder="Select Employee" disabled={!!recordToEdit} showSearch optionFilterProp="children">
+            {staffList.map(s => (
+              <Option key={s.id} value={s.id}>{s.name}</Option>
             ))}
           </Select>
         </Form.Item>
@@ -121,14 +110,14 @@ export function ManualAttendanceModal({
           </Form.Item>
         </div>
 
-        <Form.Item name="reason" label={recordToEdit ? "Reason for Edit" : "Reason for Manual Entry"}>
+        <Form.Item name="reason" label={recordToEdit ? 'Reason for Edit' : 'Reason for Manual Entry'}>
           <TextArea rows={2} placeholder="e.g. System error, Forgot ID" />
         </Form.Item>
 
         <div className="flex justify-end gap-3 mt-6">
           <Button onClick={onClose}>Cancel</Button>
           <Button type="primary" htmlType="submit" style={{ backgroundColor: '#1A1A1B' }}>
-            {recordToEdit ? "Update Record" : "Save Record"}
+            {recordToEdit ? 'Update Record' : 'Save Record'}
           </Button>
         </div>
       </Form>

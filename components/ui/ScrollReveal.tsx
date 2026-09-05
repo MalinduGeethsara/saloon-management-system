@@ -4,6 +4,8 @@ import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+let pluginRegistered = false;
+
 interface ScrollRevealProps {
   children: React.ReactNode;
   direction?: "up" | "down" | "left" | "right" | "fade";
@@ -26,8 +28,10 @@ export default function ScrollReveal({
   const elementRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Register GSAP ScrollTrigger
-    gsap.registerPlugin(ScrollTrigger);
+    if (!pluginRegistered) {
+      gsap.registerPlugin(ScrollTrigger);
+      pluginRegistered = true;
+    }
 
     const el = elementRef.current;
     if (!el) return;

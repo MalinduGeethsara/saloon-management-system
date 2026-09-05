@@ -12,29 +12,50 @@ import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { PaymentModal } from "@/components/modals/PaymentModal";
 import { InvoiceModal } from "@/components/modals/InvoiceModal";
 
+import { getAllPayments, createManualBill } from '@/lib/actions/payment';
+
 const { Title, Text } = Typography;
 
-// --- Mock Data ---
-const INITIAL_PAYMENTS = [
-  { 
-    key: '1', id: "INV-1023", client: "Kamal Perera", contact: "0771234567", barber: "Malith Sandaruwan",
-    items: [{ name: "Haircut", type: "Service", price: 2500 }], 
-    amount: 2500, method: "Cash", date: "2023-10-24" 
-  },
-  { 
-    key: '2', id: "INV-1024", client: "Saman Kumara", contact: "0719876543", barber: "Mahesh Madushanka",
-    items: [{ name: "Beard Trim", type: "Service", price: 1500 }], 
-    amount: 1500, method: "Card", date: "2023-10-24" 
-  },
-  { 
-    key: '3', id: "INV-1025", client: "Nimal Siripala", contact: "0765551234", barber: "Vindana Lakmal",
-    items: [{ name: "Haircut", type: "Service", price: 2500 }, { name: "Hair Gel", type: "Product", price: 5000 }], 
-    amount: 7500, method: "Transfer", date: "2023-10-25" 
-  },
-];
-
 function PaymentsContent() {
-  const [payments, setPayments] = useState(INITIAL_PAYMENTS);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState('owner');
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
+  
+  React.useEffect(() => {
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      setUserRole(roleMatch[2].toLowerCase());
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/payments');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+    
+    // Fetch payments
+    const fetchPayments = async () => {
+      const res = await getAllPayments();
+      if (res.success && res.data) {
+        setPayments(res.data);
+      }
+    };
+    fetchPayments();
+  }, []);
   
   // Modals state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -53,14 +74,32 @@ function PaymentsContent() {
     setIsInvoiceModalOpen(true);
   };
 
-  const handleSavePayment = (paymentData: any) => {
+  const handleSavePayment = async (paymentData: any) => {
     const finalRecord = { ...paymentData, key: Date.now().toString() };
-    setPayments(prev => [finalRecord, ...prev]);
+
+    const billRes = await createManualBill({
+      invoiceNo: paymentData.id,
+      clientName: paymentData.client,
+      clientPhone: paymentData.contact,
+      barberName: paymentData.barber,
+      barberId: paymentData.barberId,
+      items: paymentData.items,
+      amount: paymentData.amount,
+      method: paymentData.method,
+    });
+
+    if (!billRes.success) {
+      showAlert('error', billRes.message || 'Failed to record payment.');
+      return;
+    }
+
+    const res = await getAllPayments();
+    if (res.success && res.data) setPayments(res.data);
+
     showAlert('success', 'Payment recorded successfully.');
-    
-    setIsPaymentModalOpen(false); 
-    setSelectedInvoice(finalRecord); 
-    setTimeout(() => setIsInvoiceModalOpen(true), 300); // Wait for modal animation, then open Print View
+    setIsPaymentModalOpen(false);
+    setSelectedInvoice(finalRecord);
+    setTimeout(() => setIsInvoiceModalOpen(true), 300);
   };
 
   // --- Column Search Setup ---
@@ -129,7 +168,7 @@ function PaymentsContent() {
       title: 'Client Details',
       dataIndex: 'client',
       key: 'client',
-      width: 250,
+      width: 200,
       align: 'left' as const,
       ...getColumnSearchProps('client', 'Client'), 
       render: (text: string, record: any) => (
@@ -140,6 +179,19 @@ function PaymentsContent() {
           </span>
         </div>
       ),
+    },
+    {
+      title: 'Branch',
+      dataIndex: 'branch',
+      key: 'branch',
+      width: 150,
+      align: 'left' as const,
+      filters: [
+        { text: 'Colombo', value: 'Colombo' },
+        { text: 'Walasmulla', value: 'Walasmulla' },
+      ],
+      onFilter: (value: any, record: any) => record.branch === value,
+      render: (text: string) => <span className="text-[12px] font-semibold text-slate-600">{text || 'Global'}</span>,
     },
     {
       title: 'Amount',
@@ -172,26 +224,7 @@ function PaymentsContent() {
       width: 140,
       align: 'center' as const,
       render: (text: string) => <span className="text-slate-500">{text}</span>,
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      width: 80,
-      align: 'right' as const, // Push action icon to the right
-      render: (_: any, record: any) => (
-        <div className="flex items-center justify-end">
-          <Tooltip title="View/Print Invoice">
-            <Button 
-              type="text" 
-              shape="circle" 
-              icon={<EyeOutlined className="text-[#7C4DFF] text-lg" />} 
-              onClick={() => handleViewInvoice(record)} 
-              className="bg-[#F3E8FF] hover:bg-[#E9D5FF]"
-            />
-          </Tooltip>
-        </div>
-      ),
-    },
+    }
   ];
 
   return (
@@ -203,15 +236,17 @@ function PaymentsContent() {
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Payments & Billing</Title>
           <Text type="secondary">Manage transactions, invoices, and revenue. Swipe table to see all data.</Text>
         </div>
-        <Button 
-          type="primary" 
-          size="large" 
-          icon={<PlusOutlined />} 
-          onClick={handleAddNew}
-          className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold border-none w-full md:w-auto h-12 shadow-md shadow-purple-100"
-        >
-          Create Bill
-        </Button>
+        {canAdd && (
+          <Button 
+            type="primary" 
+            size="large" 
+            icon={<PlusOutlined />} 
+            onClick={handleAddNew}
+            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold border-none w-full md:w-auto h-12 shadow-md shadow-purple-100"
+          >
+            Create Bill
+          </Button>
+        )}
       </div>
 
       {/* KPI Stats - Centered on Mobile */}
@@ -250,6 +285,10 @@ function PaymentsContent() {
           rowKey="key" 
           // Force horizontal scroll for the entire table
           scroll={{ x: 900 }}
+          onRow={(record) => ({
+            onClick: () => handleViewInvoice(record),
+            className: 'cursor-pointer hover:bg-purple-50 transition-colors'
+          })}
         />
       </Card>
 

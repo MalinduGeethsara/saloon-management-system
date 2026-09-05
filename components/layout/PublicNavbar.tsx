@@ -14,7 +14,7 @@ export function PublicNavbar() {
   
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userProfile, setUserProfile] = useState<{ name: string; initials: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ name: string; initials: string; role?: string } | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -44,7 +44,8 @@ export function PublicNavbar() {
         const displayName = userName || (userRole === 'customer' ? 'Malindu' : userRole.charAt(0).toUpperCase() + userRole.slice(1));
         setUserProfile({
           name: displayName,
-          initials: displayName.charAt(0).toUpperCase()
+          initials: displayName.charAt(0).toUpperCase(),
+          role: userRole.toLowerCase()
         });
       } else {
         setIsLoggedIn(false);
@@ -109,6 +110,7 @@ export function PublicNavbar() {
               { name: 'About', path: '/about' },
               { name: 'Services', path: '/services' },
               { name: 'Products', path: '/products' },
+              { name: 'Barbers', path: '/barbers' },
               { name: 'Contact', path: '/contact' }
             ].map((link) => (
               <Magnetic key={link.name} range={35} strength={0.3}>
@@ -154,7 +156,7 @@ export function PublicNavbar() {
               
               {isLoggedIn && userProfile ? (
                 <Magnetic range={40} strength={0.3}>
-                  <Link href="/profile" className="flex items-center gap-3 group active:scale-95 transition-transform cursor-pointer">
+                  <Link href={userProfile.role === 'admin' ? '/admin' : userProfile.role === 'customer' ? '/profile' : '/owner'} className="flex items-center gap-3 group active:scale-95 transition-transform cursor-pointer">
                     <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-900 dark:text-white font-bold group-hover:bg-amber-600 group-hover:text-white transition-colors border border-zinc-300 dark:border-zinc-700">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
@@ -218,6 +220,7 @@ export function PublicNavbar() {
               { name: 'About', path: '/about' },
               { name: 'Services', path: '/services' },
               { name: 'Products', path: '/products' },
+              { name: 'Barbers', path: '/barbers' },
               { name: 'Contact', path: '/contact' }
             ].map((link) => {
               const isActive = pathname === link.path;
@@ -261,7 +264,7 @@ export function PublicNavbar() {
             
             {isLoggedIn && userProfile ? (
               <Link 
-                href="/profile" 
+                href={userProfile.role === 'admin' ? '/admin' : userProfile.role === 'customer' ? '/profile' : '/owner'}
                 onClick={closeMobileMenu}
                 className="flex items-center justify-center h-14 w-full border border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 hover:text-amber-600 hover:border-amber-600 dark:hover:text-amber-500 dark:hover:border-amber-500 active:text-amber-600 active:border-amber-600 dark:active:text-amber-500 dark:active:border-amber-500 text-sm font-bold uppercase tracking-[0.2em] transition-colors duration-300"
               >

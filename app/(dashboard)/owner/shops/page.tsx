@@ -12,7 +12,8 @@ import {
   Col, 
   Statistic, 
   Dropdown, 
-  Input 
+  Input,
+  Tooltip
 } from 'antd';
 import { 
   ShopOutlined, 
@@ -30,54 +31,71 @@ import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
 const { Title, Text } = Typography;
 
-// --- Mock Data ---
-const INITIAL_SHOPS = [
-  { 
-    key: "S-01", 
-    name: "Mr Polaa - Walasmulla", 
-    manager: "Sampath Madusanka", 
-    phone: "+94 71 256 8071", 
-    status: "Open", 
-    address: "New Road, Walasmulla",
-    staff: 8,
-    revenue: 450000,
-    image: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&q=80&w=800"
-  },
-  { 
-    key: "S-02", 
-    name: "Mr Polaa - Colombo", 
-    manager: "Saman Kumara", 
-    phone: "+94 77 123 4567", 
-    status: "Open", 
-    address: "Union Place, Colombo 02",
-    staff: 5,
-    revenue: 280000,
-    image: "https://images.unsplash.com/photo-1503951914875-befea74701c5?auto=format&fit=crop&q=80&w=800"
-  },
-  { 
-    key: "S-03", 
-    name: "Mr Polaa - Galle", 
-    manager: "Lahiru Fernando", 
-    phone: "+94 76 555 1234", 
-    status: "Closed", 
-    address: "Pedlar St, Galle Fort",
-    staff: 3,
-    revenue: 120000,
-    image: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&q=80&w=800"
-  },
-];
+// Removed mock data
 
 function ShopsContent() {
   const router = useRouter();
   const { showAlert } = useAlert();
   
-  const [shops, setShops] = useState(INITIAL_SHOPS);
+  const [shops, setShops] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingShop, setEditingShop] = useState<any>(null);
   const [shopToDelete, setShopToDelete] = useState<string | null>(null);
+
+  const [canAdd, setCanAdd] = useState(true);
+  const [canEdit, setCanEdit] = useState(true);
+  const [canDelete, setCanDelete] = useState(true);
+
+  const fetchShops = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/v1/shops');
+      const data = await res.json();
+      if (res.ok) {
+        setShops(data.shops.map((s: any) => ({
+          ...s,
+          key: s.id,
+          staffCount: s.staff ? s.staff.length : 0,
+          staffMembers: s.staff || [],
+          revenue: s.revenue || 0
+        })));
+      }
+    } catch (e) {
+      showAlert('error', 'Failed to load shops');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchShops();
+
+    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
+    if (roleMatch) {
+      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
+        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
+        if (permMatch) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
+            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/shops');
+            if (pagePerms) {
+              setCanAdd(pagePerms.canAdd);
+              setCanEdit(pagePerms.canEdit);
+              setCanDelete(pagePerms.canDelete);
+            } else {
+              setCanAdd(false);
+              setCanEdit(false);
+              setCanDelete(false);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+  }, []);
 
   const handleAdd = () => {
     setEditingShop(null);
@@ -99,28 +117,56 @@ function ShopsContent() {
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (shopToDelete) {
-      setShops(prev => prev.filter(s => s.key !== shopToDelete));
-      showAlert('success', 'Location closed and removed successfully.');
-      setIsDeleteModalOpen(false);
-      setShopToDelete(null);
+      try {
+        const res = await fetch(`/api/v1/shops?id=${shopToDelete}`, { method: 'DELETE' });
+        if (res.ok) {
+          showAlert('success', 'Location closed and removed successfully.');
+          fetchShops();
+          setIsDeleteModalOpen(false);
+          setShopToDelete(null);
+        } else {
+          showAlert('error', 'Failed to delete shop.');
+        }
+      } catch (e) {
+        showAlert('error', 'Error deleting shop.');
+      }
     }
   };
 
-  const handleSaveShop = (shopData: any) => {
-    if (shopData.key) {
-      setShops(prev => prev.map(s => s.key === shopData.key ? { ...s, ...shopData } : s));
-      showAlert('success', 'Location details updated.');
-    } else {
-      const newShop = {
-        ...shopData,
-        key: `S-${Date.now()}`, 
-        staff: 0,
-        revenue: 0
-      };
-      setShops(prev => [newShop, ...prev]);
-      showAlert('success', 'New location added successfully.');
+  const handleSaveShop = async (shopData: any) => {
+    try {
+      if (shopData.key) {
+        // UPDATE Existing
+        const payload = { ...shopData, id: shopData.key };
+        const res = await fetch('/api/v1/shops', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          fetchShops();
+          showAlert('success', 'Location details updated.');
+        } else {
+          showAlert('error', 'Failed to update shop.');
+        }
+      } else {
+        // CREATE New
+        const res = await fetch('/api/v1/shops', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(shopData)
+        });
+        if (res.ok) {
+          fetchShops();
+          showAlert('success', 'New location added successfully.');
+        } else {
+          showAlert('error', 'Failed to add shop.');
+        }
+      }
+    } catch (e) {
+      showAlert('error', 'Error saving shop.');
     }
   };
 
@@ -147,15 +193,17 @@ function ShopsContent() {
             className="rounded-xl w-full md:w-64"
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <Button 
-            type="primary" 
-            size="large" 
-            icon={<PlusOutlined />} 
-            onClick={handleAdd}
-            className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none h-12"
-          >
-            Add Location
-          </Button>
+          {canAdd && (
+            <Button 
+              type="primary" 
+              size="large" 
+              icon={<PlusOutlined />} 
+              onClick={handleAdd}
+              className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-semibold shadow-lg shadow-purple-200 border-none h-12"
+            >
+              Add Location
+            </Button>
+          )}
         </div>
       </div>
 
@@ -170,7 +218,7 @@ function ShopsContent() {
               cover={
                 <div className="relative h-44 w-full overflow-hidden">
                   <img 
-                    src={shop.image} 
+                    src={shop.imageUrl || 'https://via.placeholder.com/800x400?text=Shop+Image'} 
                     alt={shop.name} 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                   />
@@ -216,12 +264,19 @@ function ShopsContent() {
                     />
                   </Col>
                   <Col span={12}>
-                    <Statistic 
-                      title={<span className="text-[10px] uppercase font-bold text-slate-400">Total Staff</span>}
-                      value={shop.staff} 
-                      suffix={<span className="text-[10px] text-slate-400 ml-1 font-normal">Team</span>}
-                      styles={{ content: { fontSize: '16px', fontWeight: 800 } }}
-                    />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Staff ({shop.staffCount})</span>
+                      <Avatar.Group max={{ count: 3, style: { color: '#f56a00', backgroundColor: '#fde3cf' } }}>
+                        {shop.staffMembers?.map((staff: any) => (
+                          <Tooltip title={staff.name} placement="top" key={staff.id}>
+                            <Avatar src={staff.imageUrl} style={{ backgroundColor: '#7C4DFF' }}>
+                              {staff.name.charAt(0)}
+                            </Avatar>
+                          </Tooltip>
+                        ))}
+                      </Avatar.Group>
+                      {shop.staffCount === 0 && <span className="text-xs text-slate-400 font-semibold mt-1">No staff assigned</span>}
+                    </div>
                   </Col>
                 </Row>
 
@@ -237,19 +292,21 @@ function ShopsContent() {
                     Manage
                   </Button>
                   
-                  <Dropdown 
-                    menu={{ items: [
-                      { key: '1', label: 'Edit Details', icon: <SettingOutlined />, onClick: () => handleSettings(shop) },
-                      { type: 'divider' },
-                      { key: '3', label: 'Close Location', danger: true, onClick: () => handleDeleteClick(shop.key) },
-                    ] }} 
-                    trigger={['click']}
-                    placement="bottomRight"
-                  >
-                    <Button className="h-11 w-12 flex items-center justify-center rounded-xl border-slate-200 bg-white">
-                      <EllipsisOutlined style={{ fontSize: 20 }} />
-                    </Button>
-                  </Dropdown>
+                  {(canEdit || canDelete) && (
+                    <Dropdown 
+                      menu={{ items: [
+                        ...(canEdit ? [{ key: '1', label: 'Edit Details', icon: <SettingOutlined />, onClick: () => handleSettings(shop) }] : []),
+                        ...(canEdit && canDelete ? [{ type: 'divider' as const }] : []),
+                        ...(canDelete ? [{ key: '3', label: 'Close Location', danger: true, onClick: () => handleDeleteClick(shop.key) }] : []),
+                      ] }} 
+                      trigger={['click']}
+                      placement="bottomRight"
+                    >
+                      <Button className="h-11 w-12 flex items-center justify-center rounded-xl border-slate-200 bg-white">
+                        <EllipsisOutlined style={{ fontSize: 20 }} />
+                      </Button>
+                    </Dropdown>
+                  )}
                 </div>
               </div>
             </Card>

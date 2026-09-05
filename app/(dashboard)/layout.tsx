@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { AdminSidebar } from "@/components/navigation/AdminSidebar";
 import { OwnerSidebar } from "@/components/navigation/OwnerSidebar";
+import { BarberSidebar } from "@/components/navigation/BarberSidebar";
 import { NotificationBell } from "@/components/layout/NotificationBell"; 
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 
@@ -35,6 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isOwnerRoute = pathname.startsWith("/owner");
   const isAdminRoute = pathname.startsWith("/admin");
+  const isBarberRoute = pathname.startsWith("/barber");
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
@@ -71,6 +73,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <OwnerSidebar onClose={closeMobileMenu} />
   ) : isAdminRoute ? (
     <AdminSidebar onClose={closeMobileMenu} />
+  ) : isBarberRoute ? (
+    <BarberSidebar onClose={closeMobileMenu} />
   ) : (
     <div style={{ width: 260, background: '#FFFFFF', borderRight: '1px solid #E2E8F0', height: '100%' }} />
   );
@@ -86,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
 
     const currentName = nameMatch ? decodeURIComponent(nameMatch[2]) : null;
-    const currentRole = roleMatch ? roleMatch[2] : null;
+    const currentRole = roleMatch ? roleMatch[2].toLowerCase() : null;
 
     if (currentName) {
       setProfileName(currentName);
@@ -126,6 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <ConfigProvider
       theme={{
+        cssVar: { key: 'app-theme' },
         token: {
           colorPrimary: '#7C4DFF',
           borderRadius: 14,
