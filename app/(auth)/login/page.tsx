@@ -17,6 +17,20 @@ function LoginFormContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/profile';
 
+  // Force dark mode on login page to ensure the background/overscroll matches the dark theme of the page
+  useEffect(() => {
+    const html = document.documentElement;
+    const hadDark = html.classList.contains('dark');
+    if (!hadDark) {
+      html.classList.add('dark');
+    }
+    return () => {
+      if (!hadDark) {
+        html.classList.remove('dark');
+      }
+    };
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);

@@ -65,3 +65,13 @@ html.lenis, html.lenis body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Prevent white panel on overscroll/rubber-banding by matching html/body backgrounds to active theme */
+html, body {
+  @apply bg-zinc-50 text-zinc-900 transition-colors duration-500;
+}
+
+html.dark, html.dark body {
+  @apply bg-zinc-950 text-zinc-100;
+}
+
