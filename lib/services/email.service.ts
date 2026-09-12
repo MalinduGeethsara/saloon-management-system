@@ -17,8 +17,12 @@ function isConfigured() {
 
 export async function sendOtpEmail(to: string, code: string) {
   if (!isConfigured()) {
-    console.log(`[Email Mock] OTP for ${to}: ${code}`);
-    return { success: true };
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[Email Mock] OTP for ${to}: ${code}`);
+      return { success: true };
+    }
+    console.error('[Email] RESEND_API_KEY is not configured in production — OTP email not sent');
+    return { success: false };
   }
 
   try {

@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { deleteCloudinaryImage } from '@/lib/cloudinary';
 import { normalizePhone } from '@/lib/utils/phone';
+
+// Staff can only ever be created/edited into these roles via this endpoint — letting the
+// client pass an arbitrary `role` would let an OWNER-authenticated request mint an ADMIN account.
+const ASSIGNABLE_ROLES = ['MANAGER', 'BARBER'];
 
 export async function GET() {
   const session = await verifySession();
@@ -47,7 +52,13 @@ export async function POST(request: Request) {
 
   try {
     const data = await request.json();
-    const hashedPassword = await bcrypt.hash(data.password || 'password123', 10);
+
+    if (!ASSIGNABLE_ROLES.includes(data.role)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
+    const generatedPassword = data.password || crypto.randomBytes(12).toString('base64url');
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
     const user = await db.user.create({
       data: {
@@ -63,8 +74,16 @@ export async function POST(request: Request) {
         commissionRate: parseFloat(data.commissionRate) || 0,
       }
     });
-    return NextResponse.json({ success: true, user });
+
+    const { password: _password, ...userWithoutPassword } = user;
+    return NextResponse.json({
+      success: true,
+      user: userWithoutPassword,
+      // Only returned when the caller didn't supply one — show it once so the owner can hand it off.
+      generatedPassword: data.password ? undefined : generatedPassword,
+    });
   } catch (error) {
+    console.error('Failed to create staff:', error);
     return NextResponse.json({ error: 'Failed to create staff' }, { status: 500 });
   }
 }
@@ -75,12 +94,19 @@ export async function PUT(request: Request) {
 
   try {
     const data = await request.json();
-    const updateData: any = {
-      name: data.name,
-      email: data.email,
-      phone: data.phone ? normalizePhone(data.phone) : null,
-      role: data.role
-    };
+
+    // This endpoint is also used for payroll-only updates (PayrollConfigModal), which send just
+    // { id, salaryType, baseSalary, commissionRate, allowances } — role/name/email are omitted
+    // there on purpose, so only validate role when the caller actually included it.
+    if (data.role !== undefined && !ASSIGNABLE_ROLES.includes(data.role)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+    }
+
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.phone !== undefined) updateData.phone = data.phone ? normalizePhone(data.phone) : null;
+    if (data.role !== undefined) updateData.role = data.role;
 
     if (data.imageUrl !== undefined) {
       updateData.imageUrl = data.imageUrl;
@@ -101,8 +127,10 @@ export async function PUT(request: Request) {
       where: { id: data.id },
       data: updateData
     });
-    return NextResponse.json({ success: true, user });
+    const { password: _password, ...userWithoutPassword } = user;
+    return NextResponse.json({ success: true, user: userWithoutPassword });
   } catch (error) {
+    console.error('Failed to update staff:', error);
     return NextResponse.json({ error: 'Failed to update staff' }, { status: 500 });
   }
 }

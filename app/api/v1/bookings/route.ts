@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createBooking, getBookingsForUser } from '@/lib/controllers/booking.controller';
+import { createBooking, getBookingsForUser, getBookingById } from '@/lib/controllers/booking.controller';
 import { verifySession } from '@/lib/session';
+import { serverError } from '@/lib/api-error';
 
 export async function GET(request: Request) {
   try {
@@ -10,14 +11,20 @@ export async function GET(request: Request) {
     const bookings = await getBookingsForUser(session.id, session.role);
     return NextResponse.json({ bookings }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error fetching bookings', error: error.message }, { status: 500 });
+    return serverError('Error fetching bookings', error);
   }
 }
 
 export async function POST(request: Request) {
   try {
     const session = await verifySession();
-    if (!session) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    // Staff-only: this creates a CONFIRMED booking immediately and trusts a caller-supplied
+    // `amount` (for manual/walk-in bookings). Opening it to any logged-in user would let a
+    // customer hit the API directly to create a confirmed booking at a price of their choosing,
+    // bypassing the real PayHere checkout flow entirely (see lib/actions/booking.ts for that path).
+    if (!session || !['ADMIN', 'OWNER', 'MANAGER'].includes(session.role)) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
 
     const body = await request.json();
 
@@ -99,7 +106,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ booking, message: 'Booking created successfully' }, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error creating booking', error: error.message }, { status: 500 });
+    return serverError('Error creating booking', error);
   }
 }
 
@@ -117,6 +124,17 @@ export async function PUT(request: Request) {
       return NextResponse.json({ message: 'ID is required' }, { status: 400 });
     }
 
+    // A barber may only manage bookings assigned to them; managers/admins/owners can manage any.
+    if (session.role === 'BARBER') {
+      const existing = await getBookingById(body.id);
+      if (!existing) {
+        return NextResponse.json({ message: 'Booking not found' }, { status: 404 });
+      }
+      if (existing.barberId !== session.id) {
+        return NextResponse.json({ message: 'You can only manage your own bookings' }, { status: 403 });
+      }
+    }
+
     let booking;
     if (body.action === 'PAYMENT_COMPLETE') {
       booking = await completePayment(body.id, body.paymentMethod?.toUpperCase() || 'CASH');
@@ -128,7 +146,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ booking, message: 'Booking updated successfully' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error updating booking', error: error.message }, { status: 500 });
+    return serverError('Error updating booking', error);
   }
 }
 
@@ -146,6 +164,6 @@ export async function DELETE(request: Request) {
     await deleteBooking(id);
     return NextResponse.json({ message: 'Booking deleted successfully' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error deleting booking', error: error.message }, { status: 500 });
+    return serverError('Error deleting booking', error);
   }
 }

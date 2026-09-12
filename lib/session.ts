@@ -1,8 +1,8 @@
 import { SignJWT, jwtVerify, JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
+import { getSessionSecret } from './secrets';
 
-const secretKey = process.env.SESSION_SECRET || 'a-very-secret-default-key-for-dev';
-const encodedKey = new TextEncoder().encode(secretKey);
+const encodedKey = new TextEncoder().encode(getSessionSecret());
 
 export interface Permission {
   pageKey: string;

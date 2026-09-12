@@ -2,11 +2,21 @@ import { NextResponse } from 'next/server';
 import { loginCustomer, registerCustomer } from '@/lib/controllers/auth.controller';
 import { wasRecentlyVerified } from '@/lib/services/otp.service';
 import { normalizePhone } from '@/lib/utils/phone';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { email, password, isRegister, name, phone } = body;
+
+    const limitKey = `login:${getClientIp(request)}:${(email || phone || '').toLowerCase()}`;
+    const { allowed, retryAfterSeconds } = rateLimit(limitKey, 5, 15 * 60 * 1000);
+    if (!allowed) {
+      return NextResponse.json(
+        { success: false, message: 'Too many attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+      );
+    }
 
     if (isRegister) {
       if ((!email && !phone) || !password || !name) {

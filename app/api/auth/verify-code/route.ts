@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyOtp } from '@/lib/services/otp.service';
 import { normalizePhone } from '@/lib/utils/phone';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import type { OtpPurpose } from '@prisma/client';
 
 const ALLOWED_PURPOSES: OtpPurpose[] = ['REGISTER', 'LOGIN', 'PASSWORD_RESET', 'ADD_PHONE'];
@@ -16,6 +17,16 @@ export async function POST(request: Request) {
 
     if (!ALLOWED_PURPOSES.includes(purpose)) {
       return NextResponse.json({ success: false, message: 'Invalid purpose' }, { status: 400 });
+    }
+
+    // otp.service already caps attempts per code (MAX_ATTEMPTS), this additionally caps how
+    // often this IP can hit the endpoint at all.
+    const { allowed, retryAfterSeconds } = rateLimit(`verify-code:${getClientIp(request)}`, 15, 5 * 60 * 1000);
+    if (!allowed) {
+      return NextResponse.json(
+        { success: false, message: 'Too many attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+      );
     }
 
     const isEmail = identifier.includes('@');

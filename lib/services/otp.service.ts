@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { db } from '../db';
+import { getSessionSecret } from '../secrets';
 import type { OtpPurpose } from '@prisma/client';
 
 const OTP_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -7,8 +8,7 @@ const MAX_ATTEMPTS = 5;
 const VERIFIED_WINDOW_MS = 10 * 60 * 1000; // how long a consumed OTP counts as "recently verified"
 
 function hashCode(identifier: string, purpose: OtpPurpose, code: string): string {
-  const secret = process.env.SESSION_SECRET || 'a-very-secret-default-key-for-dev';
-  return crypto.createHmac('sha256', secret).update(`${identifier}:${purpose}:${code}`).digest('hex');
+  return crypto.createHmac('sha256', getSessionSecret()).update(`${identifier}:${purpose}:${code}`).digest('hex');
 }
 
 function generateCode(): string {

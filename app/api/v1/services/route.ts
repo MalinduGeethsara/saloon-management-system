@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { deleteCloudinaryImage } from '@/lib/cloudinary';
+import { serverError } from '@/lib/api-error';
 
 export async function GET() {
   try {
@@ -13,7 +14,7 @@ export async function GET() {
     });
     return NextResponse.json({ services }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error fetching services', error: error.message }, { status: 500 });
+    return serverError('Error fetching services', error);
   }
 }
 
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ service, message: 'Service created successfully' }, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error creating service', error: error.message }, { status: 500 });
+    return serverError('Error creating service', error);
   }
 }
 
@@ -95,7 +96,7 @@ export async function PUT(request: Request) {
     
     return NextResponse.json({ service, message: 'Service updated successfully' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error updating service', error: error.message }, { status: 500 });
+    return serverError('Error updating service', error);
   }
 }
 
@@ -137,6 +138,6 @@ export async function DELETE(request: Request) {
     
     return NextResponse.json({ message: 'Service deleted successfully' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error deleting service', error: error.message }, { status: 500 });
+    return serverError('Error deleting service', error);
   }
 }

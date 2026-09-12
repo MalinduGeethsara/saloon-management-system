@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifySession } from '@/lib/session';
+import { serverError } from '@/lib/api-error';
 
 export async function GET(request: Request) {
   try {
@@ -40,8 +41,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ attendance }, { status: 200 });
   } catch (error: any) {
-    console.error('[Attendance GET]', error);
-    return NextResponse.json({ message: 'Error fetching attendance', error: error.message }, { status: 500 });
+    return serverError('Error fetching attendance', error);
   }
 }
 
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ record, message: 'Attendance created' }, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error creating attendance', error: error.message }, { status: 500 });
+    return serverError('Error creating attendance', error);
   }
 }
 
@@ -121,7 +121,7 @@ export async function PUT(request: Request) {
     const record = await db.attendance.update({ where: { id: body.id }, data: updateData });
     return NextResponse.json({ record, message: 'Attendance updated' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error updating attendance', error: error.message }, { status: 500 });
+    return serverError('Error updating attendance', error);
   }
 }
 
@@ -139,6 +139,6 @@ export async function DELETE(request: Request) {
     await db.attendance.delete({ where: { id } });
     return NextResponse.json({ message: 'Attendance deleted' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error deleting attendance', error: error.message }, { status: 500 });
+    return serverError('Error deleting attendance', error);
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifySession } from '@/lib/session';
+import { serverError } from '@/lib/api-error';
 
 export async function GET(request: Request) {
   try {
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ notifications }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error fetching notifications', error: error.message }, { status: 500 });
+    return serverError('Error fetching notifications', error);
   }
 }
 
@@ -32,6 +33,6 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error updating notifications', error: error.message }, { status: 500 });
+    return serverError('Error updating notifications', error);
   }
 }

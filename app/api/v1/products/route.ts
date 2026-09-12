@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import { createProduct, getAllProducts, updateProduct, deleteProduct, getProductById } from '@/lib/controllers/product.controller';
 import { verifySession } from '@/lib/session';
 import { deleteCloudinaryImage } from '@/lib/cloudinary';
+import { serverError } from '@/lib/api-error';
 
 export async function GET() {
   try {
     const products = await getAllProducts();
     return NextResponse.json({ products }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error fetching products', error: error.message }, { status: 500 });
+    return serverError('Error fetching products', error);
   }
 }
 
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ product, message: 'Product created successfully' }, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error creating product', error: error.message }, { status: 500 });
+    return serverError('Error creating product', error);
   }
 }
 
@@ -88,7 +89,7 @@ export async function PUT(request: Request) {
     
     return NextResponse.json({ product, message: 'Product updated successfully' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error updating product', error: error.message }, { status: 500 });
+    return serverError('Error updating product', error);
   }
 }
 
@@ -130,6 +131,6 @@ export async function DELETE(request: Request) {
     
     return NextResponse.json({ message: 'Product and image deleted successfully' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error deleting product', error: error.message }, { status: 500 });
+    return serverError('Error deleting product', error);
   }
 }

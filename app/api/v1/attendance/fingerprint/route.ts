@@ -1,10 +1,20 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import crypto from 'crypto';
+import { serverError } from '@/lib/api-error';
+
+function timingSafeStringEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 export async function POST(request: Request) {
   try {
     const deviceKey = request.headers.get('X-Device-Key');
-    if (!deviceKey || deviceKey !== process.env.FINGERPRINT_DEVICE_KEY) {
+    const expectedKey = process.env.FINGERPRINT_DEVICE_KEY;
+    if (!deviceKey || !expectedKey || !timingSafeStringEqual(deviceKey, expectedKey)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -82,7 +92,6 @@ export async function POST(request: Request) {
     }, { status: 200 });
 
   } catch (error: any) {
-    console.error('Fingerprint attendance error:', error);
-    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
+    return serverError('Server error', error);
   }
 }

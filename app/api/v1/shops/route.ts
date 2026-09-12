@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { deleteCloudinaryImage } from '@/lib/cloudinary';
+import { serverError } from '@/lib/api-error';
 
 export async function GET() {
   try {
@@ -46,7 +47,7 @@ export async function GET() {
 
     return NextResponse.json({ shops: shopsWithRevenue }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error fetching shops', error: error.message }, { status: 500 });
+    return serverError('Error fetching shops', error);
   }
 }
 
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ shop, message: 'Shop created successfully' }, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error creating shop', error: error.message }, { status: 500 });
+    return serverError('Error creating shop', error);
   }
 }
 
@@ -111,7 +112,7 @@ export async function PUT(request: Request) {
     
     return NextResponse.json({ shop, message: 'Shop updated successfully' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error updating shop', error: error.message }, { status: 500 });
+    return serverError('Error updating shop', error);
   }
 }
 
@@ -139,6 +140,6 @@ export async function DELETE(request: Request) {
     
     return NextResponse.json({ message: 'Shop deleted successfully' }, { status: 200 });
   } catch (error: any) {
-    return NextResponse.json({ message: 'Error deleting shop', error: error.message }, { status: 500 });
+    return serverError('Error deleting shop', error);
   }
 }
