@@ -141,7 +141,7 @@ async function run(S, ctx, ownerCreds) {
   S.check('session lifetime is limited (≤ 1 hour)', /Expires=/i.test(authCookie));
 
   // revocation delay (informational): a deleted staff member's token keeps working until it expires
-  const temp = (await ctx.owner.post('/api/v1/staff', { role: 'BARBER', name: 'Fired Fred', email: 'fred@qa.test', password: PASSWORD })).json?.user;
+  const temp = (await ctx.owner.post('/api/v1/staff', { role: 'BARBER', name: 'Fired Fred', email: 'fred@qa.test', password: PASSWORD, requirePasswordChange: false })).json?.user;
   const fred = (await staffLogin('fred@qa.test')).client;
   await ctx.owner.del('/api/v1/staff?id=' + temp.id);
   const after = await fred.get('/api/v1/bookings');

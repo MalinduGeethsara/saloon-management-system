@@ -54,9 +54,9 @@ export async function POST(request: Request) {
     if (await bcrypt.compare(newPassword, user.password)) {
       return NextResponse.json({ success: false, message: 'Choose a password different from the current one.' }, { status: 400 });
     }
-    const emailName = user.email.split('@')[0].toLowerCase();
-    if (emailName.length >= 4 && newPassword.toLowerCase().includes(emailName)) {
-      return NextResponse.json({ success: false, message: 'The password must not contain your email name.' }, { status: 400 });
+    const lower = newPassword.toLowerCase();
+    if (lower === user.email.toLowerCase() || lower === user.email.split('@')[0].toLowerCase()) {
+      return NextResponse.json({ success: false, message: 'The password must not be your email address.' }, { status: 400 });
     }
 
     await db.user.update({

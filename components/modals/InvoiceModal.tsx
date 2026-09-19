@@ -57,7 +57,7 @@ export const InvoiceModal = ({ isOpen, onClose, data }: InvoiceModalProps) => {
     >
       <div ref={printRef} className="p-4 bg-white border border-slate-200" style={{ maxWidth: '350px', margin: '0 auto' }}>
         <div className="invoice-header text-center mb-4 border-b border-dashed border-slate-300 pb-4">
-          <Title level={3} style={{ margin: 0 }}>SALON PRO</Title>
+          <Title level={3} style={{ margin: 0 }}>Mr Polaa Saloon</Title>
           <Text type="secondary" style={{ fontSize: '12px' }}>Unisex Salon</Text>
         </div>
 

@@ -71,6 +71,9 @@ const toRow = (b: any) => ({
   // Real booked services/products (name/price), for showing what was actually paid instead of a fake line item
   services: b.services?.map((bs: any) => ({ name: bs.service?.name, price: bs.service?.price })) || [],
   products: b.products?.map((bp: any) => ({ name: bp.product?.name, price: bp.product?.price })) || [],
+  // for the bill: where the receipt goes (a walk-in has no real email, only a placeholder)
+  customerPhone: b.contactPhone || b.customer?.phone ? `0${b.contactPhone || b.customer?.phone}` : '',
+  customerEmail: b.customer?.email && !/^walkin_.+@salon\.com$/i.test(b.customer.email) ? b.customer.email : '',
 });
 
 function ManageBookingsContent() {
@@ -261,7 +264,7 @@ function ManageBookingsContent() {
         setIsAddModalOpen(false);
       } else {
         const errorData = await res.json();
-        showAlert("error", errorData.error || "Failed to create booking.");
+        showAlert("error", errorData.message || errorData.error || "Failed to create booking.");
       }
     } catch (e) {
       showAlert("error", "An error occurred.");
@@ -284,6 +287,8 @@ function ManageBookingsContent() {
     setPaymentData({
       bookingId: record.id,
       client: record.client === 'Unknown' ? '' : record.client,
+      contact: record.customerPhone || '',
+      email: record.customerEmail || '',
       barber: record.barber,
       date: record.date,
       items: realItems,
@@ -304,14 +309,21 @@ function ManageBookingsContent() {
         body: JSON.stringify({ 
           id: finalData.bookingId, 
           action: 'PAYMENT_COMPLETE',
-          paymentMethod: finalData.method 
+          paymentMethod: finalData.method,
+          contactPhone: finalData.contact,
+          contactEmail: finalData.email,
         })
       });
       
       if (res.ok) {
+        const done = await res.json().catch(() => ({}));
         setInvoiceData(finalData);
         setTimeout(() => setIsInvoiceModalOpen(true), 300); 
-        showAlert("success", "Payment recorded successfully.");
+        const sentTo = [done.receiptSms === 'sent' ? `SMS to ${finalData.contact || 'the customer'}` : null, done.receiptEmail === 'sent' ? `email to ${finalData.email || 'the customer'}` : null].filter(Boolean);
+        const problems = [done.receiptSms === 'invalid-number' ? 'the receipt SMS was NOT sent: that is not a valid Sri Lankan mobile number' : null, done.receiptEmail === 'invalid-email' ? 'the receipt email was NOT sent: that email address is not valid' : null].filter(Boolean);
+        if (problems.length) showAlert("error", `Payment recorded, but ${problems.join(' and ')}.`);
+        else if (sentTo.length) showAlert("success", `Payment recorded. The bill was sent by ${sentTo.join(' and ')}.`);
+        else showAlert("success", "Payment recorded successfully.");
         fetchBookings(); // Fetch new status to ensure dashboard is real-time
       } else {
         const error = await res.json();

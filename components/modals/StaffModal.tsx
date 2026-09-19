@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Modal, Button, Form, Input, Select, Divider, Tag, Avatar, Tabs, AutoComplete } from 'antd';
+import { Modal, Button, Form, Input, Select, Divider, Tag, Avatar, Tabs, AutoComplete, Checkbox } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, SafetyCertificateOutlined, DollarOutlined } from '@ant-design/icons';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 
@@ -30,7 +30,8 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
     if (isOpen && staff && mode === 'edit') {
       form.setFieldsValue({
         ...staff,
-        password: '' // empty password on edit unless they want to change it
+        password: '', // empty password on edit unless they want to change it
+        requirePasswordChange: !!staff.mustChangePassword,
       });
       setImageUrl(staff.imageUrl || '');
     } else if (isOpen && mode === 'add') {
@@ -121,8 +122,11 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
                     }
                   />
                 </Form.Item>
-                <Form.Item name="password" label="Password (leave blank to keep)">
-                  <Input.Password placeholder="Secure password" size="large" />
+                <Form.Item name="password" label={mode === 'add' ? 'Password (leave blank to generate one)' : 'Password (leave blank to keep)'} extra={mode === 'add' ? 'Their sign-in details are emailed to them, with a welcome SMS if you enter a mobile number.' : undefined}>
+                  <Input.Password placeholder={mode === 'add' ? 'Leave blank for an automatic password' : 'Secure password'} size="large" />
+                </Form.Item>
+                <Form.Item name="requirePasswordChange" valuePropName="checked" initialValue={false} style={{ gridColumn: '1 / -1' }}>
+                  <Checkbox>{mode === 'add' ? 'Ask them to choose their own password at first sign-in' : 'Ask them to choose a new password at their next sign-in'}</Checkbox>
                 </Form.Item>
               </div>
 

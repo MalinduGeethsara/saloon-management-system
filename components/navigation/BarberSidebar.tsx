@@ -45,10 +45,10 @@ export function BarberSidebar({ onClose }: { onClose?: () => void }) {
       <div className="p-4 md:p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C4DFF] to-[#6c42e0] flex items-center justify-center text-white font-black text-xl shadow-md shadow-purple-200">
-            S
+            M
           </div>
           <div>
-            <h1 className="text-lg font-black tracking-tight text-slate-800 m-0 leading-tight">SalonPro</h1>
+            <h1 className="text-lg font-black tracking-tight text-slate-800 m-0 leading-tight">MR POLAA</h1>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest m-0">My Dashboard</p>
           </div>
         </div>

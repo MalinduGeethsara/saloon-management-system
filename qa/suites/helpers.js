@@ -82,7 +82,7 @@ async function bootstrapBusiness(R, ownerCreds) {
   R.check('owner creates two shops', ctx.shopA?.id && ctx.shopB?.id);
 
   const mkStaff = async (role, name, email, shopId, extra = {}) => {
-    const r = await ctx.owner.post('/api/v1/staff', { role, name, email, shopId, password: PASSWORD, salaryType: 'Commission', baseSalary: 50000, commissionRate: 10, ...extra });
+    const r = await ctx.owner.post('/api/v1/staff', { role, name, email, shopId, password: PASSWORD, requirePasswordChange: false, salaryType: 'Commission', baseSalary: 50000, commissionRate: 10, ...extra });
     return r.json?.user;
   };
   ctx.manager = await mkStaff('MANAGER', 'QA Manager', 'manager@qa.test', ctx.shopA?.id, { salaryType: 'Salary' });

@@ -100,6 +100,7 @@ function PaymentsContent() {
       invoiceNo: paymentData.id,
       clientName: paymentData.client,
       clientPhone: paymentData.contact,
+      clientEmail: paymentData.email,
       barberName: paymentData.barber,
       barberId: paymentData.barberId,
       items: paymentData.items,
@@ -115,7 +116,11 @@ function PaymentsContent() {
     await fetchPayments(1);
     setPage(1);
 
-    showAlert('success', 'Payment recorded successfully.');
+    const sentTo = [billRes.receiptSms === 'sent' ? `SMS to ${paymentData.contact}` : null, billRes.receiptEmail === 'sent' ? `email to ${paymentData.email}` : null].filter(Boolean);
+    const problems = [billRes.receiptSms === 'invalid-number' ? 'the receipt SMS was NOT sent: that is not a valid Sri Lankan mobile number (e.g. 077 123 4567)' : null, billRes.receiptEmail === 'invalid-email' ? 'the receipt email was NOT sent: that email address is not valid' : null].filter(Boolean);
+    if (problems.length) showAlert('error', `Payment recorded, but ${problems.join(' and ')}.`);
+    else if (sentTo.length) showAlert('success', `Payment recorded. A thank-you receipt was sent by ${sentTo.join(' and ')}.`);
+    else showAlert('success', 'Payment recorded successfully.');
     setIsPaymentModalOpen(false);
     setSelectedInvoice(finalRecord);
     setTimeout(() => setIsInvoiceModalOpen(true), 300);

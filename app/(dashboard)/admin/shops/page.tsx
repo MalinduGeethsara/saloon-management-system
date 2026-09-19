@@ -322,7 +322,7 @@ export default function ShopDataPage() {
       <Modal open={isQRModalOpen} onCancel={() => setIsQRModalOpen(false)} footer={null} centered width={320} styles={{ body: { padding: '32px 24px' } }}>
         <div className="text-center">
           <div id="shop-qr-wrapper" className="inline-block p-4 bg-white rounded-2xl shadow-sm border border-slate-100">
-            <QRCode value={`https://saloonpro.lk/book/${activeQRShop?.key}`} size={200} color="#7C4DFF" bordered={false} />
+            <QRCode value={`${(process.env.NEXT_PUBLIC_APP_URL || 'https://mr-polaa.com').replace(/\/+$/, '')}/booking`} size={200} color="#7C4DFF" bordered={false} />
           </div>
           <Title level={4} className="mt-5 mb-0 font-bold">{activeQRShop?.name}</Title>
           <Text type="secondary" className="block mb-6">{activeQRShop?.region}, Sri Lanka</Text>

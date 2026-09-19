@@ -172,11 +172,21 @@ export const PaymentModal = ({ isOpen, onClose, onSave, paymentToEdit }: Payment
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
-              <Form.Item name="contact" label="Contact Number" rules={[{ required: true, message: 'Required' }]}>
+              <Form.Item name="contact" label="Contact Number" extra="The receipt is sent to this mobile number by SMS." rules={[{ required: true, message: 'Required' }]}>
                 <Input prefix={<PhoneOutlined className="text-slate-400" />} placeholder="077xxxxxxx" size="large" />
               </Form.Item>
             </Col>
           </Row>
+
+          {!paymentToEdit?.alreadyPaid && (
+            <Row gutter={16}>
+              <Col xs={24}>
+                <Form.Item name="email" label="Customer Email (optional)" extra="If you enter one, the receipt (bill) is emailed too." rules={[{ type: 'email', message: 'Enter a valid email address' }]}>
+                  <Input placeholder="name@example.com" size="large" />
+                </Form.Item>
+              </Col>
+            </Row>
+          )}
 
           <Row gutter={16}>
             <Col xs={24} sm={12}>

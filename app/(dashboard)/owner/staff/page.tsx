@@ -152,7 +152,14 @@ function StaffContent() {
       });
       
       if (res.ok) {
-        showAlert('success', `Staff member ${isEdit ? 'updated' : 'added'} successfully.`);
+        const saved = await res.json().catch(() => ({}));
+        const w = saved.welcome;
+        if (!isEdit && w) {
+          const parts = [w.email === 'sent' ? 'a welcome email with their sign-in details' : null, w.sms === 'sent' ? 'a welcome SMS' : null].filter(Boolean);
+          showAlert('success', `Staff member added successfully.${parts.length ? ` Sent ${parts.join(' and ')}.` : ''}${w.sms === 'invalid-number' ? ' The phone number is not a valid mobile number, so no SMS was sent.' : ''}`);
+        } else {
+          showAlert('success', `Staff member ${isEdit ? 'updated' : 'added'} successfully.`);
+        }
         fetchStaff();
         setIsModalOpen(false);
       } else {

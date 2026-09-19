@@ -13,6 +13,7 @@ import { sendSms } from './sms.service';
 import { sendBookingConfirmation, sendBookingCancellation, sendPaymentReceipt } from './email.service';
 import { notify, notifyInTx, type NotifyInput, type NotifyPlan } from './notify';
 import { realEmail } from '../utils/real-email';
+import { isValidSriLankanMobile, normalizePhone } from '../utils/phone';
 
 export { realEmail };
 
@@ -116,21 +117,39 @@ export async function notifyCustomerCancelled(bookingId: string, opts: { wasPaid
   }
 }
 
-// Payment recorded by staff at the salon (cash/card) -> receipt email + SMS
-export async function notifyCustomerPaymentReceived(bookingId: string, method: string) {
+// Payment recorded by staff at the salon (cash/card) -> receipt email + SMS.
+// The cashier may type a number and/or email on the bill (a manual booking has none on file): those win over what is
+// saved on the customer. Returns what happened so the screen can say it: sms sent / no number / invalid number,
+// email sent / no email / invalid email.
+export async function notifyCustomerPaymentReceived(
+  bookingId: string,
+  method: string,
+  opts: { phone?: string | null; email?: string | null } = {},
+): Promise<{ sms: ReceiptSmsResult; email: ReceiptEmailResult }> {
+  const result: { sms: ReceiptSmsResult; email: ReceiptEmailResult } = { sms: 'no-number', email: 'no-email' };
   try {
     const booking = await loadBooking(bookingId);
-    if (!booking?.customer || !booking.payment) return;
+    if (!booking?.customer || !booking.payment) return result;
     const { dateStr } = formatBookingWhen(booking.date);
     const receiptNo = `INV-${booking.payment.id.slice(0, 6).toUpperCase()}`;
     const methodLabel = method === 'CARD' ? 'Card' : method === 'CASH' ? 'Cash' : method;
+    const typedPhone = (opts.phone || '').trim();
+    const typedEmail = (opts.email || '').trim();
 
-    const email = realEmail(booking.customer.email);
-    if (email) {
+    // email
+    let emailTo: string | null = null;
+    if (typedEmail) {
+      if (EMAIL_RE.test(typedEmail) && realEmail(typedEmail)) emailTo = typedEmail;
+      else result.email = 'invalid-email';
+    } else {
+      emailTo = realEmail(booking.customer.email);
+    }
+    if (emailTo) {
+      result.email = 'sent';
       const products = names(booking.products.map(bp => ({ name: bp.product?.name })));
       safe('receipt email', sendPaymentReceipt({
         customerName: booking.customer.name || 'Valued Customer',
-        customerEmail: email,
+        customerEmail: emailTo,
         bookingId: booking.id,
         receiptNo,
         date: dateStr,
@@ -140,16 +159,82 @@ export async function notifyCustomerPaymentReceived(bookingId: string, method: s
         method: methodLabel,
       }));
     }
-    const smsTo = booking.contactPhone || booking.customer.phone;
+
+    // SMS
+    let smsTo: string | null = null;
+    if (typedPhone) {
+      if (isValidSriLankanMobile(typedPhone)) {
+        smsTo = typedPhone;
+        // remember it on the booking, so its later messages reach the same person
+        if (!booking.contactPhone) {
+          await db.booking.update({ where: { id: booking.id }, data: { contactPhone: normalizePhone(typedPhone) } }).catch(() => {});
+        }
+      } else {
+        result.sms = 'invalid-number';
+      }
+    } else {
+      smsTo = booking.contactPhone || booking.customer.phone || null;
+    }
     if (smsTo) {
+      result.sms = 'sent';
+      const firstName = (booking.customer.name || '').trim().split(/\s+/)[0];
       safe('receipt SMS', sendSms(
         smsTo,
-        `MR POLAA: Payment of LKR ${booking.payment.amount.toLocaleString()} received (${methodLabel}). Receipt ${receiptNo}. Thank you!`,
+        `MR POLAA: Thank you${firstName ? `, ${firstName}` : ''}! Payment of LKR ${booking.payment.amount.toLocaleString()} received (${methodLabel}). Receipt ${receiptNo}. See you again!`,
       ));
     }
   } catch (err) {
     console.error('[Notify] payment receipt failed silently:', err);
   }
+  return result;
+}
+
+// A manual (walk-in) bill: the number typed on the bill gets a thank-you SMS with the receipt.
+// Returns what happened so the screen can tell the cashier: 'sent' | 'no-number' | 'invalid-number'.
+export type ReceiptSmsResult = 'sent' | 'no-number' | 'invalid-number';
+export type ReceiptEmailResult = 'sent' | 'no-email' | 'invalid-email';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// The same bill by email, when an address was typed on it (nothing is stored: the address is used once)
+export function emailWalkInReceipt(bill: { email?: string | null; name?: string | null; amount: number; method: string; paymentId: string; items: { name: string; type?: string }[] }): ReceiptEmailResult {
+  const address = (bill.email || '').trim();
+  if (!address) return 'no-email';
+  if (!EMAIL_RE.test(address) || !realEmail(address)) return 'invalid-email';
+
+  const method = bill.method === 'CARD' ? 'Card' : bill.method === 'CASH' ? 'Cash' : bill.method;
+  const names = (type: string) => bill.items.filter(i => (i.type || 'Service') === type).map(i => i.name).filter(Boolean).join(', ');
+  safe('walk-in receipt email', sendPaymentReceipt({
+    customerName: (bill.name || '').trim() || 'Valued Customer',
+    customerEmail: address,
+    bookingId: bill.paymentId,
+    referenceLabel: 'Bill reference',
+    receiptNo: `INV-${bill.paymentId.slice(0, 6).toUpperCase()}`,
+    date: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+    services: names('Service'),
+    products: names('Product') || undefined,
+    amount: bill.amount,
+    method,
+  }));
+  return 'sent';
+}
+
+export function notifyWalkInReceipt(bill: { phone?: string | null; name?: string | null; amount: number; method: string; paymentId: string; items: { name: string }[] }): ReceiptSmsResult {
+  const phone = (bill.phone || '').trim();
+  if (!phone) return 'no-number';
+  if (!isValidSriLankanMobile(phone)) return 'invalid-number';
+
+  const receiptNo = `INV-${bill.paymentId.slice(0, 6).toUpperCase()}`; // the same number the Payments page shows
+  const firstName = (bill.name || '').trim().split(/\s+/)[0];
+  const method = bill.method === 'CARD' ? 'Card' : bill.method === 'CASH' ? 'Cash' : bill.method;
+  let what = bill.items.map(i => i.name).filter(Boolean).join(', ');
+  if (what.length > 40) what = `${what.slice(0, 37)}...`;
+
+  safe('walk-in receipt SMS', sendSms(
+    phone,
+    `MR POLAA: Thank you${firstName ? `, ${firstName}` : ''}! LKR ${Math.round(bill.amount).toLocaleString()} received (${method}). Receipt ${receiptNo}.${what ? ` ${what}.` : ''} See you again!`,
+  ));
+  return 'sent';
 }
 
 // ─── The team ─────────────────────────────────────────────────────────────────

@@ -87,6 +87,8 @@ function BarberDashboardContent() {
     setPaymentData({
       bookingId: record.id, 
       client: record.customer?.name || 'Walk-in', 
+      contact: record.contactPhone || record.customer?.phone ? `0${record.contactPhone || record.customer?.phone}` : '',
+      email: record.customer?.email && !/^walkin_.+@salon\.com$/i.test(record.customer.email) ? record.customer.email : '',
       barber: record.barber?.name, 
       date: record.date,
       items: [{ type: 'Service', name: 'Salon Service Booking', price: amount }] 
@@ -103,14 +105,21 @@ function BarberDashboardContent() {
         body: JSON.stringify({ 
           id: finalData.bookingId, 
           action: 'PAYMENT_COMPLETE',
-          paymentMethod: finalData.method 
+          paymentMethod: finalData.method,
+          contactPhone: finalData.contact,
+          contactEmail: finalData.email,
         })
       });
       
       if (res.ok) {
+        const done = await res.json().catch(() => ({}));
         setInvoiceData(finalData);
         setTimeout(() => setIsInvoiceModalOpen(true), 300); 
-        showAlert("success", "Payment recorded successfully.");
+        const sentTo = [done.receiptSms === 'sent' ? `SMS to ${finalData.contact || 'the customer'}` : null, done.receiptEmail === 'sent' ? `email to ${finalData.email || 'the customer'}` : null].filter(Boolean);
+        const problems = [done.receiptSms === 'invalid-number' ? 'the receipt SMS was NOT sent: that is not a valid Sri Lankan mobile number' : null, done.receiptEmail === 'invalid-email' ? 'the receipt email was NOT sent: that email address is not valid' : null].filter(Boolean);
+        if (problems.length) showAlert("error", `Payment recorded, but ${problems.join(' and ')}.`);
+        else if (sentTo.length) showAlert("success", `Payment recorded. The bill was sent by ${sentTo.join(' and ')}.`);
+        else showAlert("success", "Payment recorded successfully.");
         fetchBookings();
       } else {
         const error = await res.json();

@@ -15,7 +15,7 @@ async function run(R, ctx) {
   const A = (name, args, client) => client.action(name, args);
 
   const mkStaff = async (role, name, email, shopId, phone) => {
-    const r = await ctx.owner.post('/api/v1/staff', { role, name, email, shopId, password: PASSWORD, salaryType: 'Commission', baseSalary: 40000, commissionRate: 10 });
+    const r = await ctx.owner.post('/api/v1/staff', { role, name, email, shopId, password: PASSWORD, requirePasswordChange: false, salaryType: 'Commission', baseSalary: 40000, commissionRate: 10 });
     const user = r.json?.user;
     if (!user) throw new Error('could not create ' + email + ': ' + r.status + ' ' + r.text.slice(0, 200));
     if (phone) await db.user.update({ where: { id: user.id }, data: { phone } });
@@ -133,9 +133,9 @@ async function run(R, ctx) {
   const dc = await login('deputy@qa.test');
   r = await dc.get('/api/v1/staff');
   R.check('with the Staff page they see contact details', r.status === 200 && r.json?.staff?.some((s) => s.email), r.text.slice(0, 120));
-  r = await dc.post('/api/v1/staff', { role: 'BARBER', name: 'Helper Barber', email: 'helper@qa.test', password: PASSWORD });
+  r = await dc.post('/api/v1/staff', { role: 'BARBER', name: 'Helper Barber', email: 'helper@qa.test', password: PASSWORD, requirePasswordChange: false });
   R.check('...can add a barber', r.status === 200 && r.json?.user?.role === 'BARBER', r.text.slice(0, 160));
-  r = await dc.post('/api/v1/staff', { role: 'MANAGER', name: 'Sneaky Mgr', email: 'sneaky.mgr@qa.test', password: PASSWORD });
+  r = await dc.post('/api/v1/staff', { role: 'MANAGER', name: 'Sneaky Mgr', email: 'sneaky.mgr@qa.test', password: PASSWORD, requirePasswordChange: false });
   R.check('...cannot add a manager', r.status === 403, r.status);
   r = await dc.put('/api/v1/staff', { id: mgr.id, name: 'Renamed By Deputy' });
   R.check('...cannot edit a manager', r.status === 403, r.status);
@@ -153,7 +153,7 @@ async function run(R, ctx) {
   r = await dc2.get('/api/v1/staff');
   const first = r.json?.staff?.[0] || {};
   R.check('with only Attendance the staff list is just names and branches (no email, phone or pay)', r.status === 200 && r.json.staff.length > 0 && !('email' in first) && !('phone' in first) && !('baseSalary' in first), JSON.stringify(first));
-  r = await dc2.post('/api/v1/staff', { role: 'BARBER', name: 'Nope', email: 'nope@qa.test', password: PASSWORD });
+  r = await dc2.post('/api/v1/staff', { role: 'BARBER', name: 'Nope', email: 'nope@qa.test', password: PASSWORD, requirePasswordChange: false });
   R.check('...and cannot add anybody', r.status === 403, r.status);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -324,8 +324,8 @@ async function run(R, ctx) {
   R.check('a too-short new password is refused', r.status === 400, r.status + ' ' + r.text);
   r = await fc.post('/api/auth/change-password', { currentPassword: PASSWORD, newPassword: PASSWORD });
   R.check('reusing the same password is refused', r.status === 400 && /different/i.test(r.text), r.text);
-  r = await fc.post('/api/auth/change-password', { currentPassword: PASSWORD, newPassword: 'my-freshmgr-secret-1' });
-  R.check('a password containing their own email name is refused', r.status === 400, r.text);
+  r = await fc.post('/api/auth/change-password', { currentPassword: PASSWORD, newPassword: 'freshmgr@qa.test' });
+  R.check('a password that is just their own email address is refused', r.status === 400 && /email address/i.test(r.text), r.text);
   r = await fc.post('/api/auth/change-password', { currentPassword: { $ne: 1 }, newPassword: NEW_PW });
   R.check('junk (non-text) input is refused, not passed to the database', r.status === 400, r.status);
 
@@ -382,6 +382,249 @@ async function run(R, ctx) {
   for (let i = 0; i < 5; i++) codes.push((await lc2.post('/api/auth/change-password', { currentPassword: 'guess-' + i, newPassword: NEW_PW })).status);
   r = await lc2.post('/api/auth/change-password', { currentPassword: PASSWORD, newPassword: NEW_PW });
   R.check('five wrong guesses at the current password lock the form for a while (even the right one is then refused)', codes.every((c) => c === 400) && r.status === 429, codes.join(',') + ' then ' + r.status);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  R.sec('E. A manual (walk-in) bill texts a thank-you with the receipt to the number on the bill');
+  const bill = (extra) => A('createManualBill', [{ invoiceNo: 'QA-BILL', items: [{ name: 'Access Haircut', type: 'Service', price: 1500 }, { name: 'Access Beard Trim', type: 'Service', price: 1500 }], amount: 3000, method: 'Cash', ...extra }], ctx.owner);
+  const smsSince = (to, t) => sms(to).filter((e) => e.t >= t);
+
+  let tBill = Date.now();
+  r = await bill({ clientName: 'Receipt Rita Perera', clientPhone: '0771110030' });
+  R.check('the bill is saved and the screen is told a receipt SMS was sent', r.value?.success === true && r.value?.receiptSms === 'sent', JSON.stringify(r.value));
+  const ritaPay = await db.payment.findFirst({ where: { clientName: 'Receipt Rita Perera' } });
+  const receipt = await waitFor(() => smsSince('0771110030', tBill).find((e) => /Thank you/i.test(e.message)));
+  R.check('the customer gets a thank-you SMS at the number typed on the bill', !!receipt, JSON.stringify(sms('0771110030').map((e) => e.message)));
+  R.check('...it greets them by first name, with the amount and how they paid', receipt && /Thank you, Receipt!/.test(receipt.message) && /LKR 3,000 received \(Cash\)/.test(receipt.message), receipt?.message);
+  R.check('...it carries the SAME invoice number the Payments page shows for this bill', receipt && ritaPay && receipt.message.includes('INV-' + ritaPay.id.slice(0, 6).toUpperCase()), receipt?.message);
+  R.check('...and names what they bought, in one short SMS', receipt && /Access Haircut, Access Beard Trim/.test(receipt.message) && receipt.message.length <= 160, receipt && receipt.message.length + ' chars');
+  R.check('...sent from the salon\'s sender ID', receipt?.sender === 'Mr Polaa');
+
+  tBill = Date.now();
+  r = await bill({ clientName: 'Formatted Fiona', clientPhone: '+94 77 111 0031' });
+  R.check('a number typed with +94 and spaces works too (same person, same result)', r.value?.receiptSms === 'sent' && !!(await waitFor(() => smsSince('0771110031', tBill).find((e) => /Thank you, Formatted/.test(e.message)))), JSON.stringify(r.value));
+
+  tBill = Date.now();
+  r = await bill({ clientName: 'No Number Nadun', clientPhone: '' });
+  await h.sleep(1200);
+  R.check('a bill with no number is still saved, and no SMS is sent', r.value?.success === true && r.value?.receiptSms === 'no-number' && !sms().some((e) => e.t >= tBill && /Thank you/i.test(e.message)), JSON.stringify(r.value));
+
+  tBill = Date.now();
+  r = await bill({ clientName: 'Bad Number Bala', clientPhone: '0112345678' });
+  await h.sleep(1200);
+  R.check('a landline / invalid number: the bill is saved, no SMS, and the cashier is told why', r.value?.success === true && r.value?.receiptSms === 'invalid-number' && !!(await db.payment.findFirst({ where: { clientName: 'Bad Number Bala' } })) && !sms().some((e) => e.t >= tBill && /Thank you/i.test(e.message)), JSON.stringify(r.value));
+
+  const nobody = await ctx.cust[1].action('createManualBill', [{ invoiceNo: 'X', clientName: 'Hacker', clientPhone: '0771110032', items: [{ name: 'x', type: 'Service', price: 1 }], amount: 1, method: 'Cash' }]);
+  await h.sleep(800);
+  R.check('a customer cannot create a bill (and so cannot make the salon text anyone)', nobody.value?.success !== true && !sms('0771110032').length, JSON.stringify(nobody.value));
+
+  // ─────────────────────────────────────────────────────────────────────────
+  R.sec('F. A new manager or barber is welcomed by email (sign-in details) and SMS');
+  const HANDOVER = 'Handover-Pass#42';
+  const tWel = Date.now();
+  r = await ctx.owner.post('/api/v1/staff', { role: 'BARBER', name: 'Wimal Silva', email: 'wimal.welcome@qa.test', phone: '0771110040', shopId: shopA.id, password: HANDOVER, requirePasswordChange: true });
+  R.check('the owner adds a barber (with a mobile number and a password)', r.status === 200 && r.json?.user?.role === 'BARBER', r.text.slice(0, 160));
+  R.check('...and the screen is told a welcome email and SMS went out', r.json?.welcome?.email === 'sent' && r.json?.welcome?.sms === 'sent', JSON.stringify(r.json?.welcome));
+  const wMail = await waitFor(() => emails('wimal.welcome@qa.test').find((e) => e.t >= tWel));
+  R.check('the barber gets a welcome email', !!wMail && /Welcome to MR POLAA/.test(wMail.subject), wMail?.subject);
+  R.check('...that greets them by name, says their role and branch, and has the Welcome banner', wMail && /Welcome to the team, Wimal!/.test(wMail.html) && />Barber</.test(wMail.html) && /Access Colombo/.test(wMail.html) && /MR POLAA &mdash; Welcome/.test(wMail.html));
+  R.check('...with everything needed to sign in: the address, their email and the password', wMail && /\/staff-login/.test(wMail.html) && /wimal\.welcome@qa\.test/.test(wMail.html) && wMail.html.includes(HANDOVER), '');
+  R.check('...says the password is temporary and must be replaced at first sign-in', wMail && /Temporary password/.test(wMail.html) && /choose your own password/.test(wMail.html));
+  const wSms = await waitFor(() => smsSince('0771110040', tWel).find((e) => /Welcome, Wimal!/.test(e.message)));
+  R.check('the barber also gets a welcome SMS with where to sign in', !!wSms && /\/staff-login/.test(wSms.message) && wSms.sender === 'Mr Polaa', wSms?.message);
+  R.check('...but the password is NEVER put in the SMS (only in the email), and it is short', wSms && !wSms.message.includes(HANDOVER) && wSms.message.length <= 200, wSms && wSms.message.length + ' chars');
+  const wLogin = await new h.Client('wimal').post('/api/auth/staff-login', { email: 'wimal.welcome@qa.test', password: HANDOVER });
+  R.check('the emailed details really work, and the first sign-in demands a new password', wLogin.status === 200 && wLogin.json?.mustChangePassword === true, wLogin.text);
+
+  // password left blank: the system makes one, and the email is the only place the new person gets it
+  const tGen = Date.now();
+  r = await ctx.owner.post('/api/v1/staff', { role: 'MANAGER', name: 'Gayani Manager', email: 'gayani.welcome@qa.test', phone: '0771110041', shopId: shopA.id, requirePasswordChange: true });
+  const generated = r.json?.generatedPassword;
+  const gMail = await waitFor(() => emails('gayani.welcome@qa.test').find((e) => e.t >= tGen));
+  R.check('a blank password is generated, and that generated password is in the welcome email', r.status === 200 && !!generated && generated.length >= 12 && !!gMail && gMail.html.includes(generated), r.text.slice(0, 120));
+  R.check('...a manager\'s email says what a manager gets', gMail && /Manager/.test(gMail.html) && /pages the owner gives you access to/.test(gMail.html));
+  const gLogin = await new h.Client('gayani').post('/api/auth/staff-login', { email: 'gayani.welcome@qa.test', password: generated });
+  R.check('...and it signs in (locked to choosing a new one)', gLogin.status === 200 && gLogin.json?.mustChangePassword === true, gLogin.text);
+
+  // no number / a landline: the email still goes; the SMS is skipped and the owner is told
+  const tNo = Date.now();
+  r = await ctx.owner.post('/api/v1/staff', { role: 'BARBER', name: 'Nimal NoPhone', email: 'nimal.welcome@qa.test', password: HANDOVER });
+  await h.sleep(800);
+  R.check('no phone number: welcome email only, and the screen says no SMS', r.json?.welcome?.email === 'sent' && r.json?.welcome?.sms === 'no-number' && !!emails('nimal.welcome@qa.test').find((e) => e.t >= tNo) && !sms().some((e) => e.t >= tNo && /Welcome, Nimal/.test(e.message)), JSON.stringify(r.json?.welcome));
+  r = await ctx.owner.post('/api/v1/staff', { role: 'BARBER', name: 'Lasantha Landline', email: 'lasantha.welcome@qa.test', phone: '0112345678', password: HANDOVER });
+  R.check('a landline: the barber is still added and emailed; the owner is told the SMS could not be sent', r.status === 200 && r.json?.welcome?.sms === 'invalid-number' && r.json?.welcome?.email === 'sent', JSON.stringify(r.json?.welcome));
+
+  // the owner can un-tick "choose your own password"
+  const tOpt = Date.now();
+  r = await ctx.owner.post('/api/v1/staff', { role: 'BARBER', name: 'Ruwan Relaxed', email: 'ruwan.welcome@qa.test', phone: '0771110042', password: HANDOVER });
+  const rMail = await waitFor(() => emails('ruwan.welcome@qa.test').find((e) => e.t >= tOpt));
+  const rLogin = await new h.Client('ruwan').post('/api/auth/staff-login', { email: 'ruwan.welcome@qa.test', password: HANDOVER });
+  R.check('by DEFAULT a new staff member is not locked: they go straight in, and the email says just "Password"', rLogin.json?.mustChangePassword === false && rMail && !/Temporary password/.test(rMail.html) && !/choose your own password/.test(rMail.html), rLogin.text);
+  const ruwan = await db.user.findUnique({ where: { email: 'ruwan.welcome@qa.test' } });
+  r = await ctx.owner.get('/api/v1/staff');
+  R.check('the staff list tells the owner who still has to choose a password', r.json?.staff?.find((x) => x.id === ruwan.id)?.mustChangePassword === false && r.json?.staff?.find((x) => x.email === 'wimal.welcome@qa.test')?.mustChangePassword === true, '');
+  r = await ctx.owner.put('/api/v1/staff', { id: ruwan.id, requirePasswordChange: true });
+  const locked = await new h.Client('ruwan2').post('/api/auth/staff-login', { email: 'ruwan.welcome@qa.test', password: HANDOVER });
+  R.check('the owner can switch "ask them to choose a new password" ON for someone later', r.status === 200 && locked.json?.mustChangePassword === true, r.text);
+  r = await ctx.owner.put('/api/v1/staff', { id: ruwan.id, requirePasswordChange: false });
+  const unlocked = await new h.Client('ruwan3').post('/api/auth/staff-login', { email: 'ruwan.welcome@qa.test', password: HANDOVER });
+  R.check('...and OFF again (the prompt stops immediately, no matter how many times they signed in)', r.status === 200 && unlocked.json?.mustChangePassword === false, r.text);
+  const sneakyLock = await new h.Client('deputy-nope').post('/api/v1/staff', { id: ruwan.id, requirePasswordChange: true });
+  R.check('(only people allowed to edit staff can do that)', sneakyLock.status === 401 || sneakyLock.status === 403);
+
+  // safety
+  const tX = Date.now();
+  r = await ctx.owner.post('/api/v1/staff', { role: 'BARBER', name: '<b>Bold</b> <script>alert(1)</script> Bob', email: 'bob.welcome@qa.test', password: HANDOVER });
+  const xMail = await waitFor(() => emails('bob.welcome@qa.test').find((e) => e.t >= tX));
+  R.check('a name with HTML in it is shown as text in the email, never as markup', !!xMail && !/<script>alert/.test(xMail.html) && !/<b>Bold/.test(xMail.html) && /&lt;b&gt;/.test(xMail.html));
+  const before = emails('wimal.welcome@qa.test').length;
+  const wimal = await db.user.findUnique({ where: { email: 'wimal.welcome@qa.test' } });
+  r = await ctx.owner.put('/api/v1/staff', { id: wimal.id, name: 'Wimal S. Silva' });
+  await h.sleep(600);
+  R.check('editing a staff member does NOT send the welcome again', r.status === 200 && emails('wimal.welcome@qa.test').length === before);
+  r = await new h.Client('anon3').post('/api/v1/staff', { role: 'BARBER', name: 'Spam', email: 'spam.welcome@qa.test', phone: '0771110043', password: HANDOVER });
+  await h.sleep(600);
+  R.check('nobody without permission can make the system email or text a stranger', r.status === 401 || r.status === 403, r.status);
+  R.check('...and no message was sent to that stranger', !emails('spam.welcome@qa.test').length && !sms('0771110043').length);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  R.sec('G. A manual bill can also be emailed (optional email on the bill)');
+  const tEm = Date.now();
+  r = await bill({ clientName: 'Email Emily', clientPhone: '0771110033', clientEmail: 'emily.bill@qa.test' });
+  R.check('a bill with a phone AND an email: both receipts go out', r.value?.success === true && r.value?.receiptSms === 'sent' && r.value?.receiptEmail === 'sent', JSON.stringify(r.value));
+  const emilyPay = await db.payment.findFirst({ where: { clientName: 'Email Emily' } });
+  const em = await waitFor(() => emails('emily.bill@qa.test').find((e) => e.t >= tEm));
+  R.check('the customer gets a receipt email', !!em && /Payment Receipt INV-/.test(em.subject), em?.subject);
+  R.check('...with their name, what they bought, the amount and how they paid', em && /Email Emily/.test(em.html) && /Access Haircut, Access Beard Trim/.test(em.html) && /LKR 3,000/.test(em.html) && /Paid by Cash/.test(em.html));
+  R.check('...the same invoice number as the SMS and the Payments page', em && emilyPay && em.subject.includes('INV-' + emilyPay.id.slice(0, 6).toUpperCase()) && em.html.includes('#' + emilyPay.id.slice(0, 8).toUpperCase()), em?.subject);
+  R.check('...it says "Bill reference" (there is no booking) and is sent from the salon address', em && /Bill reference/.test(em.html) && !/Booking reference/.test(em.html) && /MR POLAA/.test(em.from || ''), em?.from);
+  R.check('the SMS still goes to the phone too', !!(await waitFor(() => smsSince('0771110033', tEm).find((e) => /Thank you, Email/.test(e.message)))));
+
+  const tProd = Date.now();
+  r = await bill({ clientName: 'Product Pia', clientPhone: '', clientEmail: 'pia.bill@qa.test', items: [{ name: 'Access Pomade', type: 'Product', price: 2500, productId: pomade.id }], amount: 2500 });
+  const pm = await waitFor(() => emails('pia.bill@qa.test').find((e) => e.t >= tProd));
+  R.check('email only (no phone) works, and a products-only bill lists the product without an empty "Services" section', r.value?.receiptSms === 'no-number' && r.value?.receiptEmail === 'sent' && !!pm && /Access Pomade/.test(pm.html) && !/>Services</.test(pm.html), JSON.stringify(r.value));
+
+  tBill = Date.now();
+  r = await bill({ clientName: 'Bad Email Bob', clientPhone: '', clientEmail: 'not-an-email' });
+  await h.sleep(1000);
+  R.check('a badly typed email: the bill is still saved, nothing is sent, and the cashier is told', r.value?.success === true && r.value?.receiptEmail === 'invalid-email' && !!(await db.payment.findFirst({ where: { clientName: 'Bad Email Bob' } })) && !emails('not-an-email').length, JSON.stringify(r.value));
+  r = await bill({ clientName: 'No Email Ned', clientPhone: '', clientEmail: '' });
+  R.check('no email typed: nothing to send, bill saved', r.value?.success === true && r.value?.receiptEmail === 'no-email', JSON.stringify(r.value));
+  r = await bill({ clientName: 'Placeholder Pat', clientPhone: '', clientEmail: 'walkin_123@salon.com' });
+  R.check('the internal walk-in placeholder address is never emailed', r.value?.receiptEmail === 'invalid-email' && !emails('walkin_123@salon.com').length, JSON.stringify(r.value));
+  const sneaky = await ctx.cust[1].action('createManualBill', [{ invoiceNo: 'X', clientName: 'Hacker', clientEmail: 'victim.bill@qa.test', items: [{ name: 'x', type: 'Service', price: 1 }], amount: 1, method: 'Cash' }]);
+  await h.sleep(600);
+  R.check('a customer cannot make the salon email a stranger', sneaky.value?.success !== true && !emails('victim.bill@qa.test').length);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  R.sec('H. Manual bookings: clear reasons, nothing left behind, and the commission follows the barber');
+  const nextDow = (dow, weeksAhead = 2) => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    while (d.getDay() !== dow) d.setDate(d.getDate() + 1);
+    d.setDate(d.getDate() + 7 * weeksAhead);
+    const z = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+  };
+  const monday = nextDow(1);
+  const sunday = nextDow(0);
+  const walkIns = () => db.user.count({ where: { email: { startsWith: 'walkin_' } } });
+  await db.user.update({ where: { id: bx0.id }, data: { commissionRate: 15 } });
+  const longSvc = (await ctx.owner.post('/api/v1/services', { name: 'Access Long Treatment', price: 9000, duration: 240, description: 'long', shopId: null })).json?.service;
+  const manual = (extra) => ctx.owner.post('/api/v1/bookings', { serviceIds: [svc.id], shopId: shopA.id, barberId: bx0.id, clientName: 'Manual Mala', amount: 1500, ...extra });
+
+  let w0 = await walkIns();
+  r = await manual({ date: monday + 'T09:45:00' });
+  const mb = r.json?.booking;
+  R.check('a manual booking for an open day is created (the form sends a list of services)', r.status === 201 && mb?.id && mb.barberId === bx0.id, r.status + ' ' + r.text.slice(0, 160));
+  R.check('...and creates the walk-in customer together with it', (await walkIns()) === w0 + 1);
+  r = await ctx.owner.post('/api/v1/bookings', { serviceId: svc.id, shopId: shopA.id, barberId: bx0.id, clientName: 'Calendar Cara', amount: 1500, date: monday + 'T10:30:00' });
+  R.check('the older single-service shape (calendar) still works', r.status === 201, r.status + ' ' + r.text.slice(0, 160));
+
+  w0 = await walkIns();
+  r = await manual({ date: sunday + 'T10:00:00' });
+  R.check('Sunday is refused and the reason is in the message the screen shows', r.status === 400 && /closed on Sundays/.test(r.json?.message || ''), r.status + ' ' + r.text.slice(0, 160));
+  r = await manual({ date: monday + 'T16:00:00', serviceIds: [longSvc.id], amount: 9000 });
+  R.check('a visit that would run past closing time is refused, saying when the branch is open', r.status === 400 && /open 9:00 AM - 6:00 PM/.test(r.json?.message || ''), r.status + ' ' + r.text.slice(0, 200));
+  r = await manual({ date: monday + 'T09:45:00', clientName: 'Clash Clara' });
+  R.check('the specialist already booked at that time: refused with a plain message', r.status === 409 && /already booked/.test(r.json?.message || ''), r.status + ' ' + r.text.slice(0, 160));
+  r = await manual({ date: monday + 'T11:15:00', serviceIds: [] });
+  R.check('no service chosen: a clear message', r.status === 400 && /at least one service/i.test(r.json?.message || ''), r.status + ' ' + r.text.slice(0, 160));
+  r = await manual({ date: monday + 'T11:15:00', serviceIds: ['00000000-0000-0000-0000-000000000000'] });
+  R.check('an unknown service: a clear message', r.status === 400, r.status + ' ' + r.text.slice(0, 160));
+  R.check('none of the refused bookings left a walk-in customer behind', (await walkIns()) === w0, 'walk-ins ' + (await walkIns()) + ' vs ' + w0);
+  const shopClosedNow = (await ctx.owner.post('/api/v1/shops', { name: 'Access Renovating', address: '3 Access Road', status: 'Renovating' })).json?.shop;
+  r = await manual({ date: monday + 'T11:15:00', shopId: shopClosedNow.id });
+  R.check('a branch that is closed for renovation takes no bookings', r.status === 400 && /Renovating/.test(r.json?.message || '') && (await walkIns()) === w0, r.status + ' ' + r.text.slice(0, 160));
+
+  // the commission follows the barber who did the work, at THEIR rate
+  r = await ctx.owner.put('/api/v1/bookings', { id: mb.id, action: 'PAYMENT_COMPLETE', paymentMethod: 'Cash' });
+  R.check('the manual booking is completed and paid at the salon', r.status === 200, r.status + ' ' + r.text.slice(0, 120));
+  const comm = await db.commission.findFirst({ where: { bookingId: mb.id } });
+  R.check('the commission goes to the barber the booking was made for, at that barber\'s rate (15% of 1,500 = 225)', comm && comm.barberId === bx0.id && comm.rateApplied === 15 && comm.billedAmount === 1500 && comm.amount === 225, JSON.stringify(comm));
+  const bx0c = new h.Client('bx0b');
+  await bx0c.post('/api/auth/staff-login', { email: 'accessbarber1@qa.test', password: 'Another-Good-Pass#5' });
+  const monthLabel = new Date().toLocaleString('en-US', { month: 'long' }) + ' ' + new Date().getFullYear();
+  r = await A('getMyCommissions', [monthLabel], bx0c);
+  R.check('that barber sees it in their own earnings', r.value?.success === true && r.value.data.breakdown.some((b) => b.amount === 225 && b.rateApplied === 15 && /Manual Mala/.test(b.customerName)), JSON.stringify(r.value).slice(0, 220));
+  const otherC = await login('accessbarber2@qa.test');
+  r = await A('getMyCommissions', [monthLabel], otherC);
+  R.check('...and another barber does not', r.value?.success === true && !r.value.data.breakdown.some((b) => /Manual Mala/.test(b.customerName)));
+  r = await ctx.owner.put('/api/v1/bookings', { id: mb.id, action: 'PAYMENT_COMPLETE', paymentMethod: 'Cash' });
+  R.check('completing it twice does not pay the commission twice', (await db.commission.count({ where: { bookingId: mb.id } })) === 1, r.status);
+
+  // a walk-in bill: commission on the SERVICES only, for the barber named on the bill
+  r = await A('createManualBill', [{ invoiceNo: 'QA-COMM', clientName: 'Bill Basil', barberId: bx0.id, barberName: 'Access Barber 1', items: [{ name: 'Access Haircut', type: 'Service', price: 1500 }, { name: 'Access Pomade', type: 'Product', price: 2500, productId: pomade.id }], amount: 4000, method: 'Cash' }], ctx.owner);
+  const billPay = await db.payment.findFirst({ where: { clientName: 'Bill Basil' } });
+  const billComm = billPay && (await db.commission.findFirst({ where: { paymentId: billPay.id } }));
+  R.check('a walk-in bill pays the named barber commission on the services only, not the product', r.value?.success === true && billComm && billComm.barberId === bx0.id && billComm.billedAmount === 1500 && billComm.amount === 225, JSON.stringify(billComm));
+
+  // ─────────────────────────────────────────────────────────────────────────
+  R.sec('I. The bill of a manual booking goes to the phone and email typed on it');
+  const complete = (id, extra) => ctx.owner.put('/api/v1/bookings', { id, action: 'PAYMENT_COMPLETE', paymentMethod: 'Cash', ...extra });
+  const bookFor = async (time, name, extra = {}) => (await manual({ barberId: bx1.id, date: monday + 'T' + time, clientName: name, ...extra })).json?.booking;
+
+  let bA = await bookFor('11:15:00', 'Bill Walkin');
+  let tI = Date.now();
+  r = await complete(bA.id, { contactPhone: '0771110051', contactEmail: 'bill.walkin@qa.test' });
+  R.check('completing a manual booking with a number and an email on the bill: both are sent', r.status === 200 && r.json?.receiptSms === 'sent' && r.json?.receiptEmail === 'sent', r.text.slice(0, 200));
+  const billPayA = await db.payment.findFirst({ where: { bookingId: bA.id } });
+  const iSms = await waitFor(() => smsSince('0771110051', tI).find((e) => /Thank you, Bill!/.test(e.message)));
+  R.check('the customer gets a thank-you SMS at that number, with the amount and invoice number', !!iSms && /LKR 1,500 received \(CASH\)|LKR 1,500 received \(Cash\)/.test(iSms.message) && iSms.message.includes('INV-' + billPayA.id.slice(0, 6).toUpperCase()), iSms?.message);
+  const iMail = await waitFor(() => emails('bill.walkin@qa.test').find((e) => e.t >= tI));
+  R.check('...and the bill by email, with what they had done', !!iMail && /Payment Receipt INV-/.test(iMail.subject) && /Access Haircut/.test(iMail.html) && /LKR 1,500/.test(iMail.html), iMail?.subject);
+  R.check('...the number is remembered on the booking for later messages', (await db.booking.findUnique({ where: { id: bA.id } })).contactPhone === '771110051');
+  const nBefore = h.netLog().length;
+  r = await complete(bA.id, { contactPhone: '0771110051', contactEmail: 'bill.walkin@qa.test' });
+  await h.sleep(800);
+  R.check('completing it again does not send the bill twice', r.json?.receiptSms === null && h.netLog().length === nBefore, r.text.slice(0, 160));
+
+  let bB = await bookFor('13:45:00', 'Silent Walkin');
+  tI = Date.now();
+  r = await complete(bB.id, {});
+  await h.sleep(800);
+  R.check('no number and no email typed (a walk-in has none): the payment is recorded, nothing is sent, the screen is told', r.status === 200 && r.json?.receiptSms === 'no-number' && r.json?.receiptEmail === 'no-email' && !sms().some((e) => e.t >= tI && /Thank you, Silent/.test(e.message)), r.text.slice(0, 160));
+
+  let bC = await bookFor('14:30:00', 'Typo Walkin');
+  tI = Date.now();
+  r = await complete(bC.id, { contactPhone: '12345', contactEmail: 'not-an-email' });
+  await h.sleep(800);
+  R.check('a wrong number / email is still a recorded payment, but nothing is sent and the screen says why', r.status === 200 && r.json?.receiptSms === 'invalid-number' && r.json?.receiptEmail === 'invalid-email' && (await db.payment.findFirst({ where: { bookingId: bC.id } })).status === 'COMPLETED' && !emails('not-an-email').length, r.text.slice(0, 160));
+
+  // a customer who HAS a phone and email on file: they get the bill without anything being typed; a typed number wins
+  const onFile = await db.user.create({ data: { email: 'onfile.customer@qa.test', name: 'Onfile Olivia', phone: '771110052', role: 'CUSTOMER', password: bcrypt.hashSync(PASSWORD, 10) } });
+  let bD = await bookFor('16:00:00', 'ignored', { clientName: undefined, customerId: onFile.id });
+  tI = Date.now();
+  r = await complete(bD.id, {});
+  R.check('a customer with a number and email on file gets the bill at those with nothing typed', r.json?.receiptSms === 'sent' && r.json?.receiptEmail === 'sent' && !!(await waitFor(() => smsSince('0771110052', tI).find((e) => /Thank you, Onfile/.test(e.message)))) && !!(await waitFor(() => emails('onfile.customer@qa.test').find((e) => e.t >= tI))), r.text.slice(0, 160));
+  const tuesday = nextDow(2);
+  const bE = (await manual({ barberId: bx1.id, date: tuesday + 'T09:00:00', customerId: onFile.id, clientName: undefined })).json?.booking;
+  tI = Date.now();
+  r = await complete(bE.id, { contactPhone: '0771110053' });
+  R.check('a number typed on the bill wins over the one on file', r.json?.receiptSms === 'sent' && !!(await waitFor(() => smsSince('0771110053', tI).find((e) => /Thank you, Onfile/.test(e.message)))) && !smsSince('0771110052', tI).some((e) => /Thank you/.test(e.message)), r.text.slice(0, 160));
+  const anon4 = await new h.Client('anon4').put('/api/v1/bookings', { id: bE.id, action: 'PAYMENT_COMPLETE', contactPhone: '0771110054' });
+  await h.sleep(500);
+  R.check('nobody without permission can make the system text a number through a bill', (anon4.status === 401 || anon4.status === 403) && !sms('0771110054').length);
 
 }
 

@@ -6,6 +6,7 @@ import { deleteCloudinaryImage } from '@/lib/cloudinary';
 import { normalizePhone } from '@/lib/utils/phone';
 import { PAGE_KEYS, resolveAccess } from '@/lib/access';
 import { forbidden, getAccess } from '@/lib/access.server';
+import { welcomeNewStaff } from '@/lib/services/staff-notifications';
 
 // Staff can only ever be created/edited into these roles via this endpoint — letting the
 // client pass an arbitrary `role` would let an OWNER-authenticated request mint an ADMIN account.
@@ -55,6 +56,7 @@ export async function GET() {
         role: true,
         imageUrl: true,
         shopId: true,
+        mustChangePassword: contact,
         salaryType: pay,
         baseSalary: pay,
         commissionRate: pay,
@@ -101,13 +103,29 @@ export async function POST(request: Request) {
         salaryType: mayPay ? data.salaryType || 'Commission' : 'Commission',
         baseSalary: mayPay ? parseFloat(data.baseSalary) || 0 : 0,
         commissionRate: mayPay ? parseFloat(data.commissionRate) || 0 : 0,
+        // Only when the owner ticks "choose your own password at first sign-in" (the owner/admin made from .env are always asked)
+        mustChangePassword: data.requirePasswordChange === true,
       }
+    });
+
+    // Welcome them: email with the sign-in details, SMS with where to sign in
+    const shop = user.shopId ? await db.shop.findUnique({ where: { id: user.shopId }, select: { name: true } }) : null;
+    const welcome = welcomeNewStaff({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      shopName: shop?.name,
+      password: generatedPassword,
+      mustChangePassword: user.mustChangePassword,
+      addedBy: who.session.name,
     });
 
     const { password: _password, ...userWithoutPassword } = user;
     return NextResponse.json({
       success: true,
       user: userWithoutPassword,
+      welcome,
       // Only returned when the caller didn't supply one — show it once so the owner can hand it off.
       generatedPassword: data.password ? undefined : generatedPassword,
     });
@@ -132,7 +150,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
-    const identityFields = ['name', 'email', 'phone', 'role', 'imageUrl', 'shopId', 'password'].filter((k) => data[k] !== undefined);
+    const identityFields = ['name', 'email', 'phone', 'role', 'imageUrl', 'shopId', 'password', 'requirePasswordChange'].filter((k) => data[k] !== undefined);
     const payFields = ['salaryType', 'baseSalary', 'commissionRate', 'allowances'].filter((k) => data[k] !== undefined);
     if (identityFields.length > 0 && !who.staff.edit) return forbidden();
     if (payFields.length > 0 && !(who.staff.edit || who.payroll.edit)) return forbidden();
@@ -167,6 +185,8 @@ export async function PUT(request: Request) {
     if (data.password) {
       updateData.password = await bcrypt.hash(data.password, 10);
     }
+    // The owner can switch "ask them to choose a new password at their next sign-in" on or off
+    if (typeof data.requirePasswordChange === 'boolean') updateData.mustChangePassword = data.requirePasswordChange;
 
     const user = await db.user.update({
       where: { id: data.id },

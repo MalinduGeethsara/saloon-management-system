@@ -1,4 +1,6 @@
 import type { Prisma, BookingStatus, BookingSource } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 import { db, withTransaction } from '../db';
 import { notifyBooking, notifyBookingInTx, notifyCustomerCancelled, notifyCustomerConfirmed, notifyCustomerPaymentReceived } from '../services/booking-notifications';
 import { sendChannels } from '../services/notify';
@@ -12,7 +14,12 @@ const PERSON = { select: { id: true, name: true, email: true, phone: true, image
 // What a customer may see of the specialist who serves them
 const STAFF_PUBLIC = { select: { id: true, name: true, imageUrl: true, role: true, shopId: true } } as const;
 
-export async function createBooking(data: { customerId: string; serviceIds: string[]; shopId: string; barberId: string; date: string; amount: number; paymentMethod?: string; actorRole?: string; actorId?: string }) {
+// `customerId` = an existing customer; or `clientName` = a walk-in customer, created here together with the booking
+export async function createBooking(data: { customerId?: string; clientName?: string; serviceIds: string[]; shopId: string; barberId: string; date: string; amount: number; paymentMethod?: string; actorRole?: string; actorId?: string }) {
+  // Walk-in accounts are never meant to be logged into: an unguessable password (hashed before the transaction, it is slow)
+  const walkInPassword = !data.customerId && data.clientName ? await bcrypt.hash(randomUUID(), 10) : null;
+  if (!data.customerId && !walkInPassword) throw new Error('A customer is required');
+
   // Use ACID transaction to ensure booking creation and related logic are atomic
   const result = await withTransaction(async (tx) => {
     // 1. Verify services exist
@@ -34,13 +41,21 @@ export async function createBooking(data: { customerId: string; serviceIds: stri
       }
     }
 
-    // 2. Create the booking
+    // 2. Create the booking (and the walk-in customer, when there is no existing one)
+    let customerId = data.customerId;
+    if (!customerId) {
+      const walkIn = await tx.user.create({
+        data: { name: data.clientName!.trim(), email: `walkin_${Date.now()}_${randomUUID().slice(0, 8)}@salon.com`, password: walkInPassword!, role: 'CUSTOMER' },
+      });
+      customerId = walkIn.id;
+    }
+
     const booking = await tx.booking.create({
       data: {
         date: new Date(data.date),
         status: 'CONFIRMED',
         totalAmount: data.amount,
-        customerId: data.customerId,
+        customerId,
         services: {
           create: data.serviceIds.map(id => ({
             service: { connect: { id } }
@@ -59,7 +74,7 @@ export async function createBooking(data: { customerId: string; serviceIds: stri
         status: data.paymentMethod ? 'COMPLETED' : 'PENDING',
         method: data.paymentMethod || 'CASH',
         bookingId: booking.id,
-        customerId: data.customerId,
+        customerId,
       }
     });
 
@@ -279,11 +294,13 @@ export async function deleteBooking(id: string) {
   });
 }
 
-export async function completePayment(bookingId: string, paymentMethod: string = 'CARD') {
+export async function completePayment(bookingId: string, paymentMethod: string = 'CARD', contact: { phone?: string | null; email?: string | null } = {}) {
   const before = await db.booking.findUnique({ where: { id: bookingId }, include: { payment: true } });
   const completed = await withTransaction((tx) => finalizeBookingCompletion(tx, bookingId, paymentMethod));
+  // What was sent to whom, for the screen (nothing is sent again for a booking that was already paid)
+  let receipt: Awaited<ReturnType<typeof notifyCustomerPaymentReceived>> | null = null;
   if (before && before.status !== 'COMPLETED' && before.payment?.status !== 'COMPLETED') {
-    void notifyCustomerPaymentReceived(bookingId, paymentMethod);
+    receipt = await notifyCustomerPaymentReceived(bookingId, paymentMethod, contact);
   }
-  return completed;
+  return { booking: completed, receipt };
 }

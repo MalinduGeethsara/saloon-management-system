@@ -57,7 +57,7 @@ async function run(R, ownerCreds) {
   R.check('owner deletes a service', r.status === 200 && !gone || (r.status === 200 && gone?.status !== 'Active'), r.text);
   r = await ctx.owner.put('/api/v1/shops', { id: ctx.shopB.id, name: 'QA Kandy', address: '5 Temple Street, Kandy', status: 'Open' });
   R.check('owner edits a shop', r.status === 200, r.text);
-  const tmpStaff = (await ctx.owner.post('/api/v1/staff', { role: 'BARBER', name: 'Temp Barber', email: 'temp@qa.test', password: PASSWORD })).json?.user;
+  const tmpStaff = (await ctx.owner.post('/api/v1/staff', { role: 'BARBER', name: 'Temp Barber', email: 'temp@qa.test', password: PASSWORD, requirePasswordChange: false })).json?.user;
   r = await ctx.owner.put('/api/v1/staff', { id: tmpStaff.id, name: 'Temp Barber 2', email: 'temp@qa.test', role: 'BARBER', shopId: ctx.shopA.id });
   R.check('owner edits a staff member', r.status === 200 && r.json?.user?.name === 'Temp Barber 2', r.text);
   r = await ctx.owner.del('/api/v1/staff?id=' + tmpStaff.id);
@@ -374,9 +374,11 @@ async function run(R, ownerCreds) {
 
   // ─────────────────────────────────────────────────────────────────────────
   R.sec('11. Attendance (manual + fingerprint device)');
-  const today = new Date().toISOString().slice(0, 10);
-  const inAt = new Date(); inAt.setHours(9, 0, 0, 0);
-  const outAt = new Date(); outAt.setHours(17, 30, 0, 0);
+  // (times that have already happened, whatever the hour the suite runs at: the API refuses attendance in the future)
+  const today = new Date().toLocaleDateString('en-CA');
+  const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+  const inAt = new Date(dayStart.getTime() + 60000);
+  const outAt = new Date(Math.max(inAt.getTime() + 60000, Math.min(dayStart.getTime() + 17.5 * 3600000, Date.now() - 60000)));
   r = await ctx.managerC.post('/api/v1/attendance', { userId: b1.id, date: today, checkIn: inAt.toISOString() });
   const att = r.json?.record;
   R.check('manager clocks a barber in', r.status === 201 && att?.id, r.text.slice(0, 160));

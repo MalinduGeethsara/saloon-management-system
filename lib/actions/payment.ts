@@ -3,7 +3,7 @@
 import { db, withTransaction } from '@/lib/db';
 import { authorize, getAccess } from '@/lib/access.server';
 import { notifyIfLowStock } from '@/lib/services/stock-notifications';
-import { notifyCounterSale } from '@/lib/services/booking-notifications';
+import { emailWalkInReceipt, notifyCounterSale, notifyWalkInReceipt } from '@/lib/services/booking-notifications';
 import { parsePageParams, wantsPagination } from '@/lib/pagination';
 import type { Prisma } from '@prisma/client';
 
@@ -109,6 +109,7 @@ export async function createManualBill(data: {
   invoiceNo: string;
   clientName: string;
   clientPhone?: string;
+  clientEmail?: string;
   barberName?: string;
   barberId?: string;
   items: { name: string; type: string; price: number; productId?: string }[];
@@ -124,6 +125,7 @@ export async function createManualBill(data: {
     const session = allowed.session;
 
     let soldOrderId: string | null = null;
+    let paymentId = '';
     await withTransaction(async (tx) => {
       const payment = await tx.payment.create({
         data: {
@@ -137,6 +139,7 @@ export async function createManualBill(data: {
           items: data.items,
         }
       });
+      paymentId = payment.id;
 
       // Commission is earned on services performed, not on retail products sold alongside them
       const serviceAmount = data.items
@@ -219,7 +222,13 @@ export async function createManualBill(data: {
       });
     }
 
-    return { success: true };
+    // Thank-you SMS with the receipt to the number on the bill (the cashier is told if it could not be sent)
+    const receiptSms = notifyWalkInReceipt({ phone: data.clientPhone, name: data.clientName, amount: data.amount, method: data.method, paymentId, items: data.items });
+
+    // ...and by email, when the cashier typed an address
+    const receiptEmail = emailWalkInReceipt({ email: data.clientEmail, name: data.clientName, amount: data.amount, method: data.method, paymentId, items: data.items });
+
+    return { success: true, receiptSms, receiptEmail };
   } catch (error: any) {
     console.error('Error creating manual bill:', error);
     if (typeof error?.message === 'string' && error.message.startsWith('STOCK_UNAVAILABLE:')) {

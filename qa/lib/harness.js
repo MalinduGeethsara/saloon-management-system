@@ -248,7 +248,9 @@ function actionPage(name) {
     if (info.exportedName !== name) continue;
     const pages = Object.keys(info.workers).map((w) => w.replace(/^app/, '').replace(/\/page$/, '').replace(/\/\([^)]*\)/g, '').replace(/\[[^\]]+\]/g, '00000000-0000-0000-0000-000000000000') || '/');
     const isPublic = (p) => !/^\/(owner|admin|barber|manager|booking|profile)/.test(p);
-    return pages.find((p) => isPublic(p) && !p.includes('0000-0000')) || pages.find((p) => !p.includes('0000-0000')) || pages[0] || '/';
+    // (an action used by the website AND a dashboard form, e.g. getBookedSlots, is called the way a customer would: via the customer page)
+    const isCustomerArea = (p) => /^\/(booking|profile)/.test(p);
+    return pages.find((p) => isPublic(p) && !p.includes('0000-0000')) || pages.find((p) => isCustomerArea(p) && !p.includes('0000-0000')) || pages.find((p) => !p.includes('0000-0000')) || pages[0] || '/';
   }
   return '/';
 }

@@ -4,6 +4,7 @@ import { parsePageParams, wantsPagination } from '@/lib/pagination';
 import { verifySession } from '@/lib/session';
 import { serverError } from '@/lib/api-error';
 import { authorize, forbidden, getAccess } from '@/lib/access.server';
+import { shopClosedReason, totalDurationMinutes } from '@/lib/services/booking-slots';
 
 // The calendar and the bookings page both work on bookings: the owner's tick-boxes for either count
 const BOOKING_PAGES = ['/owner/bookings/manage', '/owner/calendar'];
@@ -69,72 +70,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Please enter a valid booking date and time.' }, { status: 400 });
     }
 
-    let customerId = body.customerId;
-
-    // For manual bookings where a client name is entered but no existing customer is selected
-    if (!customerId && body.clientName) {
-      const { db } = await import('@/lib/db');
-      const bcrypt = await import('bcryptjs');
-      const dummyEmail = `walkin_${Date.now()}@salon.com`;
-      // Walk-in accounts are never meant to be logged into, so give them an unguessable password
-      const dummyPassword = await bcrypt.hash((await import('crypto')).randomUUID(), 10);
-      
-      const newCustomer = await db.user.create({
-        data: {
-          name: body.clientName,
-          email: dummyEmail,
-          password: dummyPassword,
-          role: 'CUSTOMER'
-        }
-      });
-      customerId = newCustomer.id;
-    } else if (!customerId) {
-      customerId = session.id;
+    const serviceIds: string[] = body.serviceIds || (body.serviceId ? [body.serviceId] : []);
+    if (!Array.isArray(serviceIds) || serviceIds.length === 0 || serviceIds.some((id) => typeof id !== 'string')) {
+      return NextResponse.json({ message: 'Please choose at least one service.' }, { status: 400 });
+    }
+    const clientName = typeof body.clientName === 'string' ? body.clientName.trim() : '';
+    if (!body.customerId && clientName.length > 100) {
+      return NextResponse.json({ message: 'The client name is too long (100 characters at most).' }, { status: 400 });
     }
 
-    // Handle backward compatibility: if serviceId is passed instead of array
-    const serviceIds = body.serviceIds || (body.serviceId ? [body.serviceId] : []);
-
-    // Fetch service to get the proper amount if amount is 0 or missing
-    let finalAmount = body.amount;
-    if (!finalAmount && serviceIds.length > 0) {
-      const { db } = await import('@/lib/db');
-      const services = await db.service.findMany({ where: { id: { in: serviceIds } } });
-      finalAmount = services.reduce((sum: number, s: any) => sum + s.price, 0);
+    const { db } = await import('@/lib/db');
+    const services = await db.service.findMany({ where: { id: { in: serviceIds } } });
+    if (services.length === 0) {
+      return NextResponse.json({ message: 'That service was not found. Please choose a service again.' }, { status: 400 });
     }
 
-    // Validation against Shop Operating Hours
-    if (body.shopId && body.date) {
-      const { db } = await import('@/lib/db');
+    // The price comes from the services unless the caller sent one
+    const finalAmount = body.amount || services.reduce((sum: number, s: any) => sum + s.price, 0);
+
+    // The branch must be open for the WHOLE visit (same rule and same wording as the website booking)
+    if (body.shopId) {
       const shop = await db.shop.findUnique({ where: { id: body.shopId } });
-      if (shop) {
-        if (shop.status === 'Closed' || shop.status === 'Renovating') {
-          return NextResponse.json({ message: `This location is currently ${shop.status}` }, { status: 400 });
-        }
-        
-        const bookingDate = new Date(body.date);
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const dayName = days[bookingDate.getDay()];
-        
-        if (shop.operatingHours) {
-          const schedule = (shop.operatingHours as any)[dayName];
-          if (schedule) {
-            if (schedule.isClosed) {
-              return NextResponse.json({ message: `This location is closed on ${dayName}s` }, { status: 400 });
-            }
-
-            const bTimeStr = bookingDate.toTimeString().substring(0, 5); // "HH:mm"
-            if (bTimeStr < schedule.open || bTimeStr > schedule.close) {
-              return NextResponse.json({ message: `Booking time on ${dayName} must be between ${schedule.open} and ${schedule.close}` }, { status: 400 });
-            }
-          }
-        }
-      }
+      const reason = shopClosedReason(shop, new Date(body.date), totalDurationMinutes(services));
+      if (reason) return NextResponse.json({ message: reason }, { status: 400 });
     }
+
+    // No customer chosen: a walk-in named on the form (created together with the booking) or, failing that, the staff member
+    let customerId: string | undefined = body.customerId;
+    if (!customerId && !clientName) customerId = session.id;
 
     const booking = await createBooking({
-      customerId: session.role === 'CUSTOMER' ? session.id : customerId, 
-      serviceIds: serviceIds,
+      customerId: session.role === 'CUSTOMER' ? session.id : customerId,
+      clientName: customerId ? undefined : clientName,
+      serviceIds,
       shopId: body.shopId,
       barberId: body.barberId,
       date: body.date,
@@ -183,15 +151,21 @@ export async function PUT(request: Request) {
     }
 
     let booking;
+    let receipt: { sms: string; email: string } | null = null;
     if (body.action === 'PAYMENT_COMPLETE') {
-      booking = await completePayment(body.id, body.paymentMethod?.toUpperCase() || 'CASH');
+      const done = await completePayment(body.id, body.paymentMethod?.toUpperCase() || 'CASH', {
+        phone: typeof body.contactPhone === 'string' ? body.contactPhone : null,
+        email: typeof body.contactEmail === 'string' ? body.contactEmail : null,
+      });
+      booking = done.booking;
+      receipt = done.receipt;
     } else if (body.status) {
       booking = await updateBookingStatus(body.id, body.status, { id: session.id, role: session.role });
     } else {
       return NextResponse.json({ message: 'Status or action is required' }, { status: 400 });
     }
 
-    return NextResponse.json({ booking, message: 'Booking updated successfully' }, { status: 200 });
+    return NextResponse.json({ booking, receiptSms: receipt?.sms ?? null, receiptEmail: receipt?.email ?? null, message: 'Booking updated successfully' }, { status: 200 });
   } catch (error: any) {
     return serverError('Error updating booking', error);
   }

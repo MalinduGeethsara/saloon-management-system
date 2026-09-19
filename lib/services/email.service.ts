@@ -386,6 +386,7 @@ interface PaymentReceiptDetails {
   products?: string;
   amount: number;
   method: string; // e.g. "Cash", "Card"
+  referenceLabel?: string; // wording before the reference (default "Booking reference"; a walk-in bill says "Bill reference")
 }
 
 export async function sendPaymentReceipt(details: PaymentReceiptDetails) {
@@ -394,7 +395,7 @@ export async function sendPaymentReceipt(details: PaymentReceiptDetails) {
     return { success: true };
   }
 
-  const { customerName, customerEmail, bookingId, receiptNo, date, services, products, amount, method } = details;
+  const { customerName, customerEmail, bookingId, receiptNo, date, services, products, amount, method, referenceLabel = 'Booking reference' } = details;
   const shortId = bookingId.slice(0, 8).toUpperCase();
 
   try {
@@ -444,12 +445,14 @@ export async function sendPaymentReceipt(details: PaymentReceiptDetails) {
                           <p style="margin:0;font-size:15px;font-weight:700;color:#fff;">${date}</p>
                         </td>
                       </tr>
+                      ${services ? `
                       <tr>
                         <td style="padding:20px 24px;border-bottom:1px solid #27272a;">
                           <p style="margin:0 0 2px;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#52525b;">Services</p>
                           <p style="margin:0;font-size:15px;font-weight:700;color:#fff;">${esc(services)}</p>
                         </td>
                       </tr>
+                      ` : ''}
                       ${products ? `
                       <tr>
                         <td style="padding:20px 24px;border-bottom:1px solid #27272a;">
@@ -471,7 +474,7 @@ export async function sendPaymentReceipt(details: PaymentReceiptDetails) {
                 <tr>
                   <td style="padding:0 32px 32px;">
                     <p style="margin:0;font-size:12px;color:#52525b;line-height:1.7;">
-                      Booking reference: <span style="font-family:monospace;color:#71717a;font-weight:700;">#${shortId}</span><br />
+                      ${esc(referenceLabel)}: <span style="font-family:monospace;color:#71717a;font-weight:700;">#${shortId}</span><br />
                       Questions? ${SALON_PHONE} &middot; ${SALON_EMAIL}
                     </p>
                   </td>
@@ -510,6 +513,7 @@ interface OwnerAlertDetails {
   rows: [label: string, value: string][];
   urgent?: boolean; // red banner: something needs the owner to act (refund, oversold stock ...)
   audience?: 'owner' | 'staff'; // wording of the banner and footer (default: owner)
+  banner?: string; // replaces the word in the coloured banner (e.g. "Welcome")
   actionUrl?: string;
   actionLabel?: string;
 }
@@ -552,7 +556,7 @@ export async function sendOwnerAlert(to: string[], details: OwnerAlertDetails) {
                 <tr>
                   <td style="background:${accent};padding:20px 28px;">
                     <p style="margin:0;font-size:11px;font-weight:800;letter-spacing:0.3em;text-transform:uppercase;color:#fff;">
-                      MR POLAA &mdash; ${urgent ? 'Action needed' : details.audience === 'staff' ? 'Team update' : 'Owner alert'}
+                      MR POLAA &mdash; ${esc(details.banner || (urgent ? 'Action needed' : details.audience === 'staff' ? 'Team update' : 'Owner alert'))}
                     </p>
                   </td>
                 </tr>

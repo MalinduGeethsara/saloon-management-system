@@ -253,11 +253,11 @@ function ScheduleContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          serviceId: newBookingData.extendedProps.service,
+          serviceIds: newBookingData.extendedProps.serviceIds,
           barberId: newBookingData.extendedProps.barberId,
           shopId: newBookingData.extendedProps.shopId || null,
           date: newBookingData.start,
-          amount: 0, 
+          amount: newBookingData.extendedProps.amount,
           clientName: newBookingData.title, 
         })
       });
@@ -267,7 +267,7 @@ function ScheduleContent() {
         setIsNewModalOpen(false);
       } else {
         const errorData = await res.json();
-        showAlert('error', errorData.error || 'Failed to save booking');
+        showAlert('error', errorData.message || errorData.error || 'Failed to save booking');
       }
     } catch(e) {
       showAlert('error', 'Error creating booking');
