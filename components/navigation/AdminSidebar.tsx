@@ -76,7 +76,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
     <Sider 
       width={260} 
       theme="light" 
-      style={{ height: '100vh', borderRight: '1px solid #E2E8F0', position: 'sticky', top: 0 }}
+      style={{ height: '100dvh', borderRight: '1px solid #E2E8F0', position: 'sticky', top: 0 }}
     >
       {/* Admin Logo */}
       <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>

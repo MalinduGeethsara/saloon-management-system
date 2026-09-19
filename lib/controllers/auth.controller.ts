@@ -28,6 +28,7 @@ export async function loginCustomer(emailOrPhone: string, passwordRaw: string) {
     role: user.role,
     name: user.name,
     phone: user.phone,
+    mustChangePassword: user.mustChangePassword,
   });
 
   return user;
@@ -95,6 +96,7 @@ export async function loginStaff(emailOrPhone: string, passwordRaw: string) {
     role: user.role,
     name: user.name,
     permissions: fullPermissions,
+    mustChangePassword: user.mustChangePassword,
   });
 
   return user;

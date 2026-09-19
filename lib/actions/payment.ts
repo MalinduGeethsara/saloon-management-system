@@ -1,31 +1,81 @@
 'use server';
 
 import { db, withTransaction } from '@/lib/db';
-import { verifySession } from '@/lib/session';
+import { authorize, getAccess } from '@/lib/access.server';
+import { notifyIfLowStock } from '@/lib/services/stock-notifications';
+import { notifyCounterSale } from '@/lib/services/booking-notifications';
+import { parsePageParams, wantsPagination } from '@/lib/pagination';
+import type { Prisma } from '@prisma/client';
 
-export async function getAllPayments() {
+export interface PaymentListOptions {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  method?: string; // Cash | Card | Transfer | PayHere (case-insensitive, matches the stored value)
+  shopId?: string;
+}
+
+// Without `page` this keeps the legacy behaviour (latest 100). With `page` it returns one page of
+// real, completed transactions plus filtered totals — pending/failed gateway attempts are not
+// invoices and must not count towards revenue.
+export async function getAllPayments(opts: PaymentListOptions = {}) {
   try {
-    const session = await verifySession();
-    if (!session || !['OWNER', 'ADMIN', 'MANAGER'].includes(session.role)) {
+    const allowed = await authorize('/owner/payments', 'view');
+    if (!allowed) {
       return { success: false, message: 'Unauthorized' };
     }
 
-    const payments = await db.payment.findMany({
-      include: {
-        customer: true,
-        barber: true,
-        booking: {
-          include: {
-            barber: true,
-            shop: true,
-            services: { include: { service: true } },
-            products: { include: { product: true } }
-          }
+    const paginated = wantsPagination({ page: opts.page });
+    const params = parsePageParams({ page: opts.page, pageSize: opts.pageSize });
+
+    const where: Prisma.PaymentWhereInput = paginated ? { status: 'COMPLETED' } : {};
+    const q = opts.q?.trim();
+    if (q) {
+      // Invoice ids are shown as INV-<first 6 chars of the uuid, uppercased>
+      const idPrefix = q.replace(/^inv-?/i, '').toLowerCase();
+      where.OR = [
+        ...(idPrefix ? [{ id: { startsWith: idPrefix } }] : []),
+        { clientName: { contains: q } },
+        { customer: { name: { contains: q } } },
+        { barberName: { contains: q } },
+        { barber: { name: { contains: q } } },
+      ];
+    }
+    if (opts.method && opts.method !== 'ALL') where.method = opts.method;
+    if (opts.shopId && opts.shopId !== 'ALL') where.booking = { shopId: opts.shopId };
+
+    const include = {
+      customer: true,
+      barber: true,
+      booking: {
+        include: {
+          barber: true,
+          shop: true,
+          services: { include: { service: true } },
+          products: { include: { product: true } }
         }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100
-    });
+      }
+    } satisfies Prisma.PaymentInclude;
+
+    let payments;
+    let total = 0;
+    let stats = { revenue: 0, count: 0 };
+    let shops: { id: string; name: string }[] = [];
+
+    if (paginated) {
+      const [rows, count, agg, shopRows] = await db.$transaction([
+        db.payment.findMany({ where, include, orderBy: { createdAt: 'desc' }, skip: params.skip, take: params.take }),
+        db.payment.count({ where }),
+        db.payment.aggregate({ where, _sum: { amount: true } }),
+        db.shop.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+      ]);
+      payments = rows;
+      total = count;
+      stats = { revenue: agg._sum.amount ?? 0, count };
+      shops = shopRows;
+    } else {
+      payments = await db.payment.findMany({ include, orderBy: { createdAt: 'desc' }, take: 100 });
+    }
 
     const data = payments.map(p => {
       const bookingItems = [
@@ -48,7 +98,7 @@ export async function getAllPayments() {
       };
     });
 
-    return { success: true, data };
+    return { success: true, data, total, stats, shops };
   } catch (error) {
     console.error('Error fetching payments:', error);
     return { success: false, message: 'Server Error' };
@@ -67,11 +117,13 @@ export async function createManualBill(data: {
   branch?: string;
 }) {
   try {
-    const session = await verifySession();
-    if (!session || !['OWNER', 'ADMIN', 'MANAGER'].includes(session.role)) {
+    const allowed = await authorize(['/owner/payments', '/owner/bookings/manage'], 'add');
+    if (!allowed) {
       return { success: false, message: 'Unauthorized' };
     }
+    const session = allowed.session;
 
+    let soldOrderId: string | null = null;
     await withTransaction(async (tx) => {
       const payment = await tx.payment.create({
         data: {
@@ -128,7 +180,7 @@ export async function createManualBill(data: {
         }
 
         const productAmount = productItems.reduce((sum, item) => sum + (item.price || 0), 0);
-        await tx.order.create({
+        const order = await tx.order.create({
           data: {
             source: 'ADMIN',
             totalAmount: productAmount,
@@ -145,8 +197,27 @@ export async function createManualBill(data: {
             }
           }
         });
+        soldOrderId = order.id;
       }
     });
+
+    // Stock was decremented above: alert the owner/managers if a product just got low or ran out
+    for (const item of data.items) {
+      if (item.type === 'Product' && item.productId) void notifyIfLowStock(item.productId);
+    }
+    const soldProducts = data.items.filter(i => i.type === 'Product');
+    if (soldProducts.length > 0) {
+      notifyCounterSale({
+        orderId: soldOrderId,
+        clientName: data.clientName,
+        items: soldProducts,
+        amount: data.amount,
+        method: data.method,
+        invoiceNo: data.invoiceNo,
+        servedBy: data.barberName,
+        actorId: session.id,
+      });
+    }
 
     return { success: true };
   } catch (error: any) {
@@ -160,8 +231,7 @@ export async function createManualBill(data: {
 
 export async function getBillingCatalog() {
   try {
-    const session = await verifySession();
-    if (!session) return { success: false, data: [] };
+    if (!(await getAccess('/owner/payments'))) return { success: false, data: [] };
 
     const services = await db.service.findMany({
       where: { status: 'Active' },

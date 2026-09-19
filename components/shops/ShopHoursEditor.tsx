@@ -86,8 +86,8 @@ export function ShopHoursEditor({ shop }: { shop: any }) {
       >
         <Form form={form} layout="vertical" onFinish={handleSave} className="mt-6">
           {DAYS.map(day => (
-            <div key={day} className="flex items-center justify-between p-3 mb-2 rounded-xl border border-slate-100 bg-slate-50">
-              <div className="flex items-center gap-4 w-1/3">
+            <div key={day} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 mb-2 rounded-xl border border-slate-100 bg-slate-50">
+              <div className="flex items-center gap-4 sm:w-1/3">
                 <Form.Item name={`${day}_isClosed`} valuePropName="checked" className="m-0">
                   <Switch checkedChildren="Closed" unCheckedChildren="Open" />
                 </Form.Item>

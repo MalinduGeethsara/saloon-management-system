@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Typography, Avatar, Tag, Empty, Button } from 'antd';
-import { CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Card, Table, Typography, Avatar, Tag, Empty, Button, Input } from 'antd';
+import { matchesQuery } from '@/hooks/useSearchFilter';
+import { CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, UserOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { AlertProvider, useAlert } from '@/components/alerts/AlertSystem';
@@ -18,8 +20,27 @@ const { Title, Text } = Typography;
 function BarberDashboardContent() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   const { showAlert } = useAlert();
+  const router = useRouter();
+
+  // Arrived from a notification (?booking=ID): open exactly that booking once the list has loaded
+  const focusId = useSearchParams().get('booking');
+  const opened = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusId || loading || opened.current === focusId) return;
+    opened.current = focusId;
+    const found = bookings.find((b: any) => b.id === focusId);
+    if (found) {
+      setSelectedRow(found);
+      setIsRowModalOpen(true);
+    } else {
+      showAlert('error', 'That booking is no longer on your schedule.');
+    }
+    router.replace('/barber', { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId, loading, bookings]);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [isRowModalOpen, setIsRowModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'accept' | 'decline' | null>(null);
@@ -141,12 +162,23 @@ function BarberDashboardContent() {
     return () => clearInterval(interval);
   }, []);
 
+  // Search by client, service, status or date across both lists
+  const bookingMatches = (b: any) => matchesQuery(
+    search,
+    b.customer?.name,
+    b.customer?.phone,
+    b.services?.map((s: any) => s.service?.name).join(' '),
+    b.status,
+    dayjs(b.date).format('MMM D YYYY h:mm A'),
+  );
+
   const upcomingBookings = bookings
-    .filter(b => dayjs(b.date).isAfter(dayjs()) && b.status === 'CONFIRMED')
+    .filter(b => dayjs(b.date).isAfter(dayjs()) && b.status === 'CONFIRMED' && bookingMatches(b))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 5);
 
-  const newBookings = [...bookings]
+  const newBookings = bookings
+    .filter(bookingMatches)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
@@ -246,6 +278,16 @@ function BarberDashboardContent() {
         <Text type="secondary" className="text-sm sm:text-base">Here's your schedule and latest updates.</Text>
       </div>
 
+      <Input
+        allowClear
+        size="large"
+        prefix={<SearchOutlined className="text-slate-400" />}
+        placeholder="Search your bookings"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="mb-4 sm:max-w-md"
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Bookings */}
         <Card 
@@ -256,10 +298,11 @@ function BarberDashboardContent() {
         >
           {upcomingBookings.length > 0 ? (
             <Table 
-              dataSource={upcomingBookings} 
-              columns={upcomingColumns} 
+              dataSource={upcomingBookings}
+              columns={upcomingColumns}
               rowKey="id"
               pagination={false}
+              scroll={{ x: 'max-content' }}
               loading={loading}
               className="custom-table cursor-pointer"
               rowClassName="hover:bg-slate-50 transition-colors"
@@ -286,10 +329,11 @@ function BarberDashboardContent() {
         >
           {newBookings.length > 0 ? (
             <Table 
-              dataSource={newBookings} 
-              columns={newlyAddedColumns} 
+              dataSource={newBookings}
+              columns={newlyAddedColumns}
               rowKey="id"
               pagination={false}
+              scroll={{ x: 'max-content' }}
               loading={loading}
               className="custom-table cursor-pointer"
               rowClassName={(record) => record.status === 'PENDING' ? 'bg-amber-50/50 hover:bg-amber-100/50' : 'hover:bg-slate-50 transition-colors'}
@@ -335,7 +379,9 @@ function BarberDashboardContent() {
 export default function BarberDashboard() {
   return (
     <AlertProvider>
-      <BarberDashboardContent />
+      <Suspense fallback={null}>
+        <BarberDashboardContent />
+      </Suspense>
     </AlertProvider>
   );
 }

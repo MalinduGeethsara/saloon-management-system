@@ -19,6 +19,8 @@ export interface SessionPayload extends JWTPayload {
   name: string;
   phone?: string | null;
   permissions?: Permission[];
+  // First-run / handed-over password: the middleware keeps every page and API locked except the change-password page
+  mustChangePassword?: boolean;
   [key: string]: any;
 };
 

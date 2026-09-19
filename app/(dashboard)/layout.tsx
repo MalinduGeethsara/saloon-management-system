@@ -7,7 +7,8 @@ import {
   MenuOutlined, 
   MenuFoldOutlined, 
   MenuUnfoldOutlined, 
-  LogoutOutlined 
+  LogoutOutlined,
+  KeyOutlined
 } from '@ant-design/icons';
 import { AdminSidebar } from "@/components/navigation/AdminSidebar";
 import { OwnerSidebar } from "@/components/navigation/OwnerSidebar";
@@ -37,6 +38,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isOwnerRoute = pathname.startsWith("/owner");
   const isAdminRoute = pathname.startsWith("/admin");
   const isBarberRoute = pathname.startsWith("/barber");
+  // Roles without a menu (e.g. /manager/*) get no sidebar/drawer/hamburger instead of an empty panel
+  const hasSidebar = isOwnerRoute || isAdminRoute || isBarberRoute;
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
@@ -75,9 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <AdminSidebar onClose={closeMobileMenu} />
   ) : isBarberRoute ? (
     <BarberSidebar onClose={closeMobileMenu} />
-  ) : (
-    <div style={{ width: 260, background: '#FFFFFF', borderRight: '1px solid #E2E8F0', height: '100%' }} />
-  );
+  ) : null;
 
   const [profileName, setProfileName] = useState('System User');
   const [profileRole, setProfileRole] = useState('Staff');
@@ -155,6 +156,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         .desktop-menu-btn { display: none !important; }
         .mobile-menu-btn { display: inline-flex !important; }
+        .dashboard-header { padding: 0 12px !important; height: 64px !important; line-height: normal !important; }
+        .dashboard-content { padding: 12px !important; }
+        .dashboard-header-actions { gap: 12px !important; }
+
+        @media (min-width: 768px) {
+          .dashboard-header { padding: 0 24px !important; height: 80px !important; }
+          .dashboard-content { padding: 24px !important; }
+          .dashboard-header-actions { gap: 24px !important; }
+        }
         
         @media (min-width: 992px) {
           .dashboard-sider { 
@@ -170,39 +180,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       `}</style>
 
-      <Layout style={{ minHeight: '100vh', overflow: 'hidden' }}>
+      {/* overflow-x: clip (not hidden) so the sticky header still sticks to the viewport */}
+      <Layout style={{ minHeight: '100dvh', overflowX: 'clip' }}>
         
-        <Sider 
-          width={260} 
-          theme="light" 
-          className={`dashboard-sider ${desktopSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}
-          style={{ 
-            borderRight: '1px solid #E2E8F0', position: 'fixed', height: '100vh', left: 0, top: 0, zIndex: 100 
-          }}
-        >
-          {SidebarContent}
-        </Sider>
+        {hasSidebar && (
+          <>
+            <Sider 
+              width={260} 
+              theme="light" 
+              className={`dashboard-sider ${desktopSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}
+              style={{ 
+                borderRight: '1px solid #E2E8F0', position: 'fixed', height: '100dvh', left: 0, top: 0, zIndex: 100 
+              }}
+            >
+              {SidebarContent}
+            </Sider>
 
-        <Drawer
-          placement="left"
-          open={mobileMenuOpen}
-          onClose={closeMobileMenu}
-          styles={{ body: { padding: 0 }, wrapper: { width: 280 } }}
-          closable={false}
-        >
-          {SidebarContent}
-        </Drawer>
+            {/* Width matches the 260px sidebar it hosts, so there is no dead strip beside it */}
+            <Drawer
+              placement="left"
+              open={mobileMenuOpen}
+              onClose={closeMobileMenu}
+              styles={{ body: { padding: 0 }, wrapper: { width: 260, maxWidth: '85vw' } }}
+              closable={false}
+            >
+              {SidebarContent}
+            </Drawer>
+          </>
+        )}
 
-        <Layout className={`dashboard-main ${desktopSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        <Layout className={`dashboard-main ${hasSidebar && desktopSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           
-          <Header style={{ 
-            padding: '0 24px', background: '#F8F9FF', display: 'flex', alignItems: 'center', 
-            justifyContent: 'space-between', height: '80px', position: 'sticky', top: 0, zIndex: 99, backdropFilter: 'blur(8px)',
+          <Header className="dashboard-header" style={{ 
+            background: '#F8F9FF', display: 'flex', alignItems: 'center', 
+            justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 99, backdropFilter: 'blur(8px)',
           }}>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <Button className="mobile-menu-btn" icon={<MenuOutlined />} onClick={() => setMobileMenuOpen(true)} size="large" type="text" />
-              <Button className="desktop-menu-btn" icon={desktopSidebarOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />} onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)} size="large" type="text" />
+              {hasSidebar && (
+                <>
+                  <Button className="mobile-menu-btn" icon={<MenuOutlined />} onClick={() => setMobileMenuOpen(true)} size="large" type="text" />
+                  <Button className="desktop-menu-btn" icon={desktopSidebarOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />} onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)} size="large" type="text" />
+                </>
+              )}
               
               {mounted && (
                 <div className="hidden sm:flex flex-col" style={{ lineHeight: '1.2' }}>
@@ -212,7 +232,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <div className="dashboard-header-actions" style={{ display: 'flex', alignItems: 'center' }}>
               <NotificationBell />
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 {mounted && (
@@ -222,6 +242,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                 )}
                 
+                <Button
+                  type="text"
+                  icon={<KeyOutlined style={{ fontSize: '18px' }} />}
+                  onClick={() => router.push('/change-password')}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', color: '#7C4DFF' }}
+                  title="Change password"
+                  aria-label="Change password"
+                />
+
                 <Button 
                   type="text" 
                   danger 
@@ -234,7 +263,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </Header>
 
-          <Content style={{ padding: '24px', overflowY: 'auto' }}>
+          <Content className="dashboard-content" style={{ overflowY: 'auto' }}>
             <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
               {children}
             </div>

@@ -2,8 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Table, Card, Tag, Button, Typography, Space, Dropdown, MenuProps, Avatar, Input, DatePicker } from 'antd';
-import type { InputRef, TableColumnType } from 'antd';
+import { Card, Tag, Button, Typography, Space, Dropdown, MenuProps, Avatar, Input, DatePicker } from 'antd';
 import {
   PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined,
   EnvironmentOutlined, MoreOutlined, EditOutlined, DeleteOutlined, SearchOutlined, UserOutlined
@@ -12,6 +11,8 @@ import dayjs from 'dayjs';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ManualAttendanceModal } from "@/components/modals/ManualAttendanceModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { ResponsiveTable } from "@/components/ui/ResponsiveTable";
+import { useAccess } from "@/hooks/useAccess";
 
 const { Title, Text } = Typography;
 
@@ -24,23 +25,41 @@ function AttendanceContent() {
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
 
-  const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
-  const fetchAttendance = async (date?: dayjs.Dayjs | null) => {
-    const target = date === undefined ? selectedDate : date;
+  // Server-side pagination: date + employee-name search + page all go to the API
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const requestSeq = useRef(0);
+
+  const fetchAttendance = async () => {
+    const seq = ++requestSeq.current;
+    setLoading(true);
     try {
-      const url = target
-        ? `/api/v1/attendance?date=${target.format('YYYY-MM-DD')}`
-        : '/api/v1/attendance';
-      const res = await fetch(url);
+      const qs = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+      if (selectedDate) qs.set('date', selectedDate.format('YYYY-MM-DD'));
+      if (debouncedSearch) qs.set('q', debouncedSearch);
+      const res = await fetch(`/api/v1/attendance?${qs.toString()}`);
+      if (seq !== requestSeq.current) return; // superseded by a newer request
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         showAlert('error', err.message || 'Failed to load attendance');
+        setLoading(false);
         return;
       }
       const data = await res.json();
+      if (seq !== requestSeq.current) return;
       if (data.attendance) {
+        // e.g. the last record of the last page was deleted: step back to the new last page
+        if (data.attendance.length === 0 && data.total > 0 && page > 1) {
+          setPage(Math.max(1, Math.ceil(data.total / PAGE_SIZE)));
+          return;
+        }
+        setTotal(data.total ?? data.attendance.length);
         setAttendanceData(data.attendance.map((a: any) => ({
           key: a.id,
           userId: a.userId,
@@ -59,51 +78,44 @@ function AttendanceContent() {
       showAlert('error', 'Failed to load attendance');
       console.error('[Attendance fetch]', e);
     }
+    if (seq === requestSeq.current) setLoading(false);
   };
 
   const handleDateChange = (date: dayjs.Dayjs | null) => {
     setSelectedDate(date);
-    fetchAttendance(date);
+    setPage(1);
   };
 
-  const [canAdd, setCanAdd] = useState(true);
-  const [canEdit, setCanEdit] = useState(true);
-  const [canDelete, setCanDelete] = useState(true);
+  // Debounce the name search; a new search always starts from page 1
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchText.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchText]);
 
   useEffect(() => {
-    fetchAttendance(null);
+    fetchAttendance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, selectedDate, debouncedSearch]);
 
-    // Fetch real staff list
-    fetch('/api/v1/staff')
+  // What this person may do here (the owner's tick-boxes; the server checks the same rules again)
+  const access = useAccess('/owner/hr/attendance');
+  const canAdd = access.add;
+  const canEdit = access.edit;
+  const canDelete = access.delete;
+
+  useEffect(() => {
+    // The people a manual entry can be made for (works for anyone who may use this page)
+    fetch('/api/v1/attendance?staff=1')
       .then(r => r.json())
       .then(d => {
         if (d.staff) {
-          setStaffList(d.staff.map((s: any) => ({ id: s.id, name: s.name })));
+          setStaffList(d.staff.map((st: any) => ({ id: st.id, name: st.name })));
         }
       })
       .catch(() => {});
-
-    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (roleMatch) {
-      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
-        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-        if (permMatch) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
-            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/hr/attendance');
-            if (pagePerms) {
-              setCanAdd(pagePerms.canAdd);
-              setCanEdit(pagePerms.canEdit);
-              setCanDelete(pagePerms.canDelete);
-            } else {
-              setCanAdd(false);
-              setCanEdit(false);
-              setCanDelete(false);
-            }
-          } catch {}
-        }
-      }
-    }
   }, []);
 
   const handleAddNew = () => { setEditingRecord(null); setIsEntryModalOpen(true); };
@@ -116,7 +128,7 @@ function AttendanceContent() {
         const res = await fetch(`/api/v1/attendance?id=${recordToDelete}`, { method: 'DELETE' });
         if (res.ok) {
           showAlert('success', 'Record deleted successfully.');
-          fetchAttendance(selectedDate ?? null);
+          fetchAttendance();
         } else {
           showAlert('error', 'Failed to delete record.');
         }
@@ -128,20 +140,22 @@ function AttendanceContent() {
     }
   };
 
-  const handleSaveRecord = async (newRecord: any) => {
+  // Returns false when the server refused the entry, so the form stays open with what was typed
+  const handleSaveRecord = async (newRecord: any): Promise<boolean> => {
     try {
       const isEdit = !!newRecord.key;
-      const now = new Date();
-      const dateStr = newRecord.date || now.toISOString().split('T')[0];
+      // The chosen day at noon: safely inside that calendar day in any time zone
+      const dayAtNoon = dayjs(newRecord.date).hour(12).minute(0).second(0).toISOString();
 
       const body = isEdit
-        ? { id: newRecord.key, checkIn: newRecord.clockInRaw, checkOut: newRecord.clockOutRaw }
+        ? { id: newRecord.key, checkIn: newRecord.clockInRaw, checkOut: newRecord.clockOutRaw, note: newRecord.note }
         : {
             userId: newRecord.userId,
-            date: new Date(dateStr).toISOString(),
+            date: dayAtNoon,
             checkIn: newRecord.clockInRaw || null,
             checkOut: newRecord.clockOutRaw || null,
             method: 'MANUAL',
+            note: newRecord.note,
           };
 
       const res = await fetch('/api/v1/attendance', {
@@ -152,37 +166,17 @@ function AttendanceContent() {
 
       if (res.ok) {
         showAlert('success', 'Attendance record saved.');
-        fetchAttendance(selectedDate ?? null);
-      } else {
-        const err = await res.json();
-        showAlert('error', err.message || 'Failed to save record.');
+        fetchAttendance();
+        return true;
       }
+      const err = await res.json().catch(() => ({}));
+      showAlert('error', err.message || 'Failed to save record.');
+      return false;
     } catch {
       showAlert('error', 'An error occurred.');
+      return false;
     }
-    setIsEntryModalOpen(false);
   };
-
-  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
-      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-        <Input
-          ref={searchInput}
-          placeholder={`Search ${placeholder}`}
-          value={selectedKeys[0]}
-          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-          onPressEnter={() => confirm()}
-          style={{ marginBottom: 8, display: 'block' }}
-        />
-        <Space>
-          <Button type="primary" onClick={() => confirm()} icon={<SearchOutlined />} size="small" style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}>Search</Button>
-          <Button onClick={() => { clearFilters && clearFilters(); confirm(); }} size="small" style={{ width: 90 }}>Reset</Button>
-        </Space>
-      </div>
-    ),
-    filterIcon: (filtered: boolean) => <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined }} />,
-    onFilter: (value, record) => record[dataIndex]?.toString().toLowerCase().includes((value as string).toLowerCase()),
-  });
 
   const columns = [
     {
@@ -191,7 +185,6 @@ function AttendanceContent() {
       key: 'name',
       width: 250,
       align: 'left' as const,
-      ...getColumnSearchProps('name', 'Employee'),
       render: (text: string, record: any) => (
         <Link href={`/owner/hr/attendance/${record.key}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} />
@@ -281,14 +274,14 @@ function AttendanceContent() {
           <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Attendance Tracking</Title>
           <Text type="secondary">Monitor staff check-ins and leaves. Click an employee name to view details.</Text>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <DatePicker
             style={{ borderRadius: '12px', height: '48px' }}
             value={selectedDate}
             onChange={handleDateChange}
             allowClear={true}
             placeholder="Filter by date..."
-            className="hidden sm:block"
+            className="w-full sm:w-auto"
           />
           {canAdd && (
             <Button type="primary" size="large" icon={<PlusOutlined />} onClick={handleAddNew} className="bg-[#7C4DFF] hover:bg-[#6c42e0] rounded-xl font-bold h-12 shadow-md w-full md:w-auto">
@@ -299,7 +292,54 @@ function AttendanceContent() {
       </div>
 
       <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden" styles={{ body: { padding: 0 } }}>
-        <Table columns={columns} dataSource={attendanceData} pagination={{ pageSize: 8, size: 'small' }} rowKey="key" scroll={{ x: 1000 }} />
+        <div className="p-4 border-b border-slate-100">
+          <Input
+            allowClear
+            prefix={<SearchOutlined className="text-slate-400" />}
+            placeholder="Search staff"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="sm:max-w-xs"
+          />
+        </div>
+        <ResponsiveTable
+          columns={columns}
+          dataSource={attendanceData}
+          loading={loading}
+          pagination={{ current: page, pageSize: PAGE_SIZE, total, size: 'small', onChange: (p) => setPage(p) }}
+          rowKey="key"
+          scroll={{ x: 1000 }}
+          renderMobileCard={(record: any) => {
+            const statusColor = record.status === 'Active (In)' ? 'blue' : record.status === 'Absent' || record.status === 'On Leave' ? 'red' : 'green';
+            const menuItems: MenuProps['items'] = [
+              ...(canEdit ? [{ key: 'edit', label: 'Edit Record', icon: <EditOutlined />, onClick: () => handleEdit(record) }] : []),
+              ...(canDelete ? [{ key: 'delete', label: 'Delete', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteClick(record.key) }] : []),
+            ];
+            return (
+              <div className="rounded-2xl border border-slate-100 bg-white p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Link href={`/owner/hr/attendance/${record.key}`} className="flex items-center gap-2 min-w-0">
+                    <Avatar size="small" icon={<UserOutlined />} style={{ backgroundColor: '#F3E8FF', color: '#7C4DFF' }} />
+                    <span className="font-bold text-[#7C4DFF] truncate">{record.name}</span>
+                  </Link>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Tag color={statusColor} className="rounded-full px-3 font-bold border-0 text-[10px] m-0">{record.status.toUpperCase()}</Tag>
+                    {menuItems.length > 0 && (
+                      <Dropdown menu={{ items: menuItems }} trigger={['click']} placement="bottomRight">
+                        <Button type="text" shape="circle" size="small" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
+                      </Dropdown>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-sm font-mono text-slate-600">
+                  <span>In: {record.clockIn}</span>
+                  <span>Out: {record.clockOut}</span>
+                  <span className="text-[10px] font-sans font-bold text-slate-400">{record.method === 'FINGERPRINT' ? 'FINGERPRINT' : 'MANUAL'}</span>
+                </div>
+              </div>
+            );
+          }}
+        />
       </Card>
 
       <ManualAttendanceModal

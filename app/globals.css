@@ -75,3 +75,30 @@ html.dark, html.dark body {
   @apply bg-zinc-950 text-zinc-100;
 }
 
+
+/* --- Mobile ergonomics (phones / small tablets) --- */
+@media (max-width: 767px) {
+  /* 16px inputs stop iOS Safari from zooming the page on focus */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* antd tables: tighter cells so more columns fit before horizontal scrolling kicks in */
+  .ant-table-wrapper .ant-table-thead > tr > th,
+  .ant-table-wrapper .ant-table-tbody > tr > td {
+    padding: 10px 8px !important;
+  }
+
+  /* antd modals: sit near the top and scroll their own body instead of overflowing the screen */
+  .ant-modal {
+    top: 16px !important;
+    max-width: calc(100vw - 24px) !important;
+    margin-inline: auto !important;
+  }
+  .ant-modal .ant-modal-body {
+    max-height: calc(100dvh - 170px);
+    overflow-y: auto;
+  }
+}

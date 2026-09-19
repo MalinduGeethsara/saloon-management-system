@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { safeCallbackPath } from '@/lib/utils/safe-redirect';
 import { 
   UserOutlined, 
   LockOutlined, 
@@ -15,7 +16,7 @@ import {
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/profile';
+  const callbackUrl = safeCallbackPath(searchParams.get('callbackUrl'), '/profile');
 
   // Force dark mode on login page to ensure the background/overscroll matches the dark theme of the page
   useEffect(() => {
@@ -210,7 +211,7 @@ function LoginFormContent() {
         });
 
         setTimeout(() => {
-          router.push(callbackUrl);
+          router.push(data.mustChangePassword ? '/change-password' : callbackUrl);
         }, 1200);
       } else {
         setMessage({
@@ -228,14 +229,8 @@ function LoginFormContent() {
     }
   };
 
-  const fillDemoCredentials = (usePhone = false) => {
-    setEmail(usePhone ? '+94 77 123 4567' : 'customer@salon.com');
-    setPassword('password123');
-    setActiveTab('login');
-  };
-
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
+    <div className="min-h-dvh lg:h-screen lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
 
       {/* Slide-down Notification Bubble */}
       {showNotification && showNotification.show && (
@@ -265,7 +260,7 @@ function LoginFormContent() {
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0 bg-zinc-900">
           <img 
-            src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop" 
+            src="/images/site/barber-chair.jpg" 
             alt="Salon Background" 
             className="w-full h-full object-cover opacity-30 grayscale"
           />
@@ -279,7 +274,7 @@ function LoginFormContent() {
               MR POLAA
             </span>
             <span className="text-[9px] tracking-[0.3em] text-amber-500 font-bold uppercase mt-1.5">
-              Premium Grooming
+              Unisex Salon
             </span>
           </div>
         </Link>
@@ -298,7 +293,7 @@ function LoginFormContent() {
 
         {/* Footer info */}
         <div className="relative z-10 text-xs text-zinc-600 flex justify-between">
-          <span>© 2026 MR POLAA. All Rights Reserved.</span>
+          <span>© 2026 Mr Polaa (PVT) LTD. All Rights Reserved.</span>
           <Link href="/about" className="hover:underline">Learn about our heritage</Link>
         </div>
       </div>
@@ -313,7 +308,7 @@ function LoginFormContent() {
               MR POLAA
             </span>
             <span className="text-[8px] tracking-[0.3em] text-amber-500 font-bold uppercase mt-1.5">
-              Premium Grooming
+              Unisex Salon
             </span>
           </Link>
         </div>
@@ -321,7 +316,7 @@ function LoginFormContent() {
         {/* Back Link */}
         <Link 
           href="/" 
-          className="absolute top-6 left-6 text-xs font-bold text-zinc-500 hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors duration-300"
+          className="self-start mb-6 lg:mb-0 lg:absolute lg:top-6 lg:left-6 text-xs font-bold text-zinc-500 hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors duration-300"
         >
           <ArrowLeftOutlined /> Back to home
         </Link>

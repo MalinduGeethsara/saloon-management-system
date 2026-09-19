@@ -1,68 +1,87 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { 
-  Table, Card, Typography, Tag, Button, Input, Statistic, Row, Col, Tooltip, Space
+import {
+  Card, Typography, Tag, Button, Input, Statistic, Row, Col, Select
 } from 'antd';
-import type { InputRef, TableColumnType } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, WalletOutlined, CreditCardOutlined, EyeOutlined 
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { PaymentModal } from "@/components/modals/PaymentModal";
 import { InvoiceModal } from "@/components/modals/InvoiceModal";
+import { ResponsiveTable } from "@/components/ui/ResponsiveTable";
 
 import { getAllPayments, createManualBill } from '@/lib/actions/payment';
+import { useAccess } from '@/hooks/useAccess';
 
 const { Title, Text } = Typography;
 
 function PaymentsContent() {
   const [payments, setPayments] = useState<any[]>([]);
-  const [userRole, setUserRole] = useState('owner');
-  const [canAdd, setCanAdd] = useState(true);
-  const [canEdit, setCanEdit] = useState(true);
-  const [canDelete, setCanDelete] = useState(true);
-  
-  React.useEffect(() => {
-    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (roleMatch) {
-      setUserRole(roleMatch[2].toLowerCase());
-      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
-        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-        if (permMatch) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
-            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/payments');
-            if (pagePerms) {
-              setCanAdd(pagePerms.canAdd);
-              setCanEdit(pagePerms.canEdit);
-              setCanDelete(pagePerms.canDelete);
-            } else {
-              setCanAdd(false);
-              setCanEdit(false);
-              setCanDelete(false);
-            }
-          } catch (e) {}
-        }
+
+  // Server-side pagination + filters (search/method/branch cover every page, not just the loaded one)
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState({ revenue: 0, count: 0 });
+  const [shops, setShops] = useState<{ id: string; name: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [methodFilter, setMethodFilter] = useState('ALL');
+  const [shopFilter, setShopFilter] = useState('ALL');
+  const requestSeq = useRef(0);
+  // What this person may do here (the owner's tick-boxes; the server checks the same rules again)
+  const access = useAccess('/owner/payments');
+  const canAdd = access.add;
+  const canEdit = access.edit;
+  const canDelete = access.delete;
+
+  const fetchPayments = async (pageOverride?: number) => {
+    const seq = ++requestSeq.current;
+    setLoading(true);
+    const res = await getAllPayments({
+      page: pageOverride ?? page,
+      pageSize: PAGE_SIZE,
+      q: debouncedSearch,
+      method: methodFilter,
+      shopId: shopFilter,
+    });
+    if (seq !== requestSeq.current) return; // superseded by a newer request
+    if (res.success && res.data) {
+      // e.g. the last page emptied out after a filter change: step back to the new last page
+      if (res.data.length === 0 && (res.total ?? 0) > 0 && (pageOverride ?? page) > 1) {
+        setPage(Math.max(1, Math.ceil((res.total ?? 0) / PAGE_SIZE)));
+        return;
       }
+      setPayments(res.data);
+      setTotal(res.total ?? 0);
+      if (res.stats) setStats(res.stats);
+      if (res.shops) setShops(res.shops);
     }
-    
-    // Fetch payments
-    const fetchPayments = async () => {
-      const res = await getAllPayments();
-      if (res.success && res.data) {
-        setPayments(res.data);
-      }
-    };
+    setLoading(false);
+  };
+
+  // Debounce the search box; a new search always starts from page 1
+  React.useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchText.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchText]);
+
+  React.useEffect(() => {
     fetchPayments();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedSearch, methodFilter, shopFilter]);
   
   // Modals state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false); 
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null); 
 
-  const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
 
   const handleAddNew = () => {
@@ -93,8 +112,8 @@ function PaymentsContent() {
       return;
     }
 
-    const res = await getAllPayments();
-    if (res.success && res.data) setPayments(res.data);
+    await fetchPayments(1);
+    setPage(1);
 
     showAlert('success', 'Payment recorded successfully.');
     setIsPaymentModalOpen(false);
@@ -102,57 +121,8 @@ function PaymentsContent() {
     setTimeout(() => setIsInvoiceModalOpen(true), 300);
   };
 
-  // --- Column Search Setup ---
-  const getColumnSearchProps = (dataIndex: string, placeholder: string): TableColumnType<any> => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
-      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-        <Input
-          ref={searchInput}
-          placeholder={`Search ${placeholder}`}
-          value={selectedKeys[0]}
-          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-          onPressEnter={() => confirm()}
-          style={{ marginBottom: 8, display: 'block' }}
-        />
-        <Space>
-          <Button
-            type="primary"
-            onClick={() => confirm()}
-            icon={<SearchOutlined />}
-            size="small"
-            style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}
-          >
-            Search
-          </Button>
-          <Button
-            onClick={() => { clearFilters && clearFilters(); confirm(); }}
-            size="small"
-            style={{ width: 90 }}
-          >
-            Reset
-          </Button>
-        </Space>
-      </div>
-    ),
-    filterIcon: (filtered: boolean) => (
-      <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '16px' }} />
-    ),
-    onFilter: (value, record) =>
-      record[dataIndex]
-        .toString()
-        .toLowerCase()
-        .includes((value as string).toLowerCase()),
-    filterDropdownProps: {
-      onOpenChange: (visible) => {
-        if (visible) {
-          setTimeout(() => searchInput.current?.select(), 100);
-        }
-      },
-    },
-  });
-
-  const totalRevenue = payments.reduce((acc, curr) => acc + curr.amount, 0);
-  const totalTransactions = payments.length;
+  const totalRevenue = stats.revenue;
+  const totalTransactions = stats.count;
 
   const columns = [
     {
@@ -161,7 +131,6 @@ function PaymentsContent() {
       key: 'id',
       width: 140,
       align: 'left' as const,
-      ...getColumnSearchProps('id', 'ID'), 
       render: (text: string) => <span className="font-mono text-xs font-bold text-slate-500">{text}</span>,
     },
     {
@@ -170,7 +139,6 @@ function PaymentsContent() {
       key: 'client',
       width: 200,
       align: 'left' as const,
-      ...getColumnSearchProps('client', 'Client'), 
       render: (text: string, record: any) => (
         <div className="flex flex-col">
           <span className="font-bold text-slate-800 text-[14px]">{text}</span>
@@ -186,11 +154,6 @@ function PaymentsContent() {
       key: 'branch',
       width: 150,
       align: 'left' as const,
-      filters: [
-        { text: 'Colombo', value: 'Colombo' },
-        { text: 'Walasmulla', value: 'Walasmulla' },
-      ],
-      onFilter: (value: any, record: any) => record.branch === value,
       render: (text: string) => <span className="text-[12px] font-semibold text-slate-600">{text || 'Global'}</span>,
     },
     {
@@ -207,12 +170,6 @@ function PaymentsContent() {
       key: 'method',
       width: 140,
       align: 'center' as const, // Center align tags
-      filters: [
-        { text: 'Cash', value: 'Cash' },
-        { text: 'Card', value: 'Card' },
-        { text: 'Transfer', value: 'Transfer' },
-      ],
-      onFilter: (value: any, record: any) => record.method === value,
       render: (method: string) => (
         <Tag className="font-semibold px-3 py-0.5 rounded-md" icon={method === 'Cash' ? <WalletOutlined /> : <CreditCardOutlined />}>{method}</Tag>
       ),
@@ -250,8 +207,8 @@ function PaymentsContent() {
       </div>
 
       {/* KPI Stats - Centered on Mobile */}
-      <Row gutter={[16, 16]} className="mb-8">
-        <Col xs={24} sm={12}>
+      <Row gutter={[12, 12]} className="mb-6">
+        <Col xs={12}>
           <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
               title={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</span>} 
@@ -261,7 +218,7 @@ function PaymentsContent() {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12}>
+        <Col xs={12}>
           <Card variant="borderless" className="shadow-sm rounded-2xl flex items-center justify-center text-center sm:text-left sm:justify-start">
             <Statistic 
               title={<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Transactions</span>} 
@@ -278,17 +235,63 @@ function PaymentsContent() {
         className="shadow-sm rounded-3xl overflow-hidden" 
         styles={{ body: { padding: 0 } }}
       >
-        <Table 
-          columns={columns} 
-          dataSource={payments} 
-          pagination={{ pageSize: 8, size: 'small' }} 
-          rowKey="key" 
-          // Force horizontal scroll for the entire table
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 p-4 border-b border-slate-100">
+          <Input
+            allowClear
+            prefix={<SearchOutlined className="text-slate-400" />}
+            placeholder="Search payments"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="lg:max-w-sm"
+          />
+          <Select
+            value={methodFilter}
+            onChange={(v) => { setMethodFilter(v); setPage(1); }}
+            className="w-full lg:w-44"
+            options={[
+              { label: 'All methods', value: 'ALL' },
+              { label: 'Cash', value: 'Cash' },
+              { label: 'Card', value: 'Card' },
+              { label: 'Transfer', value: 'Transfer' },
+              { label: 'PayHere', value: 'PayHere' },
+            ]}
+          />
+          <Select
+            value={shopFilter}
+            onChange={(v) => { setShopFilter(v); setPage(1); }}
+            className="w-full lg:w-52"
+            options={[{ label: 'All branches', value: 'ALL' }, ...shops.map(sh => ({ label: sh.name, value: sh.id }))]}
+          />
+        </div>
+
+        <ResponsiveTable
+          columns={columns}
+          dataSource={payments}
+          loading={loading}
+          pagination={{ current: page, pageSize: PAGE_SIZE, total, onChange: (p) => setPage(p) }}
+          rowKey="key"
           scroll={{ x: 900 }}
           onRow={(record) => ({
             onClick: () => handleViewInvoice(record),
             className: 'cursor-pointer hover:bg-purple-50 transition-colors'
           })}
+          renderMobileCard={(record) => (
+            <div className="rounded-2xl border border-slate-100 bg-white p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-800 truncate">{record.client}</div>
+                  <div className="text-[11px] text-slate-500 truncate">
+                    {record.items?.length > 1 ? `${record.items[0].name} +${record.items.length - 1} more` : record.items?.[0]?.name}
+                  </div>
+                </div>
+                <span className="font-mono font-bold text-slate-800 shrink-0">Rs. {record.amount.toLocaleString()}</span>
+              </div>
+              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+                <span className="font-mono font-bold">{record.id}</span>
+                <span>{record.method} • {record.branch || 'Global'} • {record.date}</span>
+              </div>
+            </div>
+          )}
         />
       </Card>
 

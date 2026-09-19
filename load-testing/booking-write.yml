@@ -1,0 +1,35 @@
+config:
+  target: "http://localhost:3001"
+  processor: "./processor.js"
+  phases:
+    - duration: 5
+      arrivalCount: 6
+      name: "6 staff creating bookings"
+  payload:
+    path: "./staff-all.csv"
+    fields:
+      - "email"
+      - "password"
+
+scenarios:
+  - name: "Staff creates a walk-in booking"
+    flow:
+      - post:
+          url: "/api/auth/staff-login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          afterResponse: "captureCookie"
+      - loop:
+          - function: "setBookingSlot"
+          - post:
+              url: "/api/v1/bookings"
+              headers:
+                Cookie: "{{ authCookie }}"
+              json:
+                shopId: "{{ shopId }}"
+                barberId: "{{ barberId }}"
+                serviceIds: ["{{ serviceId }}"]
+                date: "{{ bookingDate }}"
+          - think: 20
+        count: 6

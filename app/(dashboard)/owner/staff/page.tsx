@@ -43,6 +43,8 @@ const STAFF_DATA = [
 ];
 
 import { useRouter } from 'next/navigation';
+import { matchesQuery } from '@/hooks/useSearchFilter';
+import { useAccess } from '@/hooks/useAccess';
 
 function StaffContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,12 +53,15 @@ function StaffContent() {
   const [staffData, setStaffData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [canAdd, setCanAdd] = useState(true);
-  const [canEdit, setCanEdit] = useState(true);
-  const [canDelete, setCanDelete] = useState(true);
-  const [isOwnerOrAdmin, setIsOwnerOrAdmin] = useState(true);
+  // What this person may do here (the owner's tick-boxes; the server checks the same rules again)
+  const access = useAccess('/owner/staff');
+  const canAdd = access.add;
+  const canEdit = access.edit;
+  const canDelete = access.delete;
+  const isOwnerOrAdmin = access.role === 'OWNER' || access.role === 'ADMIN';
 
   const searchInput = useRef<InputRef>(null);
+  const [query, setQuery] = useState('');
   const { showAlert } = useAlert();
   const router = useRouter();
 
@@ -90,29 +95,6 @@ function StaffContent() {
   useEffect(() => {
     fetchStaff();
 
-    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (roleMatch) {
-      const role = roleMatch[2].toLowerCase();
-      if (role !== 'owner' && role !== 'admin') {
-        setIsOwnerOrAdmin(false);
-        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-        if (permMatch) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
-            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/staff');
-            if (pagePerms) {
-              setCanAdd(pagePerms.canAdd);
-              setCanEdit(pagePerms.canEdit);
-              setCanDelete(pagePerms.canDelete);
-            } else {
-              setCanAdd(false);
-              setCanEdit(false);
-              setCanDelete(false);
-            }
-          } catch (e) {}
-        }
-      }
-    }
   }, []);
 
   const handleAdd = () => {
@@ -149,7 +131,9 @@ function StaffContent() {
         showAlert('success', 'Staff member deleted.');
         fetchStaff();
       } else {
-        showAlert('error', 'Failed to delete staff member.');
+        // The API explains why when the person has history that must be kept
+        const body = await res.json().catch(() => null);
+        showAlert('error', body?.error || 'Failed to delete staff member.');
       }
     } catch (e) {
       showAlert('error', 'An error occurred.');
@@ -336,10 +320,25 @@ function StaffContent() {
         </Col>
       </Row>
 
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <Input
+          allowClear
+          size="large"
+          prefix={<SearchOutlined className="text-slate-400" />}
+          placeholder="Search staff"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="sm:max-w-md"
+        />
+        {query.trim() && (
+          <span className="text-xs text-slate-500">{staffData.filter(s => matchesQuery(query, s.name, s.role, s.branch, s.email, s.phone, s.status)).length} of {staffData.length} shown</span>
+        )}
+      </div>
+
       <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden" styles={{ body: { padding: 0 } }}>
         <Table 
           columns={columns} 
-          dataSource={staffData} 
+          dataSource={staffData.filter(s => matchesQuery(query, s.name, s.role, s.branch, s.email, s.phone, s.status))}
           pagination={{ pageSize: 8 }}
           rowKey="key"
           loading={loading}

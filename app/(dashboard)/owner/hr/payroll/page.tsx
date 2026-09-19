@@ -4,15 +4,19 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import {
-  Card, Typography, Row, Col, Statistic, Tag, Button, Select, Modal, Progress, Table, Empty
+  Card, Typography, Row, Col, Statistic, Tag, Button, Select, Modal, Progress, Table, Empty, Input
 } from 'antd';
 import {
-  DollarOutlined, RightOutlined, SyncOutlined, SettingOutlined, EyeOutlined
+  DollarOutlined, RightOutlined, SyncOutlined, SettingOutlined, EyeOutlined, SearchOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
 import { PayrollConfigModal } from "@/components/modals/PayrollConfigModal";
 import { getMonthlyPayroll, processPayroll, markPayrollPaid } from '@/lib/actions/payroll';
+import { AppPagination } from '@/components/ui/AppPagination';
+import { usePagedList } from '@/hooks/usePagedList';
+import { matchesQuery } from '@/hooks/useSearchFilter';
+import { useAccess } from '@/hooks/useAccess';
 
 const { Title, Text } = Typography;
 
@@ -60,6 +64,12 @@ function PayrollContent() {
   const [selectedMonth, setSelectedMonth] = useState(() => dayjs().format('MMMM YYYY'));
   const [payrollList, setPayrollList] = useState<any[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [employeeQuery, setEmployeeQuery] = useState('');
+  const filteredPayroll = useMemo(
+    () => payrollList.filter((e) => matchesQuery(employeeQuery, e.name, e.role, e.id, e.status)),
+    [payrollList, employeeQuery],
+  );
+  const payrollPaging = usePagedList(filteredPayroll, 12);
 
   const fetchPayroll = async () => {
     setIsLoadingData(true);
@@ -70,31 +80,13 @@ function PayrollContent() {
     setIsLoadingData(false);
   };
 
-  const [canAdd, setCanAdd] = useState(true);
-  const [canEdit, setCanEdit] = useState(true);
+  const access = useAccess('/owner/hr/payroll');
+  const canAdd = access.add;
+  const canEdit = access.edit;
 
   useEffect(() => {
     fetchPayroll();
 
-    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (roleMatch) {
-      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
-        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-        if (permMatch) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
-            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/hr/payroll');
-            if (pagePerms) {
-              setCanAdd(pagePerms.canAdd);
-              setCanEdit(pagePerms.canEdit);
-            } else {
-              setCanAdd(false);
-              setCanEdit(false);
-            }
-          } catch (e) {}
-        }
-      }
-    }
   }, [selectedMonth]);
 
   // --- Processing States ---
@@ -198,7 +190,7 @@ function PayrollContent() {
               title={<span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Net Payout</span>}
               value={totalPayout} 
               prefix={<span className="text-[#7C4DFF] text-xl font-bold mr-1">Rs.</span>}
-              styles={{ content: { fontWeight: 800, color: '#1A1A1B', fontSize: '32px' } }}
+              styles={{ content: { fontWeight: 800, color: '#1A1A1B', fontSize: 'clamp(20px, 5.5vw, 32px)' } }}
             />
           </Card>
         </Col>
@@ -208,7 +200,7 @@ function PayrollContent() {
               title={<span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pending Payments</span>}
               value={totalPending} 
               prefix={<span className="text-orange-500 text-xl font-bold mr-1">Rs.</span>}
-              styles={{ content: { fontWeight: 800, color: '#F97316', fontSize: '32px' } }}
+              styles={{ content: { fontWeight: 800, color: '#F97316', fontSize: 'clamp(20px, 5.5vw, 32px)' } }}
             />
           </Card>
         </Col>
@@ -218,16 +210,28 @@ function PayrollContent() {
               title={<span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total EPF & ETF (Company Liability)</span>}
               value={totalEPFETF} 
               prefix="Rs."
-              styles={{ content: { fontWeight: 800, color: '#475569', fontSize: '32px' } }}
+              styles={{ content: { fontWeight: 800, color: '#475569', fontSize: 'clamp(20px, 5.5vw, 32px)' } }}
             />
           </Card>
         </Col>
       </Row>
 
       {/* Employee Cards Grid */}
-      <h3 className="text-lg font-bold text-slate-800 mb-4 mt-10">Employee Payroll List</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 mt-10">
+        <h3 className="text-lg font-bold text-slate-800 m-0">Employee Payroll List</h3>
+        <Input
+          allowClear
+          size="large"
+          prefix={<SearchOutlined className="text-slate-400" />}
+          placeholder="Search employees"
+          value={employeeQuery}
+          onChange={(e) => { setEmployeeQuery(e.target.value); payrollPaging.setPage(1); }}
+          className="sm:max-w-xs"
+        />
+      </div>
+      {employeeQuery.trim() && filteredPayroll.length === 0 && <Empty description="No employees match your search" className="my-8" />}
       <Row gutter={[24, 24]}>
-        {payrollList.map((employee) => (
+        {payrollPaging.pageItems.map((employee) => (
           <Col xs={24} sm={12} md={8} lg={6} xl={6} key={employee.key}>
             <Card 
               variant="borderless" 
@@ -307,6 +311,7 @@ function PayrollContent() {
           </Col>
         ))}
       </Row>
+      <AppPagination current={payrollPaging.page} pageSize={payrollPaging.pageSize} total={payrollPaging.total} onChange={payrollPaging.setPage} />
 
       {/* 1. Confirmation Modal */}
       <ConfirmationModal 
@@ -376,6 +381,7 @@ function PayrollContent() {
               dataSource={commissionEmployee.breakdown}
               rowKey="id"
               pagination={{ pageSize: 8 }}
+              scroll={{ x: 'max-content' }}
               size="small"
               columns={[
                 { title: 'Date', dataIndex: 'date', key: 'date', render: (d: string) => d ? dayjs(d).format('DD MMM YYYY') : '-' },

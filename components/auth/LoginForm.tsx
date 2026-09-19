@@ -5,6 +5,7 @@ import { Form, Input, Button, Card, Typography, message, theme } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons'; 
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import { safeCallbackPath } from '@/lib/utils/safe-redirect';
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
@@ -18,7 +19,7 @@ export const LoginForm = () => {
   
   const { token } = useToken();
   // ✅ Defaults back to staff-login if no callback URL is provided
-  const callbackUrl = searchParams.get('callbackUrl') || '/staff-login';
+  const callbackUrl = safeCallbackPath(searchParams.get('callbackUrl'), '/staff-login');
 
   const onFinish = async (values: any) => {
     setLoading(true);
@@ -37,6 +38,12 @@ export const LoginForm = () => {
         messageApi.success(`Welcome back, ${data.name}!`);
         
         let destination = callbackUrl;
+        // A first-run / handed-over password must be replaced before anything else opens
+        if (data.mustChangePassword) {
+          router.push('/change-password');
+          router.refresh();
+          return;
+        }
         
         if (destination === '/staff-login' || destination === '/' || destination === '/login') {
           const userRole = (data.role || '').toLowerCase();
@@ -111,7 +118,7 @@ export const LoginForm = () => {
         >
           <Input 
             prefix={<UserOutlined style={{ color: '#bfbfbf', marginRight: 8 }} />} 
-            placeholder="owner@salon.com" 
+            placeholder="name@example.com" 
             style={{ padding: '10px 14px' }}
           />
         </Form.Item>
@@ -127,39 +134,6 @@ export const LoginForm = () => {
             style={{ padding: '10px 14px' }}
           />
         </Form.Item>
-
-        <div style={{ 
-          backgroundColor: '#F8F9FF', 
-          padding: '12px 16px', 
-          borderRadius: '8px', 
-          marginBottom: '24px', 
-          fontSize: '11px', 
-          color: '#64748B', 
-          border: '1px solid #E2E8F0',
-          lineHeight: '1.6'
-        }}>
-          <strong style={{ color: token.colorPrimary, display: 'block', marginBottom: '6px' }}>Demo Logins (Pass: password123)</strong>
-          <div style={{ display: 'flex', marginBottom: '4px' }}>
-            <span style={{ width: '70px', fontWeight: 600, flexShrink: 0 }}>Admin:</span>
-            <span>admin@salon.com</span>
-          </div>
-          <div style={{ display: 'flex', marginBottom: '4px' }}>
-            <span style={{ width: '70px', fontWeight: 600, flexShrink: 0 }}>Owner:</span>
-            <span>owner@salon.com</span>
-          </div>
-          <div style={{ display: 'flex', marginBottom: '4px' }}>
-            <span style={{ width: '70px', fontWeight: 600, flexShrink: 0 }}>Manager:</span>
-            <span>manager@salon.com</span>
-          </div>
-          <div style={{ display: 'flex' }}>
-            <span style={{ width: '70px', fontWeight: 600, flexShrink: 0 }}>Barbers:</span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span>mahesh@salon.com</span>
-              <span>malith@salon.com</span>
-              <span>vindana@salon.com</span>
-            </div>
-          </div>
-        </div>
 
         <Form.Item style={{ marginBottom: 0 }}>
           <Button 

@@ -87,10 +87,10 @@ export function ProductModal({
         onFinish={handleFinish}
         style={{ marginTop: 24 }}
       >
-        <Row gutter={32}>
+        <Row gutter={[32, 16]}>
           
           {/* Left Column: LARGE Image Uploader */}
-          <Col span={10}>
+          <Col xs={24} md={10}>
             <Form.Item label="Product Image" style={{ marginBottom: 0 }}>
               <div className="product-image-uploader flex justify-center p-4 border-2 border-dashed border-gray-200">
                 <ImageUpload 
@@ -118,7 +118,7 @@ export function ProductModal({
           </Col>
 
           {/* Right Column: Details */}
-          <Col span={14}>
+          <Col xs={24} md={14}>
             <Form.Item 
               name="name" 
               label="Product Name" 
@@ -128,7 +128,7 @@ export function ProductModal({
             </Form.Item>
 
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item 
                   name="brand" 
                   label="Brand" 
@@ -137,7 +137,7 @@ export function ProductModal({
                   <Input placeholder="e.g. Suavecito" size="large" />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item name="category" label="Category" rules={[{ required: true }]}>
                   <Select placeholder="Select" size="large">
                     <Option value="Hair Care">Hair Care</Option>
@@ -150,7 +150,7 @@ export function ProductModal({
             </Row>
 
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item 
                   name="price" 
                   label="Price (Rs)" 
@@ -164,7 +164,7 @@ export function ProductModal({
                   />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item 
                   name="stock" 
                   label="Stock" 

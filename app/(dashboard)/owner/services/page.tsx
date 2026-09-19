@@ -34,6 +34,8 @@ import {
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ServiceModal } from "@/components/modals/ServiceModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { matchesQuery } from "@/hooks/useSearchFilter";
+import { useAccess } from '@/hooks/useAccess';
 
 const { Title, Text } = Typography;
 
@@ -43,9 +45,10 @@ function ServicesContent() {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState('owner');
-  const [canAdd, setCanAdd] = useState(true);
-  const [canEdit, setCanEdit] = useState(true);
-  const [canDelete, setCanDelete] = useState(true);
+  const access = useAccess(['/owner/services', '/owner/products']);
+  const canAdd = access.add;
+  const canEdit = access.edit;
+  const canDelete = access.delete;
   
   // Modal States
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
@@ -54,6 +57,9 @@ function ServicesContent() {
   const [serviceToDelete, setServiceToDelete] = useState<any>(null);
 
   const searchInput = useRef<InputRef>(null);
+  // Search box + type filter above the table
+  const [query, setQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'All' | 'Service' | 'Product'>('All');
   const { showAlert } = useAlert();
 
   const fetchCatalog = async () => {
@@ -75,30 +81,6 @@ function ServicesContent() {
   React.useEffect(() => {
     fetchCatalog();
     
-    // Check Permissions
-    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (roleMatch) {
-      setUserRole(roleMatch[2].toLowerCase());
-      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
-        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-        if (permMatch) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
-            // Check permissions for the catalog page
-            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/services');
-            if (pagePerms) {
-              setCanAdd(pagePerms.canAdd);
-              setCanEdit(pagePerms.canEdit);
-              setCanDelete(pagePerms.canDelete);
-            } else {
-              setCanAdd(false);
-              setCanEdit(false);
-              setCanDelete(false);
-            }
-          } catch (e) {}
-        }
-      }
-    }
   }, []);
 
   const handleAdd = () => {
@@ -350,6 +332,10 @@ function ServicesContent() {
     },
   ];
 
+  const visibleItems = services.filter(s =>
+    (typeFilter === 'All' || s.category === typeFilter) &&
+    matchesQuery(query, s.name, s.description, s.category, s.brand, s.sku, s.status, s.price)
+  );
   const totalServices = services.filter(s => s.category === 'Service').length;
   const totalProducts = services.filter(s => s.category === 'Product').length;
 
@@ -411,6 +397,32 @@ function ServicesContent() {
         </Col>
       </Row>
 
+      {/* Search + filter */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <Input
+          allowClear
+          size="large"
+          prefix={<SearchOutlined className="text-slate-400" />}
+          placeholder="Search services & products"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="sm:max-w-md"
+        />
+        <Segmented
+          size="large"
+          value={typeFilter}
+          onChange={(v) => setTypeFilter(v as 'All' | 'Service' | 'Product')}
+          options={[
+            { label: 'All', value: 'All' },
+            { label: 'Services', value: 'Service' },
+            { label: 'Products', value: 'Product' },
+          ]}
+        />
+        {(query || typeFilter !== 'All') && (
+          <Text type="secondary" className="self-center text-xs">{visibleItems.length} of {services.length} shown</Text>
+        )}
+      </div>
+
       {/* Main Table - FULL SWIPE */}
       <Card 
         variant="borderless" 
@@ -419,7 +431,9 @@ function ServicesContent() {
       >
         <Table 
           columns={columns} 
-          dataSource={services} 
+          dataSource={visibleItems}
+          loading={loading}
+          locale={{ emptyText: <Empty description={query ? 'No items match your search' : 'Nothing here yet'} /> }}
           pagination={{ pageSize: 8, size: 'small' }}
           rowKey="key"
           // Force horizontal scroll for full table swipe

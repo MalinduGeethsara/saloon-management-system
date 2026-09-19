@@ -12,9 +12,12 @@ import {
   SolutionOutlined,
   UsergroupAddOutlined,
   ScissorOutlined,
-  ShoppingCartOutlined
+  ShoppingCartOutlined,
+  WalletOutlined
 } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
+import { resolveAccess, type PermissionRow } from '@/lib/access';
+import { readSession, SESSION_REFRESHED_EVENT } from '@/hooks/useAccess';
 
 const { Sider } = Layout;
 
@@ -25,87 +28,65 @@ interface OwnerSidebarProps {
 export function OwnerSidebar({ onClose }: OwnerSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [userRole, setUserRole] = useState<string>('owner');
-  const [attendanceId, setAttendanceId] = useState<string>('1');
-  const [empId, setEmpId] = useState<string>('EMP-001');
-
-  const [userPermissions, setUserPermissions] = useState<any[]>([]);
+  // Who is signed in and what the owner allowed them (the same rules the server applies).
+  // Re-read whenever the server re-issued their session because their access changed.
+  const [session, setSession] = useState<{ role: string; rows: PermissionRow[] }>({ role: '', rows: [] });
 
   useEffect(() => {
-    const matchRole = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (matchRole) setUserRole(matchRole[2].toLowerCase());
-
-    const matchPerms = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-    if (matchPerms) {
-      try {
-        setUserPermissions(JSON.parse(decodeURIComponent(matchPerms[2])));
-      } catch (e) {
-        setUserPermissions([]);
-      }
-    }
-
-    const matchAttendance = document.cookie.match(new RegExp('(^| )attendance_id=([^;]+)'));
-    if (matchAttendance) setAttendanceId(matchAttendance[2]);
-
-    const matchEmp = document.cookie.match(new RegExp('(^| )emp_id=([^;]+)'));
-    if (matchEmp) setEmpId(matchEmp[2]);
+    const read = () => setSession(readSession());
+    read();
+    window.addEventListener(SESSION_REFRESHED_EVENT, read);
+    return () => window.removeEventListener(SESSION_REFRESHED_EVENT, read);
   }, []);
 
-  const hrChildrenLinks = (userRole !== 'owner' && userRole !== 'admin') ? [
-    { key: `/owner/hr/attendance/${attendanceId}`, label: 'My Attendance' },
-    { key: `/owner/hr/payroll/${empId}`, label: 'My Payroll' },
-  ] : [
-    { key: '/owner/hr/attendance', label: 'Attendance' },
-    { key: '/owner/hr/payroll', label: 'Payroll' },
-  ];
+  const userRole = session.role.toLowerCase();
+  const seesEverything = userRole === 'owner' || userRole === 'admin';
+  const canSee = (key: string) => resolveAccess(session.role, session.rows, key).view;
 
   const rawMenuItems = [
     { key: '/owner', icon: <DashboardOutlined />, label: 'Intelligence', allowedRoles: ['owner', 'admin'] },
     { key: '/owner/calendar', icon: <CalendarOutlined />, label: 'Calendar', allowedRoles: ['owner', 'admin', 'manager', 'barber'] },
     { key: '/owner/bookings/manage', icon: <CarryOutOutlined />, label: 'Bookings', allowedRoles: ['owner', 'admin', 'manager'] },
     { key: '/owner/staff', icon: <UsergroupAddOutlined />, label: 'Staff', allowedRoles: ['owner', 'admin'] },
-    { 
-      key: 'hr', 
-      icon: <SolutionOutlined />, 
+    {
+      key: 'hr',
+      icon: <SolutionOutlined />,
       label: 'Human Resources',
-      allowedRoles: ['owner', 'admin', 'barber'],
-      children: hrChildrenLinks  
+      allowedRoles: ['owner', 'admin'],
+      children: [
+        { key: '/owner/hr/attendance', label: 'Attendance' },
+        { key: '/owner/hr/payroll', label: 'Payroll' },
+      ],
     },
     { key: '/owner/shops', icon: <ShopOutlined />, label: 'My Shops', allowedRoles: ['owner', 'admin'] },
     { key: '/owner/services', icon: <ScissorOutlined />, label: 'Services', allowedRoles: ['owner', 'admin', 'manager'] },
     { key: '/owner/products', icon: <TeamOutlined />, label: 'Products', allowedRoles: ['owner', 'admin', 'manager'] },
     { key: '/owner/payments', icon: <DollarCircleOutlined />, label: 'Payments', allowedRoles: ['owner', 'admin', 'manager'] },
     { key: '/owner/orders', icon: <ShoppingCartOutlined />, label: 'Orders', allowedRoles: ['owner', 'admin', 'manager'] },
+    // Owner's private books: stock orders, petty cash, bills, wages. Never granted to other roles.
+    { key: '/owner/expenses', icon: <WalletOutlined />, label: 'Expenses', allowedRoles: ['owner'] },
     { key: '/owner/reports', icon: <BarChartOutlined />, label: 'Reports', allowedRoles: ['owner', 'admin'] },
   ];
 
   const filteredMenuItems = rawMenuItems
-  .filter(item => {
-    // Admin and Owner see everything they are hardcoded to see
-    if (userRole === 'admin' || userRole === 'owner') {
-      return item.allowedRoles.includes(userRole);
-    }
-    
-    // Dynamic permission check for custom roles
-    if (userRole !== 'admin' && userRole !== 'owner') {
-      // If it's the 'hr' group, check if any child is allowed
+    .map((item) => {
+      if (seesEverything) return item.allowedRoles.includes(userRole) ? item : null;
+      // Everyone else: exactly the pages the owner gave them (Expenses is never given out)
+      if (item.key === '/owner/expenses') return null;
       if (item.key === 'hr') {
-        return userPermissions.some((p: any) => p.pageKey?.startsWith('/owner/hr') && p.canView);
+        const children = item.children!.filter((c) => canSee(c.key));
+        return children.length ? { ...item, children } : null;
       }
-      
-      // Exact check
-      const perm = userPermissions.find((p: any) => p.pageKey === item.key);
-      return perm ? perm.canView : false;
-    }
-    return false;
-  })
-  .map(({ allowedRoles, ...cleanItem }) => cleanItem);
+      return canSee(item.key) ? item : null;
+    })
+    .filter((item): item is NonNullable<typeof item> => !!item)
+    .map(({ allowedRoles, ...cleanItem }) => cleanItem);
 
   return (
     <Sider 
       width={260} 
       theme="light" 
-      style={{ borderRight: '1px solid #E2E8F0', height: '100vh', position: 'sticky', top: 0 }}
+      style={{ borderRight: '1px solid #E2E8F0', height: '100dvh', position: 'sticky', top: 0 }}
     >
       <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
         <div style={{ display: 'grid', color: '#7C4DFF', fontWeight: 'bolder', fontSize: '18px' }}>MR POLAA</div>

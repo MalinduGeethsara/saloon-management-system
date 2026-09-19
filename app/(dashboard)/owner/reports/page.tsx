@@ -275,7 +275,7 @@ function ReportsContent() {
           >
             <RevenueExpenseChart data={reports.performanceData} loading={loading} />
 
-            <div className="flex justify-center gap-6 mt-6 pt-4 border-t border-slate-100">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-6 pt-4 border-t border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#7C4DFF]" />
                 <span className="text-xs font-bold text-slate-600">Total Revenue</span>

@@ -11,6 +11,15 @@ import {
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { getCustomerBookings, cancelBooking } from "@/lib/actions/booking";
 import { getMyOrders } from "@/lib/actions/orders";
+import { usePagedList } from "@/hooks/usePagedList";
+import PublicPagination from "@/components/website/PublicPagination";
+
+const PAGE_SIZE = 8;
+
+const PAYMENT_PILL = (status: string) =>
+  status === "Paid" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500" :
+  status === "Refunded" ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500" :
+  "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500";
 
 interface Appointment {
   id: string;
@@ -140,9 +149,16 @@ export default function ProfileDashboard() {
     }
   };
 
+  const upcomingAppointments = appointments.filter(app => app.status === "Pending" || app.status === "Confirmed");
+  const pastAppointments = appointments.filter(app => app.status === "Completed" || app.status === "Cancelled");
+  const displayedAppointments = appointmentFilter === "upcoming" ? upcomingAppointments : pastAppointments;
+
+  const apptPaging = usePagedList(displayedAppointments, PAGE_SIZE);
+  const orderPaging = usePagedList(orders, PAGE_SIZE);
+
   if (!mounted) {
     return (
-      <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen pt-24 pb-32 items-center justify-center">
+      <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen pt-10 pb-16 md:pt-24 md:pb-32 items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">
           <div className="w-12 h-12 rounded-full bg-zinc-300 dark:bg-zinc-800 mb-4"></div>
           <div className="h-4 bg-zinc-300 dark:bg-zinc-800 rounded w-32 mb-2"></div>
@@ -152,15 +168,10 @@ export default function ProfileDashboard() {
     );
   }
 
-  const upcomingAppointments = appointments.filter(app => app.status === "Pending" || app.status === "Confirmed");
-  const pastAppointments = appointments.filter(app => app.status === "Completed" || app.status === "Cancelled");
-  
-  const displayedAppointments = appointmentFilter === "upcoming" ? upcomingAppointments : pastAppointments;
-
   return (
-    <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24 pb-32">
+    <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-10 pb-16 md:pt-24 md:pb-32">
       <ScrollReveal direction="down">
-        <div className="max-w-7xl mx-auto px-6 w-full mt-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full mt-4 md:mt-10">
         
         <div className="flex flex-col lg:flex-row gap-8">
           
@@ -224,14 +235,14 @@ export default function ProfileDashboard() {
             
             {activeTab === "appointments" && (
               <div className="animate-in fade-in duration-500">
-                <div className="p-6 md:p-8 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50">
-                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
+                <div className="p-4 sm:p-6 md:p-8 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-zinc-50/50 dark:bg-zinc-900/50">
+                  <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
                     <CalendarOutlined className="text-amber-600 dark:text-amber-500" />
                     Appointments History
                   </h2>
-                  <div className="flex bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1">
-                    <button 
-                      onClick={() => setAppointmentFilter("upcoming")}
+                  <div className="flex bg-zinc-200 dark:bg-zinc-800 rounded-lg p-1 self-start sm:self-auto">
+                    <button
+                      onClick={() => { setAppointmentFilter("upcoming"); apptPaging.setPage(1); }}
                       className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
                         appointmentFilter === "upcoming" 
                           ? "bg-white dark:bg-zinc-700 text-amber-600 dark:text-amber-500 shadow-sm" 
@@ -240,8 +251,8 @@ export default function ProfileDashboard() {
                     >
                       Upcoming ({upcomingAppointments.length})
                     </button>
-                    <button 
-                      onClick={() => setAppointmentFilter("past")}
+                    <button
+                      onClick={() => { setAppointmentFilter("past"); apptPaging.setPage(1); }}
                       className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
                         appointmentFilter === "past" 
                           ? "bg-white dark:bg-zinc-700 text-amber-600 dark:text-amber-500 shadow-sm" 
@@ -253,7 +264,39 @@ export default function ProfileDashboard() {
                   </div>
                 </div>
                 
-                <div className="p-0 overflow-x-auto">
+                {/* Phones: one card per appointment instead of a 9-column table */}
+                {displayedAppointments.length > 0 && (
+                  <div className="md:hidden p-4 space-y-3">
+                    {apptPaging.pageItems.map((app, index) => (
+                      <button
+                        key={app.id || index}
+                        type="button"
+                        onClick={() => { setSelectedAppointment(app); setIsModalOpen(true); }}
+                        className="w-full text-left border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40 p-4 active:bg-zinc-100 dark:active:bg-zinc-800/60 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold text-zinc-900 dark:text-white">{app.code}</div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{app.date} / {app.time}</div>
+                          </div>
+                          <span className={`shrink-0 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${PAYMENT_PILL(app.paymentStatus)}`}>
+                            {app.paymentStatus}
+                          </span>
+                        </div>
+                        <div className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                          {app.serviceName}
+                          {app.productNames && <span className="block text-xs font-normal text-zinc-400 truncate">+ {app.productNames}</span>}
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-sm">
+                          <span className="font-bold text-amber-600 dark:text-amber-500 truncate">{app.barberName}</span>
+                          <span className="font-medium text-zinc-600 dark:text-zinc-400 shrink-0">{app.amount}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className={`p-0 overflow-x-auto ${displayedAppointments.length > 0 ? 'hidden md:block' : ''}`}>
                   {displayedAppointments.length === 0 ? (
                     <div className="p-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">
                       No {appointmentFilter} appointments found.
@@ -274,15 +317,15 @@ export default function ProfileDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {displayedAppointments.map((app, index) => (
+                        {apptPaging.pageItems.map((app, index) => (
                           <tr key={app.id || index} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
-                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{index + 1}</td>
+                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{(apptPaging.page - 1) * PAGE_SIZE + index + 1}</td>
                             <td className="py-5 px-6 text-sm font-bold text-zinc-900 dark:text-white align-top">{app.code}</td>
                             <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{app.date} / {app.time}</td>
                             <td className="py-5 px-6 text-sm font-medium text-zinc-800 dark:text-zinc-200 align-top">
                               {app.serviceName}
                               {app.productNames && (
-                                <div className="text-xs font-normal text-zinc-400 mt-0.5 max-w-[200px] truncate" title={app.productNames}>+ {app.productNames}</div>
+                                <div className="text-xs font-normal text-zinc-400 mt-0.5 max-w-[55%] truncate" title={app.productNames}>+ {app.productNames}</div>
                               )}
                             </td>
                             <td className="py-5 px-6 text-sm font-bold text-amber-600 dark:text-amber-500 align-top">{app.barberName}</td>
@@ -314,19 +357,50 @@ export default function ProfileDashboard() {
                     </table>
                   )}
                 </div>
+
+                <div className="px-4 pb-6 md:px-8">
+                  <PublicPagination current={apptPaging.page} totalPages={apptPaging.totalPages} onChange={apptPaging.setPage} className="!mt-6" />
+                </div>
               </div>
             )}
 
             {activeTab === "orders" && (
               <div className="animate-in fade-in duration-500">
-                <div className="p-6 md:p-8 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50">
-                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
+                <div className="p-4 sm:p-6 md:p-8 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50">
+                  <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
                     <ShoppingOutlined className="text-amber-600 dark:text-amber-500" />
                     My Orders
                   </h2>
                 </div>
 
-                <div className="p-0 overflow-x-auto">
+                {orders.length > 0 && (
+                  <div className="md:hidden p-4 space-y-3">
+                    {orderPaging.pageItems.map((order, index) => (
+                      <button
+                        key={order.id || index}
+                        type="button"
+                        onClick={() => { setSelectedOrder(order); setIsOrderModalOpen(true); }}
+                        className="w-full text-left border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40 p-4 active:bg-zinc-100 dark:active:bg-zinc-800/60 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold text-zinc-900 dark:text-white">{order.code}</div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{order.date}</div>
+                          </div>
+                          <span className={`shrink-0 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
+                            order.status === "COLLECTED" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500" : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500"
+                          }`}>
+                            {order.statusLabel}
+                          </span>
+                        </div>
+                        <div className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{order.items.map(i => i.name).join(', ')}</div>
+                        <div className="mt-2 text-right text-sm font-medium text-zinc-600 dark:text-zinc-400">{order.amount}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className={`p-0 overflow-x-auto ${orders.length > 0 ? 'hidden md:block' : ''}`}>
                   {orders.length === 0 ? (
                     <div className="p-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">
                       No product orders yet.
@@ -345,9 +419,9 @@ export default function ProfileDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {orders.map((order, index) => (
+                        {orderPaging.pageItems.map((order, index) => (
                           <tr key={order.id || index} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
-                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{index + 1}</td>
+                            <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{(orderPaging.page - 1) * PAGE_SIZE + index + 1}</td>
                             <td className="py-5 px-6 text-sm font-bold text-zinc-900 dark:text-white align-top">{order.code}</td>
                             <td className="py-5 px-6 text-sm text-zinc-600 dark:text-zinc-400 align-top">{order.date}</td>
                             <td className="py-5 px-6 text-sm font-medium text-zinc-800 dark:text-zinc-200 align-top max-w-[240px] truncate" title={order.items.map(i => i.name).join(', ')}>
@@ -379,6 +453,10 @@ export default function ProfileDashboard() {
                     </table>
                   )}
                 </div>
+
+                <div className="px-4 pb-6 md:px-8">
+                  <PublicPagination current={orderPaging.page} totalPages={orderPaging.totalPages} onChange={orderPaging.setPage} className="!mt-6" />
+                </div>
               </div>
             )}
 
@@ -402,8 +480,8 @@ export default function ProfileDashboard() {
       {/* Detail Modal Overlay */}
       {isModalOpen && selectedAppointment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 shadow-2xl animate-in zoom-in-95 duration-300 text-zinc-900 dark:text-white">
-            <h3 className="text-xl font-bold mb-6 pb-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center tracking-wide">
+          <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-300 text-zinc-900 dark:text-white">
+            <h3 className="text-xl font-bold mb-4 sm:mb-6 pb-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center tracking-wide">
               <span>Appointment Details</span>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -413,7 +491,7 @@ export default function ProfileDashboard() {
               </button>
             </h3>
             
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div className="flex justify-between items-center">
                 <span className="text-zinc-500 text-sm">Appointment Code</span>
                 <span className="font-mono font-bold text-zinc-900 dark:text-white">{selectedAppointment.code}</span>
@@ -432,14 +510,14 @@ export default function ProfileDashboard() {
               {selectedAppointment.serviceName && (
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-500 text-sm">Service</span>
-                  <span className="font-bold text-zinc-900 dark:text-white text-right max-w-[200px] truncate" title={selectedAppointment.serviceName}>{selectedAppointment.serviceName}</span>
+                  <span className="font-bold text-zinc-900 dark:text-white text-right max-w-[55%] truncate" title={selectedAppointment.serviceName}>{selectedAppointment.serviceName}</span>
                 </div>
               )}
 
               {selectedAppointment.productNames && (
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-500 text-sm">Products</span>
-                  <span className="font-bold text-zinc-900 dark:text-white text-right max-w-[200px] truncate" title={selectedAppointment.productNames}>{selectedAppointment.productNames}</span>
+                  <span className="font-bold text-zinc-900 dark:text-white text-right max-w-[55%] truncate" title={selectedAppointment.productNames}>{selectedAppointment.productNames}</span>
                 </div>
               )}
 
@@ -481,7 +559,7 @@ export default function ProfileDashboard() {
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800 flex gap-4">
+            <div className="mt-6 sm:mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800 flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
               {selectedAppointment.status === "Pending" && (
                 <button
                   onClick={() => handleCancelAppointment(selectedAppointment.id)}
@@ -504,7 +582,7 @@ export default function ProfileDashboard() {
       {/* Order Detail Modal Overlay */}
       {isOrderModalOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 shadow-2xl animate-in zoom-in-95 duration-300 text-zinc-900 dark:text-white">
+          <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-300 text-zinc-900 dark:text-white">
             <h3 className="text-xl font-bold mb-6 pb-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center tracking-wide">
               <span>Order Details</span>
               <button
@@ -515,7 +593,7 @@ export default function ProfileDashboard() {
               </button>
             </h3>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div className="flex justify-between items-center">
                 <span className="text-zinc-500 text-sm">Order Code</span>
                 <span className="font-mono font-bold text-zinc-900 dark:text-white">{selectedOrder.code}</span>

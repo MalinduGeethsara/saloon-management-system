@@ -2,22 +2,62 @@
 
 import { db } from '@/lib/db';
 import { verifySession } from '@/lib/session';
+import { authorize } from '@/lib/access.server';
+import { parsePageParams, wantsPagination } from '@/lib/pagination';
+import type { Prisma } from '@prisma/client';
 
-export async function getAllOrders() {
+export interface OrderListOptions {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  status?: 'PENDING_PICKUP' | 'COLLECTED' | 'ALL';
+}
+
+// Without `page` this keeps the legacy behaviour (latest 200). With `page` it returns one page
+// plus overall counts, so the KPI cards don't depend on how many rows happen to be loaded.
+export async function getAllOrders(opts: OrderListOptions = {}) {
   try {
-    const session = await verifySession();
-    if (!session || !['OWNER', 'ADMIN', 'MANAGER'].includes(session.role)) {
+    if (!(await authorize('/owner/orders', 'view'))) {
       return { success: false, message: 'Unauthorized', data: [] };
     }
 
-    const orders = await db.order.findMany({
-      include: {
-        customer: true,
-        items: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    });
+    const paginated = wantsPagination({ page: opts.page });
+    const params = parsePageParams({ page: opts.page, pageSize: opts.pageSize });
+
+    const where: Prisma.OrderWhereInput = {};
+    const q = opts.q?.trim();
+    if (q) {
+      // Order ids are shown as ORD-<first 6 chars of the uuid, uppercased>
+      const idPrefix = q.replace(/^ord-?/i, '').toLowerCase();
+      where.OR = [
+        ...(idPrefix ? [{ id: { startsWith: idPrefix } }] : []),
+        { clientName: { contains: q } },
+        { clientPhone: { contains: q } },
+        { customer: { name: { contains: q } } },
+        { customer: { phone: { contains: q } } },
+      ];
+    }
+    if (opts.status === 'PENDING_PICKUP' || opts.status === 'COLLECTED') where.status = opts.status;
+
+    const include = { customer: true, items: true } satisfies Prisma.OrderInclude;
+
+    let orders;
+    let total = 0;
+    let stats = { total: 0, pending: 0, collected: 0 };
+
+    if (paginated) {
+      const [rows, count, all, pending] = await db.$transaction([
+        db.order.findMany({ where, include, orderBy: { createdAt: 'desc' }, skip: params.skip, take: params.take }),
+        db.order.count({ where }),
+        db.order.count(),
+        db.order.count({ where: { status: 'PENDING_PICKUP' } }),
+      ]);
+      orders = rows;
+      total = count;
+      stats = { total: all, pending, collected: all - pending };
+    } else {
+      orders = await db.order.findMany({ include, orderBy: { createdAt: 'desc' }, take: 200 });
+    }
 
     const data = orders.map(o => ({
       key: o.id,
@@ -32,7 +72,7 @@ export async function getAllOrders() {
       collectedAt: o.collectedAt ? o.collectedAt.toISOString().split('T')[0] : null,
     }));
 
-    return { success: true, data };
+    return { success: true, data, total, stats };
   } catch (error) {
     console.error('Error fetching orders:', error);
     return { success: false, message: 'Server Error', data: [] };
@@ -41,8 +81,7 @@ export async function getAllOrders() {
 
 export async function updateOrderStatus(orderId: string, status: 'PENDING_PICKUP' | 'COLLECTED') {
   try {
-    const session = await verifySession();
-    if (!session || !['OWNER', 'ADMIN', 'MANAGER'].includes(session.role)) {
+    if (!(await authorize('/owner/orders', 'edit'))) {
       return { success: false, message: 'Unauthorized' };
     }
 

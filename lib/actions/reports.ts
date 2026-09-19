@@ -1,17 +1,13 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { verifySession } from '@/lib/session';
+import { authorize } from '@/lib/access.server';
 import { Prisma } from '@prisma/client';
 
-const ALLOWED_ROLES = ['OWNER', 'ADMIN'];
-
+// Owner, or a manager the owner gave the Reports page
 async function requireReportsAccess() {
-  const session = await verifySession();
-  if (!session || !ALLOWED_ROLES.includes(session.role)) {
-    return null;
-  }
-  return session;
+  const allowed = await authorize('/owner/reports', 'view');
+  return allowed ? allowed.session : null;
 }
 
 function resolveDateRange(startDate?: string, endDate?: string) {

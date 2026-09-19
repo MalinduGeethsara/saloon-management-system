@@ -18,23 +18,27 @@ import {
   ShoppingCartOutlined
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
+import { GRANTABLE_PAGES } from '@/lib/access';
 
 const { Title, Text } = Typography;
 
-const AVAILABLE_PERMISSIONS = [
-  { key: '/owner', label: 'Intelligence', icon: <DashboardOutlined /> },
-  { key: '/owner/calendar', label: 'Calendar', icon: <CalendarOutlined /> },
-  { key: '/owner/bookings/manage', label: 'Bookings', icon: <CarryOutOutlined /> },
-  { key: '/owner/staff', label: 'Staff Members', icon: <UsergroupAddOutlined /> },
-  { key: '/owner/shops', label: 'Shops', icon: <ShopOutlined /> },
-  { key: '/owner/services', label: 'Services', icon: <ScissorOutlined /> },
-  { key: '/owner/products', label: 'Products', icon: <TeamOutlined /> },
-  { key: '/owner/payments', label: 'Payments', icon: <DollarCircleOutlined /> },
-  { key: '/owner/orders', label: 'Orders', icon: <ShoppingCartOutlined /> },
-  { key: '/owner/reports', label: 'Reports', icon: <BarChartOutlined /> },
-  { key: '/owner/hr/attendance', label: 'HR & Attendance', icon: <SolutionOutlined /> },
-  { key: '/owner/hr/payroll', label: 'Payroll', icon: <DollarCircleOutlined /> },
-];
+// Icons for the pages the owner can hand out (the list itself lives in lib/access.ts, shared with the server)
+const PAGE_ICONS: Record<string, React.ReactNode> = {
+  '/owner': <DashboardOutlined />,
+  '/owner/calendar': <CalendarOutlined />,
+  '/owner/bookings/manage': <CarryOutOutlined />,
+  '/owner/staff': <UsergroupAddOutlined />,
+  '/owner/shops': <ShopOutlined />,
+  '/owner/services': <ScissorOutlined />,
+  '/owner/products': <TeamOutlined />,
+  '/owner/payments': <DollarCircleOutlined />,
+  '/owner/orders': <ShoppingCartOutlined />,
+  '/owner/reports': <BarChartOutlined />,
+  '/owner/hr/attendance': <SolutionOutlined />,
+  '/owner/hr/payroll': <DollarCircleOutlined />,
+};
+
+const AVAILABLE_PERMISSIONS = GRANTABLE_PAGES.map((p) => ({ key: p.key, label: p.label, covers: p.covers, icon: PAGE_ICONS[p.key] }));
 
 interface PermissionState {
   pageKey: string;
@@ -59,6 +63,7 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [person, setPerson] = useState<{ name: string; role: string } | null>(null);
   const router = useRouter();
 
   const [messageApi, contextHolder] = message.useMessage();
@@ -67,6 +72,7 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
     fetch(`/api/v1/permissions?userId=${userId}`)
       .then(res => res.json())
       .then(data => {
+        if (data.name) setPerson({ name: data.name, role: data.role });
         if (data.permissions) {
           // Merge fetched permissions with available schema
           setPermissions(prev => prev.map(p => {
@@ -105,20 +111,15 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Only send permissions where canView is true to save DB space
-      const activePermissions = permissions.filter(p => p.canView);
-      
+      // Every page is sent, ticked or not: an explicit "no" also switches off a page their role would get by default
       const res = await fetch('/api/v1/permissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userId,
-          permissions: activePermissions
-        })
+        body: JSON.stringify({ userId, permissions })
       });
 
       if (res.ok) {
-        messageApi.success('Permissions saved successfully!');
+        messageApi.success('Saved. It takes effect within a few seconds, no need for them to sign in again.');
         router.push('/owner/staff');
       } else {
         messageApi.error('Failed to save permissions');
@@ -143,7 +144,10 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-purple-600">
               {moduleDef?.icon}
             </div>
-            <Text strong className="text-slate-800 text-base">{moduleDef?.label}</Text>
+            <div className="flex flex-col">
+              <Text strong className="text-slate-800 text-base">{moduleDef?.label}</Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>{moduleDef?.covers}</Text>
+            </div>
           </Space>
         );
       }
@@ -204,7 +208,10 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
         <SafetyCertificateOutlined className="text-3xl text-purple-600" />
         <div>
           <Title level={3} style={{ margin: 0, fontWeight: 800 }}>Manage Staff Permissions</Title>
-          <Text type="secondary">Control exactly what this staff member can view, add, edit, or delete.</Text>
+          <Text type="secondary">
+            {person ? <><b>{person.name}</b> ({person.role.toLowerCase()}). </> : null}
+            Tick what they can do on each page. Anything left unticked stays hidden from them. Changes apply within a few seconds.
+          </Text>
         </div>
       </div>
 
@@ -214,6 +221,7 @@ export default function PermissionsPage({ params }: { params: Promise<{ id: stri
           dataSource={permissions} 
           rowKey="pageKey"
           pagination={false}
+          scroll={{ x: 'max-content' }}
           className="permissions-table"
         />
 

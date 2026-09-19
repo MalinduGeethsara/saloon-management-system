@@ -7,7 +7,7 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 
 export default function AboutPage() {
   return (
-    <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24">
+    <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-10 md:pt-24">
 
       <ScrollReveal direction="down">
         <div className="max-w-7xl mx-auto px-6 w-full">
@@ -29,7 +29,7 @@ export default function AboutPage() {
               <div>
                 <div className="w-full h-48 sm:h-56 overflow-hidden rounded-2xl mb-6 border border-zinc-200 dark:border-zinc-800/80 shadow-sm">
                   <img
-                    src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop"
+                    src="/images/site/barber-chair.jpg"
                     alt="Past Salon Setup"
                     className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
                   />
@@ -56,7 +56,7 @@ export default function AboutPage() {
               <div>
                 <div className="w-full h-48 sm:h-56 overflow-hidden rounded-2xl mb-6 border border-amber-500/20 dark:border-amber-500/10 shadow-sm">
                   <img
-                    src="https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=2000&auto=format&fit=crop"
+                    src="/images/site/salon-interior.jpg"
                     alt="Present Salon Setup"
                     className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
                   />
@@ -84,7 +84,7 @@ export default function AboutPage() {
 
             {/* Profile Bio Column */}
             <ScrollReveal direction="down" delay={0.1} className="flex flex-col justify-center order-2 lg:order-1">
-              <p className="text-zinc-600 dark:text-zinc-400 text-base md:text-lg leading-relaxed mb-8 font-light transition-colors text-justify">
+              <p className="text-zinc-600 dark:text-zinc-400 text-base md:text-lg leading-relaxed mb-8 font-light transition-colors text-left sm:text-justify">
                 Welcome to Mr Polaa, your ultimate destination for grooming excellence and style. Since our inception on February 21, 2021, we have been dedicated to providing exceptional grooming services that enhance your natural character and boost your confidence. Our journey from a humble single-chair setup at New Road to our newly expanded premium unisex studio at the same location reflects our commitment to excellence and growth. At Mr Polaa, we believe in the transformative power of a tailored grooming experience. Our team of skilled artisans is passionate about delivering personalized care using advanced techniques and top-quality organic products. We strive to create a relaxing environment where you can rejuvenate and leave looking and feeling your absolute best. I am incredibly proud of what we have achieved and grateful for the trust and support of our clients. We look forward to welcoming you and making your style dreams a reality.
               </p>
 
@@ -100,7 +100,7 @@ export default function AboutPage() {
             <ScrollReveal direction="down" delay={0.25} className="flex justify-center order-1 lg:order-2 w-full">
               <div className="w-full h-95 sm:h-125 lg:h-145 relative rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 group cursor-pointer">
                 <img
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop"
+                  src="/images/site/portrait.jpg"
                   alt="Nimesh Haththasingha - Founder of Mr Polaa"
                   className="w-full h-full object-cover object-top transition-all duration-700 hover:scale-105"
                 />

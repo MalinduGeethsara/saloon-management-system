@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { cn } from "@/lib/utils";
 
 let pluginRegistered = false;
 
@@ -87,7 +88,7 @@ export default function ScrollReveal({
   }, [direction, delay, duration, distance, triggerHook]);
 
   return (
-    <div ref={elementRef} className={`w-full ${className}`}>
+    <div ref={elementRef} className={cn("w-full", className)}>
       {children}
     </div>
   );

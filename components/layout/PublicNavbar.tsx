@@ -70,10 +70,18 @@ export function PublicNavbar() {
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
+  // Keep the page behind the open drawer from scrolling
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [isMobileMenuOpen]);
+
   return (
     <>
       <header className="bg-zinc-50/90 dark:bg-zinc-950/90 backdrop-blur-xl text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-900 sticky top-0 z-50 transition-colors duration-500">
-        <div className="max-w-7xl mx-auto px-6 h-24 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-24 flex justify-between items-center">
           
           {/* Left: Logo & Brand */}
           <Link 
@@ -88,16 +96,16 @@ export function PublicNavbar() {
             }} 
             className="flex items-center gap-1 group z-50"
           >
-            <div className="relative w-14 h-14 overflow-hidden rounded-full transition-colors duration-500 shrink-0">
+            <div className="relative w-11 h-11 md:w-14 md:h-14 overflow-hidden rounded-full transition-colors duration-500 shrink-0">
               <Image src="/images/dashboard/logo_black.png" alt="Mr Polaa Logo Light" fill className="object-contain p-1 block dark:hidden" />
               <Image src="/images/dashboard/logo_white.png" alt="Mr Polaa Logo Dark" fill className="object-contain p-1 hidden dark:block" />
             </div>
             
             <div className="flex flex-col justify-center">
-              <span className="text-xl sm:text-2xl font-black tracking-[0.2em] leading-none text-zinc-900 dark:text-white group-hover:text-amber-500 transition-colors duration-500">
+              <span className="text-lg sm:text-2xl font-black tracking-[0.15em] sm:tracking-[0.2em] leading-none text-zinc-900 dark:text-white group-hover:text-amber-500 transition-colors duration-500">
                 MR POLAA
               </span>
-              <span className="text-[8px] sm:text-[9px] tracking-[0.82em] text-amber-600 dark:text-amber-500 font-bold uppercase mt-1.5">
+              <span className="hidden sm:block text-[9px] tracking-[0.82em] text-amber-600 dark:text-amber-500 font-bold uppercase mt-1.5">
                 Unisex salon
               </span>
             </div>
@@ -128,7 +136,7 @@ export function PublicNavbar() {
             ))}
           </nav>
           {/* Right: Actions */}
-          <div className="flex items-center gap-4 lg:gap-6 z-50">
+          <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 z-50">
             
             {mounted && (
               <Magnetic range={40} strength={0.35}>
@@ -206,12 +214,12 @@ export function PublicNavbar() {
 
       {/* Clickable Dark Backdrop Overlay */}
       <div 
-        className={`fixed inset-0 top-24 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm z-30 lg:hidden transition-opacity duration-500 ease-in-out ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 top-16 md:top-24 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm z-30 lg:hidden transition-opacity duration-500 ease-in-out ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={closeMobileMenu}
       />
 
       {/* Mobile Menu Side Drawer */}
-      <div className={`fixed top-24 right-0 bottom-0 w-[75vw] sm:w-80 bg-zinc-50/98 dark:bg-zinc-950/98 backdrop-blur-2xl border-l border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl z-40 lg:hidden transition-transform duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-16 md:top-24 right-0 bottom-0 w-[75vw] sm:w-80 bg-zinc-50/98 dark:bg-zinc-950/98 backdrop-blur-2xl border-l border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl z-40 lg:hidden transition-transform duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex flex-col px-6 py-8 h-full overflow-y-auto pb-32">
           
           <nav className="flex flex-col gap-8 mb-10">
@@ -279,12 +287,13 @@ export function PublicNavbar() {
               </Link>
             ) : (
               <Link 
-                href="/login" 
+                href="/login"
                 onClick={closeMobileMenu}
+                aria-label="Sign in"
                 className="flex items-center justify-center h-14 w-full border border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-zinc-100 hover:text-amber-600 hover:border-amber-600 dark:hover:text-amber-500 dark:hover:border-amber-500 active:text-amber-600 active:border-amber-600 dark:active:text-amber-500 dark:active:border-amber-500 transition-colors duration-300"
               >
                 <div className="flex items-center justify-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-[18px] h-[18px]">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
                 </div>

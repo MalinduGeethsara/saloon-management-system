@@ -15,11 +15,13 @@ export default async function ShopDashboardPage({ params }: { params: Promise<{ 
   const shop = await prisma.shop.findUnique({
     where: { id: shopId },
     include: {
-      staff: true,
+      // Only the columns this page shows: `staff: true` / `customer: true` would load password hashes
+      // into a page that also renders client components
+      staff: { select: { id: true, name: true, email: true, phone: true, role: true, imageUrl: true } },
       bookings: {
         include: {
-          customer: true,
-          barber: true,
+          customer: { select: { id: true, name: true, email: true, phone: true } },
+          barber: { select: { id: true, name: true } },
           services: { include: { service: true } }
         },
         orderBy: {

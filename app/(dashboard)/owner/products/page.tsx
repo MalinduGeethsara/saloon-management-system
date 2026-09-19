@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
-import { 
-  Table, 
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
   Card, 
   Typography, 
   Tag, 
@@ -35,6 +35,10 @@ import {
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ProductModal } from "@/components/modals/ProductModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { ResponsiveTable } from "@/components/ui/ResponsiveTable";
+import { AppPagination } from "@/components/ui/AppPagination";
+import { usePagedList } from "@/hooks/usePagedList";
+import { useAccess } from '@/hooks/useAccess';
 
 const { Title, Text } = Typography;
 
@@ -44,10 +48,11 @@ function ProductsContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   
-  // Permissions State
-  const [canAdd, setCanAdd] = useState(true);
-  const [canEdit, setCanEdit] = useState(true);
-  const [canDelete, setCanDelete] = useState(true);
+  // What this person may do here (the owner's tick-boxes; the server checks the same rules again)
+  const access = useAccess(['/owner/products', '/owner/services']);
+  const canAdd = access.add;
+  const canEdit = access.edit;
+  const canDelete = access.delete;
   
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -58,6 +63,26 @@ function ProductsContent() {
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   const { showAlert } = useAlert();
+  const router = useRouter();
+
+  // Arrived from a notification (?product=ID): open that product once the list has loaded
+  const focusId = useSearchParams().get('product');
+  const openedFocus = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!focusId || loading || !access.ready || openedFocus.current === focusId) return;
+    openedFocus.current = focusId;
+    const found = products.find((p: any) => p.id === focusId);
+    if (!found) {
+      showAlert('error', 'That product could not be found. It may have been removed.');
+    } else if (access.edit) {
+      setEditingProduct(found);
+      setIsProductModalOpen(true);
+    } else {
+      setSearchTerm(found.name || ''); // view-only: narrow the list to it
+    }
+    router.replace('/owner/products', { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId, loading, products, access.ready]);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -79,28 +104,6 @@ function ProductsContent() {
   React.useEffect(() => {
     fetchProducts();
     
-    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (roleMatch) {
-      const role = roleMatch[2].toLowerCase();
-      if (role !== 'owner' && role !== 'admin') {
-        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-        if (permMatch) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
-            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/products');
-            if (pagePerms) {
-              setCanAdd(pagePerms.canAdd);
-              setCanEdit(pagePerms.canEdit);
-              setCanDelete(pagePerms.canDelete);
-            } else {
-              setCanAdd(false);
-              setCanEdit(false);
-              setCanDelete(false);
-            }
-          } catch (e) {}
-        }
-      }
-    }
   }, []);
 
   // --- Handlers ---
@@ -176,15 +179,20 @@ function ProductsContent() {
   const filteredProducts = products.filter(p => 
     p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+    p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Grid view pages client-side (the list view uses the table's own pager)
+  const gridPaging = usePagedList(filteredProducts, 12);
 
   // --- Render Views ---
 
   // 1. Grid View
   const renderGridView = () => (
+    <>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {filteredProducts.map((product) => (
+      {gridPaging.pageItems.map((product) => (
         <Card 
           key={product.key}
           hoverable
@@ -194,7 +202,7 @@ function ProductsContent() {
             <div className="relative h-48 w-full bg-white flex items-center justify-center overflow-hidden p-4 group">
               <div 
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                style={{ backgroundImage: `url(${product.imageUrl || product.image || 'https://via.placeholder.com/300'})`, opacity: 0.95 }}
+                style={{ backgroundImage: `url(${product.imageUrl || product.image || '/images/dashboard/placeholder.svg'})`, opacity: 0.95 }}
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
                 {canEdit && (
@@ -240,6 +248,16 @@ function ProductsContent() {
               <span>{product.brand}</span>
               <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">{product.sku}</span>
             </div>
+            {(canEdit || canDelete) && (
+              <div className="flex gap-2 mt-3 md:hidden">
+                {canEdit && (
+                  <Button className="flex-1" icon={<EditOutlined />} onClick={() => handleEdit(product)}>Edit</Button>
+                )}
+                {canDelete && (
+                  <Button className="flex-1" danger icon={<DeleteOutlined />} onClick={() => handleDeleteClick(product.key)}>Delete</Button>
+                )}
+              </div>
+            )}
           </div>
         </Card>
       ))}
@@ -249,6 +267,8 @@ function ProductsContent() {
         </div>
       )}
     </div>
+    <AppPagination current={gridPaging.page} pageSize={gridPaging.pageSize} total={gridPaging.total} onChange={gridPaging.setPage} />
+    </>
   );
 
   // 2. List View
@@ -316,7 +336,7 @@ function ProductsContent() {
 
     return (
       <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }} styles={{ body: { padding: 0 } }}>
-        <Table columns={columns} dataSource={filteredProducts} pagination={{ pageSize: 8 }} rowKey="key" />
+        <ResponsiveTable columns={columns} dataSource={filteredProducts} pagination={{ pageSize: 8 }} rowKey="key" />
       </Card>
     );
   };
@@ -332,7 +352,7 @@ function ProductsContent() {
         </div>
         
         {/* Controls Container - Aligned on one line for md+ screens */}
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* View Toggle */}
           <Segmented
             options={[
@@ -342,14 +362,14 @@ function ProductsContent() {
             value={viewMode}
             onChange={(val) => setViewMode(val as 'list' | 'grid')}
             size="large"
-            className="hidden sm:block" 
           />
 
           <Input 
             prefix={<SearchOutlined className="text-gray-400" />} 
-            placeholder="Search..." 
+            placeholder="Search products" 
             size="large"
-            className="flex-1 md:w-64 rounded-xl"
+            allowClear
+            className="order-first w-full md:order-none md:flex-none md:w-64 rounded-xl"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           
@@ -360,7 +380,7 @@ function ProductsContent() {
               icon={<PlusOutlined />} 
               onClick={handleAdd}
               style={{ backgroundColor: '#7C4DFF', borderRadius: '12px', fontWeight: 600 }}
-              className="shrink-0"
+              className="shrink-0 flex-1 md:flex-none"
             >
               Add Product
             </Button>
@@ -369,8 +389,8 @@ function ProductsContent() {
       </div>
 
       {/* Stats Overview */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={8}>
+      <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
+        <Col xs={8}>
           <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Total Products</span>}
@@ -380,7 +400,7 @@ function ProductsContent() {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={8}>
           <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Low Stock Items</span>}
@@ -390,7 +410,7 @@ function ProductsContent() {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={8}>
           <Card variant="borderless" style={{ borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
             <Statistic 
               title={<span className="text-xs font-bold text-gray-400 uppercase">Out of Stock</span>}
@@ -432,7 +452,9 @@ function ProductsContent() {
 export default function ProductsPage() {
   return (
     <AlertProvider>
-      <ProductsContent />
+      <Suspense fallback={null}>
+        <ProductsContent />
+      </Suspense>
     </AlertProvider>
   );
 }

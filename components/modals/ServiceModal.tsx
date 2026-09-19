@@ -87,8 +87,8 @@ export function ServiceModal({
         onFinish={handleFinish}
         style={{ marginTop: 24 }}
       >
-        <Row gutter={32}>
-          <Col span={10}>
+        <Row gutter={[32, 16]}>
+          <Col xs={24} md={10}>
             <Form.Item label="Item Image" style={{ marginBottom: 0 }}>
               <div className="flex justify-center p-4 border-2 border-dashed border-gray-200 bg-slate-50 rounded-xl">
                 <ImageUpload 
@@ -105,7 +105,7 @@ export function ServiceModal({
               <Input />
             </Form.Item>
           </Col>
-          <Col span={14}>
+          <Col xs={24} md={14}>
             <Form.Item 
               name="name" 
               label="Item Name" 
@@ -115,7 +115,7 @@ export function ServiceModal({
             </Form.Item>
 
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item name="category" label="Category" rules={[{ required: true }]}>
                   <Select placeholder="Select Category" size="large">
                     <Select.Option value="Service">Service</Select.Option>
@@ -123,7 +123,7 @@ export function ServiceModal({
                   </Select>
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item name="status" label="Status" initialValue="Active">
                   <Select size="large">
                     <Select.Option value="Active">Active</Select.Option>
@@ -133,7 +133,7 @@ export function ServiceModal({
               </Col>
             </Row>
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item name="shopId" label="Branch Location" rules={[{ required: true, message: 'Please select a branch' }]}>
                   <Select placeholder="Select Branch" size="large" allowClear>
                     {shops.map(shop => (
@@ -142,7 +142,7 @@ export function ServiceModal({
                   </Select>
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item 
                   name="price" 
                   label="Price (LKR)" 

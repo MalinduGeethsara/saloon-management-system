@@ -26,7 +26,7 @@ export default async function WebsiteHomePage() {
     <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500">
 
       {/* 1. HERO */}
-      <HeroSection />
+      <HeroSection services={services} />
 
       {/* 2. BRAND PARTNERS MARQUEE */}
       <ScrollReveal direction="down" delay={0.1}>
@@ -52,25 +52,25 @@ export default async function WebsiteHomePage() {
       </ScrollReveal>
 
       {/* 3. THE CRAFT (ABOUT) */}
-      <section className="py-32 px-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+      <section className="py-16 md:py-32 px-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
           <ScrollReveal direction="down" className="lg:col-span-7 grid grid-cols-2 gap-6 relative">
-            <div className="flex flex-col gap-6 mt-12">
+            <div className="flex flex-col gap-6 mt-6 sm:mt-12">
               <Image
-                src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?q=80&w=2000&auto=format&fit=crop"
+                src="/images/site/barber-tools.jpg"
                 alt="Barber Tools"
                 width={800}
                 height={500}
-                className="w-full h-80 object-cover rounded-none xl:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
+                className="w-full h-48 sm:h-80 object-cover rounded-none xl:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
               />
             </div>
             <div className="flex flex-col gap-6">
               <Image
-                src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop"
+                src="/images/site/barber-chair.jpg"
                 alt="Vintage Chair"
                 width={800}
                 height={800}
-                className="w-full h-[28rem] object-cover rounded-none xl:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
+                className="w-full h-64 sm:h-[28rem] object-cover rounded-none xl:grayscale hover:grayscale-0 transition-all duration-700 shadow-xl dark:shadow-none"
               />
             </div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-amber-600/10 blur-[100px] rounded-full z-[-1]"></div>
@@ -115,13 +115,16 @@ export default async function WebsiteHomePage() {
       </section>
 
       {/* 4. SERVICES */}
-      <ServicesSection services={services} />
+      {/* Phones already get a services rail inside the hero, so this larger section is md+ only */}
+      <div className="hidden md:block">
+        <ServicesSection services={services.slice(0, 3)} />
+      </div>
 
       {/* 5. ARTISANS */}
       <BarbersSection barbers={barbers} />
 
       {/* 6. CLIENT REVIEWS */}
-      <section className="py-32 relative overflow-hidden transition-colors duration-500">
+      <section className="py-16 md:py-32 relative overflow-hidden transition-colors duration-500">
         <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none"></div>
         <div className="absolute bottom-[20%] right-[10%] w-[300px] h-[300px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 
@@ -189,9 +192,9 @@ export default async function WebsiteHomePage() {
       </section>
 
       {/* 7. CTA BANNER */}
-      <section className="relative py-32 px-6 overflow-hidden border-t border-zinc-200 dark:border-zinc-900 transition-colors duration-500">
+      <section className="relative py-16 md:py-32 px-6 overflow-hidden border-t border-zinc-200 dark:border-zinc-900 transition-colors duration-500">
         <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-950 transition-colors duration-500">
-          <Image fill src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=2070&auto=format&fit=crop" alt="Shop Interior" className="object-cover opacity-20 dark:opacity-10 grayscale mix-blend-overlay" />
+          <Image fill src="/images/site/shop-front.jpg" alt="Shop Interior" className="object-cover opacity-20 dark:opacity-10 grayscale mix-blend-overlay" />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-100 via-zinc-100/80 dark:from-zinc-950 dark:via-zinc-950/80 to-transparent transition-colors duration-500"></div>
         </div>
         <div className="relative z-10 max-w-3xl mx-auto text-center">

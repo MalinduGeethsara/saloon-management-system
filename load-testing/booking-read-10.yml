@@ -1,0 +1,29 @@
+config:
+  target: "http://localhost:3001"
+  processor: "./processor.js"
+  phases:
+    - duration: 5
+      arrivalCount: 10
+      name: "10 staff arrive"
+  payload:
+    path: "./staff-all.csv"
+    fields:
+      - "email"
+      - "password"
+
+scenarios:
+  - name: "Staff repeatedly opens booking list"
+    flow:
+      - post:
+          url: "/api/auth/staff-login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          afterResponse: "captureCookie"
+      - loop:
+          - get:
+              url: "/api/v1/bookings"
+              headers:
+                Cookie: "{{ authCookie }}"
+          - think: 4
+        count: 30

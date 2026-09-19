@@ -70,13 +70,20 @@ export function PublicFooter() {
             <div className="flex flex-col">
               <h4 className="text-amber-600 dark:text-amber-500 text-md tracking-[0.2em] uppercase mb-6 md:mb-8 text-center md:text-left">Quick Links</h4>
               <div className="flex flex-col gap-4 md:gap-5 items-center md:items-start">
-                {['Home', 'About', 'Terms & Conditions', 'Contact'].map((item) => (
+                {[
+                  { label: 'Home', href: '/' },
+                  { label: 'About', href: '/about' },
+                  { label: 'Terms & Conditions', href: '/terms-conditions' },
+                  { label: 'Privacy Policy', href: '/privacy-policy' },
+                  { label: 'Refund Policy', href: '/refund-policy' },
+                  { label: 'Contact', href: '/contact' },
+                ].map((item) => (
                   <Link
-                    key={item}
-                    href={item === 'Home' ? '/' : `/${item.toLowerCase().replace(' & ', '-')}`}
+                    key={item.label}
+                    href={item.href}
                     className="text-xs font-black tracking-widest text-black dark:text-zinc-100 hover:text-amber-600 dark:hover:text-amber-500 transition-all uppercase active:scale-[0.98] origin-center md:origin-left hover:md:translate-x-1"
                   >
-                    {item}
+                    {item.label}
                   </Link>
                 ))}
               </div>
@@ -117,8 +124,8 @@ export function PublicFooter() {
           </div>
 
           <div className="border-t border-zinc-200/50 dark:border-zinc-800/50 pt-6 md:pt-8 flex justify-center text-center">
-            <p className="text-[10px] md:text-[11px] tracking-widest text-zinc-600 dark:text-zinc-500 font-medium uppercase leading-relaxed">
-              © 2026 All Rights Reserved @ Mr Polaa <span className="hidden sm:inline mx-2"></span>
+            <p className="text-[10px] md:text-[11px] tracking-widest text-zinc-600 dark:text-zinc-400 font-medium uppercase leading-relaxed">
+              © 2026 All Rights Reserved @ Mr Polaa (PVT) LTD <span className="hidden sm:inline mx-2"></span>
             </p>
           </div>
 

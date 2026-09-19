@@ -100,12 +100,13 @@ export function LocationModal({ isOpen, onClose, onSave, shopToEdit }: LocationM
         </Form.Item>
 
         <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item name="manager" label="Manager Name" rules={[{ required: true }]}>
+          <Col xs={24} sm={12}>
+            {/* Not stored on the shop (the card shows the branch's manager staff account), so it must not block saving */}
+            <Form.Item name="manager" label="Manager Name">
               <Input prefix={<UserOutlined />} placeholder="Manager Name" size="large" />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Form.Item name="phone" label="Phone" rules={[{ required: true }]}>
               <Input prefix={<PhoneOutlined />} placeholder="+94..." size="large" />
             </Form.Item>
@@ -123,12 +124,12 @@ export function LocationModal({ isOpen, onClose, onSave, shopToEdit }: LocationM
         <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-6 mb-3 border-b border-slate-100 pb-2">Operating Hours</div>
         
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Form.Item name="openTime" label="Opening Time" rules={[{ required: true }]}>
               <TimePicker format="HH:mm" size="large" className="w-full" minuteStep={15} />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Form.Item name="closeTime" label="Closing Time" rules={[{ required: true }]}>
               <TimePicker format="HH:mm" size="large" className="w-full" minuteStep={15} />
             </Form.Item>

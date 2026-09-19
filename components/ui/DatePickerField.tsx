@@ -10,6 +10,13 @@ interface DatePickerFieldProps {
   minDate?: Dayjs; // defaults to today — dates before this are not selectable
   placeholder?: string;
   className?: string;
+  // Days the business is closed (shown struck through). They stay tappable so the page can explain why
+  // nothing can be booked, e.g. "closed on Sundays"
+  isDateClosed?: (day: Dayjs) => boolean;
+  // Last bookable day; later days are not selectable
+  maxDate?: Dayjs;
+  // Short explanation shown under the calendar, e.g. "Sundays are closed"
+  disabledHint?: string;
 }
 
 const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -20,6 +27,9 @@ export default function DatePickerField({
   minDate,
   placeholder = "Select a date",
   className = "",
+  isDateClosed,
+  maxDate,
+  disabledHint,
 }: DatePickerFieldProps) {
   const today = (minDate ?? dayjs()).startOf("day");
   const selected = value ? dayjs(value, "YYYY-MM-DD") : null;
@@ -61,8 +71,11 @@ export default function DatePickerField({
     ...Array.from({ length: daysInMonth }, (_, i) => startOfMonth.add(i, "day")),
   ];
 
+  const isBlocked = (day: Dayjs) => day.isBefore(today, "day") || (!!maxDate && day.isAfter(maxDate, "day"));
+  const isClosedDay = (day: Dayjs) => !isBlocked(day) && !!isDateClosed?.(day);
+
   const handlePick = (day: Dayjs) => {
-    if (day.isBefore(today, "day")) return;
+    if (isBlocked(day)) return;
     onChange(day.format("YYYY-MM-DD"));
     setIsOpen(false);
   };
@@ -81,7 +94,7 @@ export default function DatePickerField({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-72 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-4">
+        <div className="absolute z-50 mt-2 w-[min(18rem,calc(100vw-2rem))] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-4">
           <div className="flex items-center justify-between mb-4">
             <button
               type="button"
@@ -117,7 +130,8 @@ export default function DatePickerField({
             {days.map((day, idx) => {
               if (!day) return <div key={`blank-${idx}`} />;
 
-              const isPast = day.isBefore(today, "day");
+              const isPast = isBlocked(day);
+              const closed = isClosedDay(day);
               const isToday = day.isSame(today, "day");
               const isSelected = !!selected && day.isSame(selected, "day");
 
@@ -126,9 +140,13 @@ export default function DatePickerField({
                   key={day.format("YYYY-MM-DD")}
                   type="button"
                   disabled={isPast}
+                  title={closed ? "Closed" : undefined}
+                  aria-label={`${day.format("dddd D MMMM")}${closed ? " (closed)" : ""}`}
                   onClick={() => handlePick(day)}
-                  className={`aspect-square flex items-center justify-center text-xs font-bold transition-colors ${
-                    isPast
+                  className={`aspect-square flex items-center justify-center text-sm font-bold transition-colors ${
+                    closed
+                      ? "text-zinc-400 dark:text-zinc-600 line-through decoration-2 bg-zinc-100/70 dark:bg-zinc-800/40 hover:text-red-500"
+                      : isPast
                       ? "text-zinc-300 dark:text-zinc-700 cursor-not-allowed"
                       : isSelected
                         ? "bg-amber-600 text-white"
@@ -142,6 +160,11 @@ export default function DatePickerField({
               );
             })}
           </div>
+          {disabledHint && (
+            <p className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800 text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+              <span className="line-through mr-1">12</span> {disabledHint}
+            </p>
+          )}
         </div>
       )}
     </div>

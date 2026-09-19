@@ -53,12 +53,11 @@ export default function AdminDashboard() {
         // Enable horizontal scroll on mobile for the list
         styles={{ body: { padding: '20px', overflowX: 'auto' } }}
       >
-        {/* Forces a minimum width so it becomes swipeable rather than squashed */}
-        <div style={{ minWidth: '450px' }}>
+        <div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {activities.map((item, index) => (
               <React.Fragment key={item.id}>
-                <div style={{ padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                   <Space size="middle">
                     <CheckCircleFilled style={{ color: '#48BB78', fontSize: '20px' }} />
                     <div>

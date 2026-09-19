@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/selenium-tests/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -32,6 +33,14 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# database dumps and load-test artifacts (real user data / plaintext test passwords)
+*.sql
+/load-testing/*.csv
+/load-testing/*.log
+/load-testing/*.txt
+/load-testing/results/
 
 # vercel
 .vercel
@@ -39,3 +48,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# QA run output (results, mock gateway log, server logs)
+/qa/results/

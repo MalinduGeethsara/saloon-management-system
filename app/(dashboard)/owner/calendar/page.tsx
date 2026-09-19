@@ -60,6 +60,14 @@ const getRelativeDate = (days: number, hours: number, minutes: number) => {
 
 function ScheduleContent() {
   const { token } = useToken();
+  const [isMobileCalendar, setIsMobileCalendar] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)');
+    const update = () => setIsMobileCalendar(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
   const calendarRef = useRef<FullCalendar>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -166,10 +174,14 @@ function ScheduleContent() {
   }, []);
 
   // --- Computed Events ---
+  const [eventSearch, setEventSearch] = useState('');
   const filteredEvents = useMemo(() => {
-    if (!activeBarberId) return events;
-    return events.filter(e => e.extendedProps.barberId === activeBarberId);
-  }, [events, activeBarberId]);
+    const q = eventSearch.trim().toLowerCase();
+    return events.filter(e =>
+      (!activeBarberId || e.extendedProps.barberId === activeBarberId) &&
+      (!q || [e.title, e.extendedProps.service, e.extendedProps.shop, e.extendedProps.status].some(v => String(v ?? '').toLowerCase().includes(q)))
+    );
+  }, [events, activeBarberId, eventSearch]);
 
   // --- Upcoming List (Next 3 events) ---
   const upcomingEvents = useMemo(() => {
@@ -283,10 +295,11 @@ function ScheduleContent() {
   };
 
   return (
-    <div className="h-[calc(100vh-100px)] flex flex-col lg:flex-row gap-6 p-4">
+    <div className="lg:h-[calc(100dvh-100px)] flex flex-col lg:flex-row gap-4 lg:gap-6 p-2 sm:p-4">
       
       {/* --- LEFT SIDEBAR (Control Panel) --- */}
-      <div className="w-full lg:w-80 flex flex-col gap-4 h-full overflow-y-auto pr-1">
+      {/* Phones show the calendar first and the mini-calendar / filters below it */}
+      <div className="order-2 lg:order-1 w-full lg:w-80 flex flex-col gap-4 lg:h-full lg:overflow-y-auto pr-1">
         
 
 
@@ -371,7 +384,7 @@ function ScheduleContent() {
       </div>
 
       {/* --- RIGHT SIDE (Main Calendar) --- */}
-      <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="order-1 lg:order-2 flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         
         {/* Custom Header */}
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white z-10 relative">
@@ -384,8 +397,15 @@ function ScheduleContent() {
             <Title level={4} style={{ margin: 0 }}>{viewTitle}</Title>
           </div>
 
-          <div className="flex gap-2">
-            <Input prefix={<SearchOutlined />} placeholder="Search event..." className="w-48 hidden md:flex rounded-lg" />
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <Input
+              allowClear
+              prefix={<SearchOutlined />}
+              placeholder="Search bookings"
+              value={eventSearch}
+              onChange={(e) => setEventSearch(e.target.value)}
+              className="w-full sm:w-52 rounded-lg"
+            />
             <div className="bg-slate-100 p-1 rounded-lg flex">
               <Button 
                 type={currentView === 'timeGridDay' ? 'default' : 'text'} 
@@ -435,7 +455,7 @@ function ScheduleContent() {
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="timeGridDay"
-            height="100%"
+            height={isMobileCalendar ? '72dvh' : '100%'}
             headerToolbar={false}
             allDaySlot={false}
             slotMinTime="08:00:00"

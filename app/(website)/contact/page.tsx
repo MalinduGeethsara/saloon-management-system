@@ -6,7 +6,7 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 
 export default function ContactPage() {
   return (
-    <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24 pb-32 overflow-hidden relative">
+    <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-10 pb-16 md:pt-24 md:pb-32 overflow-hidden relative">
 
       {/* Decorative Background Glows */}
       <div className="absolute top-[20%] right-[10%] w-100 h-100 bg-amber-500/10 blur-[150px] rounded-full pointer-events-none"></div>
@@ -17,7 +17,7 @@ export default function ContactPage() {
           <div className="text-center mb-16">
             <h3 className="text-amber-600 dark:text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 transition-colors">Get in Touch</h3>
             <h1 className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white transition-colors">Contact <span className="font-serif italic font-light text-zinc-500">Us</span></h1>
-            <p className="text-zinc-500 dark:text-zinc-400 mt-6 max-w-xl mx-auto text-justify">
+            <p className="text-zinc-500 dark:text-zinc-400 mt-6 max-w-xl mx-auto text-left sm:text-justify">
               Whether you have inquiries about our premium services, need assistance scheduling your next appointment, or simply want expert grooming advice, our dedicated team is always here to help.
             </p>
           </div>

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import dayjs from 'dayjs';
-import { Card, Typography, Row, Col, Statistic, Select, Table, Tag } from 'antd';
-import { DollarOutlined, ScissorOutlined, TrophyOutlined } from '@ant-design/icons';
+import { Card, Typography, Row, Col, Statistic, Select, Table, Tag, Input } from 'antd';
+import { matchesQuery } from '@/hooks/useSearchFilter';
+import { DollarOutlined, ScissorOutlined, TrophyOutlined, SearchOutlined } from '@ant-design/icons';
 import { getMyCommissions } from '@/lib/actions/payroll';
 
 const { Title, Text } = Typography;
@@ -18,6 +19,7 @@ export default function BarberEarningsPage() {
   const [selectedMonth, setSelectedMonth] = useState(() => dayjs().format('MMMM YYYY'));
   const [data, setData] = useState<{ monthTotal: number; transactionCount: number; lifetimeTotal: number; breakdown: any[] } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -136,13 +138,24 @@ export default function BarberEarningsPage() {
         </Col>
       </Row>
 
+      <Input
+        allowClear
+        size="large"
+        prefix={<SearchOutlined className="text-slate-400" />}
+        placeholder="Search earnings"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="mb-4 sm:max-w-sm"
+      />
+
       <Card variant="borderless" className="shadow-sm rounded-3xl overflow-hidden">
         <Table
-          dataSource={data?.breakdown ?? []}
+          dataSource={(data?.breakdown ?? []).filter((r: any) => matchesQuery(search, r.customerName, r.description, r.source, r.amount))}
           columns={columns}
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10 }}
+          scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'No commission-earning transactions for this month yet.' }}
         />
       </Card>

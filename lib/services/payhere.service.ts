@@ -23,14 +23,20 @@ export function getMerchantId(): string {
   return getPayHereConfig().merchantId;
 }
 
+let modeWarningLogged = false;
+
 export function isSandbox(): boolean {
   const sandbox = (process.env.PAYHERE_MODE || 'sandbox').toLowerCase() !== 'live';
 
-  if (process.env.NODE_ENV === 'production' && sandbox) {
-    console.warn('[PayHere] Running in PRODUCTION with PAYHERE_MODE=sandbox — real payments will NOT be processed. Set PAYHERE_MODE=live when ready to go live.');
-  }
-  if (process.env.NODE_ENV !== 'production' && !sandbox) {
-    console.warn('[PayHere] Running outside production with PAYHERE_MODE=live — this will attempt to move real money. Confirm this is intentional.');
+  // Say it once at the first payment, not on every single request
+  if (!modeWarningLogged) {
+    modeWarningLogged = true;
+    if (process.env.NODE_ENV === 'production' && sandbox) {
+      console.warn('[PayHere] Running in PRODUCTION with PAYHERE_MODE=sandbox — real payments will NOT be processed. Set PAYHERE_MODE=live when ready to go live.');
+    }
+    if (process.env.NODE_ENV !== 'production' && !sandbox) {
+      console.warn('[PayHere] Running outside production with PAYHERE_MODE=live — this will attempt to move real money. Confirm this is intentional.');
+    }
   }
 
   return sandbox;

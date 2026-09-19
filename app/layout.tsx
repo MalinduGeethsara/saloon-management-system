@@ -12,8 +12,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MR POLAA — Premium Grooming",
-  description: "An exclusive sanctuary for the modern gentleman. Book precision haircuts, hot towel shaves, and premium artisan barber slots online.",
+  title: "MR POLAA — Unisex Salon",
+  description: "MR POLAA is a unisex salon in Walasmulla, Sri Lanka. Book haircuts, styling, shaves and salon treatments online.",
 };
 
 export default function RootLayout({

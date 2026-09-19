@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { verifySession } from '@/lib/session';
+import { authorize } from '@/lib/access.server';
 
 // Helper to get date boundaries based on range string
 function getDateBounds(timeRange: string) {
@@ -32,8 +32,10 @@ function getDateBounds(timeRange: string) {
 
 export async function getDashboardAnalytics(shopId: string | 'all', timeRange: string) {
   try {
-    const session = await verifySession();
-    if (!session) return { success: false, message: 'Unauthorized' };
+    // Salon-wide revenue and booking figures: owner/admin/manager only (a barber or customer session must not read them)
+    if (!(await authorize('/owner', 'view'))) {
+      return { success: false, message: 'Unauthorized' };
+    }
 
     const { start, end } = getDateBounds(timeRange);
 

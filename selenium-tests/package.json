@@ -1,0 +1,28 @@
+{
+  "name": "mrpolaa-selenium-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full frontend Selenium test suite for the MR POLAA salon management system",
+  "scripts": {
+    "test": "mocha --timeout 60000 tests/**/*.test.js",
+    "test:auth": "mocha --timeout 60000 tests/01-auth.test.js",
+    "test:staff": "mocha --timeout 60000 tests/02-owner-staff-crud.test.js",
+    "test:products": "mocha --timeout 60000 tests/03-owner-products-stock.test.js",
+    "test:services-shops": "mocha --timeout 60000 tests/04-owner-services-shops.test.js",
+    "test:bookings": "mocha --timeout 90000 tests/05-bookings-crud.test.js",
+    "test:attendance": "mocha --timeout 60000 tests/06-attendance.test.js",
+    "test:payroll": "mocha --timeout 60000 tests/07-payroll.test.js",
+    "test:payment": "mocha --timeout 120000 tests/08-customer-booking-payhere.test.js",
+    "test:sms": "mocha --timeout 60000 tests/09-sms-gateway.test.js",
+    "test:multiuser": "mocha --timeout 120000 tests/10-multi-user-concurrency.test.js",
+    "cleanup": "node helpers/cleanup-all.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "chai": "^4.5.0",
+    "chromedriver": "^151.0.5",
+    "dotenv": "^16.4.5",
+    "mocha": "^10.7.3",
+    "selenium-webdriver": "^4.25.0"
+  }
+}

@@ -80,7 +80,7 @@ export function PayrollConfigModal({ isOpen, onClose, staff, onSaveSuccess }: Pa
       }
     >
       <Form form={form} layout="vertical" onFinish={handleFinish} style={{ marginTop: 24 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           <Form.Item name="salaryType" label="Salary Structure">
             <Select size="large">
               <Option value="Commission">Commission Based</Option>
@@ -97,7 +97,7 @@ export function PayrollConfigModal({ isOpen, onClose, staff, onSaveSuccess }: Pa
           </Form.Item>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           <Form.Item name="baseSalary" label="Base Salary (LKR)">
             <Input prefix="Rs." size="large" type="number" />
           </Form.Item>

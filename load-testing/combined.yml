@@ -1,0 +1,73 @@
+config:
+  target: "http://localhost:3001"
+  processor: "./processor.js"
+  phases:
+    - duration: 10
+      arrivalCount: 10
+      name: "10 staff, mixed realistic usage"
+  payload:
+    path: "./staff-all.csv"
+    fields:
+      - "email"
+      - "password"
+
+# Reports/payroll (OWNER-only) are load-tested separately in reports.yml / payroll.yml.
+# This combined run mixes the two heaviest, most frequent flows (booking read + write) with
+# the dashboard (no role restriction) to approximate a realistic 5-minute peak.
+scenarios:
+  - name: "Booking list checks"
+    weight: 60
+    flow:
+      - post:
+          url: "/api/auth/staff-login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          afterResponse: "captureCookie"
+      - loop:
+          - get:
+              url: "/api/v1/bookings"
+              headers:
+                Cookie: "{{ authCookie }}"
+          - think: 4
+        count: 75
+
+  - name: "Creating walk-in bookings"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/staff-login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          afterResponse: "captureCookie"
+      - loop:
+          - function: "setBookingSlot"
+          - post:
+              url: "/api/v1/bookings"
+              headers:
+                Cookie: "{{ authCookie }}"
+              json:
+                shopId: "{{ shopId }}"
+                barberId: "{{ barberId }}"
+                serviceIds: ["{{ serviceId }}"]
+                date: "{{ bookingDate }}"
+          - think: 20
+        count: 15
+
+  - name: "Glancing at dashboard"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/auth/staff-login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          afterResponse: "captureCookie"
+      - loop:
+          - get:
+              url: "/api/loadtest/dashboard"
+              headers:
+                Cookie: "{{ authCookie }}"
+          - think: 15
+        count: 20

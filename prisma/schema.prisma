@@ -14,6 +14,8 @@ model User {
   email     String   @unique
   phone     String?  @unique
   password  String
+  // A first-run / handed-over password: until the person sets their own, every page and API stays locked
+  mustChangePassword Boolean @default(false)
   name      String
   imageUrl  String?
   googleId  String?  @unique
@@ -43,6 +45,7 @@ model User {
   permissions        StaffPermission[]
   notifications      Notification[]
   employeeDevices    EmployeeDevice[]
+  expensesCreated    Expense[]        @relation("ExpenseCreator")
 }
 
 model Shop {
@@ -60,6 +63,7 @@ model Shop {
   bookings  Booking[]
   staff     User[]    @relation("ShopStaff")
   services  Service[]
+  expenses  Expense[]
 }
 
 model Service {
@@ -121,6 +125,10 @@ model Booking {
   serviceAmount Float?        // services-only subtotal snapshot — commission is computed from this, not totalAmount, so product sales never inflate a barber's commission. Null on pre-existing rows, which are 100% services anyway (fall back to totalAmount).
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  // Mobile number this booking's SMS go to: the number the customer gave for it (normalised, no leading 0).
+  // Falls back to the account's phone when empty. It is NOT required to be unique: it can be a relative's number.
+  contactPhone String?
 
   // Foreign Keys
   customerId  String
@@ -204,6 +212,7 @@ model Attendance {
   method      String   @default("MANUAL")  // MANUAL | FINGERPRINT
   deviceId    String?
   recordedBy  String?
+  note        String?  @db.VarChar(255) // why a manual entry was made / edited
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -364,9 +373,47 @@ model Notification {
   desc      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-  
+
+  // What it is about, so clicking it can open exactly that record (BOOKING, ORDER, PRODUCT, PAYMENT, PAYROLL, ATTENDANCE, ACCESS)
+  refType   String?  @db.VarChar(20)
+  refId     String?  @db.VarChar(64)
+
   // Relations
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
 }
 
+// Money the owner spends besides staff wages (which come from Payroll): stock orders, petty cash,
+// bills, rent... Only the OWNER can create/read these (see lib/actions/expenses.ts).
+enum ExpenseCategory {
+  STOCK_ORDER
+  PETTY_CASH
+  UTILITIES
+  RENT
+  OTHER
+}
+
+model Expense {
+  id          String          @id @default(uuid())
+  category    ExpenseCategory
+  title       String
+  amount      Float
+  date        DateTime
+  supplier    String?
+  note        String?         @db.Text
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Foreign Keys
+  shopId      String?
+  createdById String
+
+  // Relations
+  shop        Shop?           @relation(fields: [shopId], references: [id])
+  createdBy   User            @relation("ExpenseCreator", fields: [createdById], references: [id])
+
+  @@index([date, category])
+  @@index([shopId])
+}

@@ -26,6 +26,7 @@ interface BookingActionModalProps {
   onDelete?: (id: string) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  canCancel?: boolean; // Decline / cancel (the owner's "Delete / Cancel" tick-box); a barber can always decline their own
 }
 
 export default function BookingActionModal({ 
@@ -38,7 +39,8 @@ export default function BookingActionModal({
   onViewInvoice,
   onDelete,
   canEdit = true,
-  canDelete = false
+  canDelete = false,
+  canCancel = true
 }: BookingActionModalProps) {
   if (!booking) return null;
 
@@ -86,9 +88,9 @@ export default function BookingActionModal({
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
-          {isPending && canEdit && (
+          {isPending && (canEdit || canCancel) && (
             <>
-              <Button 
+              {canEdit && <Button 
                 type="primary" 
                 size="large"
                 icon={<CheckCircleOutlined />}
@@ -96,8 +98,8 @@ export default function BookingActionModal({
                 className="w-full bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-200 h-12 rounded-xl font-bold text-base"
               >
                 Accept Booking
-              </Button>
-              <Button 
+              </Button>}
+              {canCancel && <Button 
                 type="primary" 
                 danger
                 size="large"
@@ -106,7 +108,7 @@ export default function BookingActionModal({
                 className="w-full shadow-md h-12 rounded-xl font-bold text-base"
               >
                 Decline Booking
-              </Button>
+              </Button>}
             </>
           )}
 
@@ -134,7 +136,7 @@ export default function BookingActionModal({
             </Button>
           )}
 
-          {(isCancelled || (!canEdit && !isCompleted)) && (
+          {(isCancelled || (!isCompleted && !((isPending && (canEdit || canCancel)) || (isConfirmed && canEdit)))) && (
             <div className="text-center p-6 bg-slate-50 rounded-xl text-slate-500 font-medium">
               No further actions available for this booking.
             </div>

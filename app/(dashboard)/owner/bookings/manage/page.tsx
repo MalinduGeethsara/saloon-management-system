@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { 
   Table, 
   Card, 
@@ -12,12 +13,10 @@ import {
   Col, 
   Tooltip,
   Input,
-  Space,
+  Segmented,
+  Select,
   Avatar,
-  Dropdown,
-  MenuProps
 } from 'antd';
-import type { InputRef, TableColumnType } from 'antd';
 import { 
   CheckCircleOutlined, 
   CloseCircleOutlined, 
@@ -26,15 +25,15 @@ import {
   CalendarOutlined,
   UserOutlined,
   PlusOutlined,
-  SyncOutlined,
-  DownOutlined
 } from '@ant-design/icons';
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { ConfirmationModal } from '@/components/modals/ConfirmationModal';
 import { NewBookingModal } from '@/components/modals/NewBookingModal';
+import { useAccess } from '@/hooks/useAccess';
 import { PaymentModal } from '@/components/modals/PaymentModal';
 import { InvoiceModal } from '@/components/modals/InvoiceModal';
 import BookingActionModal from '@/components/modals/BookingActionModal';
+import { ResponsiveTable } from '@/components/ui/ResponsiveTable';
 
 import dayjs from 'dayjs';
 
@@ -54,15 +53,37 @@ const BARBERS_LIST = [
   { id: '3', name: 'Vindana Lakmal', color: '#2563eb' },
 ];
 
+// One API booking -> one table row
+const toRow = (b: any) => ({
+  key: b.id,
+  id: b.id,
+  client: b.customer?.name || 'Unknown',
+  barber: b.barber?.name || 'Unknown',
+  branch: b.shop?.name || 'Global / All',
+  status: b.status === 'CONFIRMED' ? 'Confirmed' : b.status === 'COMPLETED' ? 'Paid' : b.status === 'CANCELLED' ? 'Cancelled' : 'Pending',
+  total: b.totalAmount,
+  date: b.date,
+  // Already paid online (e.g. via the payment gateway at booking time) vs. still needs
+  // payment collected in person — determines whether Payment Method is editable later.
+  paymentStatus: b.payment?.status,
+  paymentMethod: b.payment?.method,
+  source: b.source, // 'WEBSITE' (customer booked it themselves) or 'ADMIN' (staff-created)
+  // Real booked services/products (name/price), for showing what was actually paid instead of a fake line item
+  services: b.services?.map((bs: any) => ({ name: bs.service?.name, price: bs.service?.price })) || [],
+  products: b.products?.map((bp: any) => ({ name: bp.product?.name, price: bp.product?.price })) || [],
+});
+
 function ManageBookingsContent() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState('owner');
   
   // Permissions
-  const [canAdd, setCanAdd] = useState(true);
-  const [canEdit, setCanEdit] = useState(true);
-  const [canDelete, setCanDelete] = useState(true);
+  // What this person may do here (the owner's tick-boxes; the server checks the same rules again)
+  const access = useAccess(['/owner/bookings/manage', '/owner/calendar']);
+  const canAdd = access.add;
+  const canEdit = access.edit;
+  const canDelete = access.delete;
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
@@ -78,99 +99,106 @@ function ManageBookingsContent() {
   const [paymentData, setPaymentData] = useState<any>(null);
   const [invoiceData, setInvoiceData] = useState<any>(null);
   
-  const searchInput = useRef<InputRef>(null);
   const { showAlert } = useAlert();
+  const router = useRouter();
 
-  const fetchBookings = async () => {
-    setLoading(true);
+  // Arrived from a notification (?booking=ID): open exactly that booking, wherever it is in the list
+  const focusId = useSearchParams().get('booking');
+  React.useEffect(() => {
+    if (!focusId) return;
+    let cancelled = false;
+    (async () => {
+      let found: any = null;
+      try {
+        const res = await fetch(`/api/v1/bookings?page=1&pageSize=5&q=${encodeURIComponent(focusId)}`);
+        const data = await res.json();
+        found = (data.bookings || []).find((b: any) => b.id === focusId) || null;
+      } catch {}
+      if (cancelled) return;
+      if (found) {
+        setSelectedRow(toRow(found));
+        setIsRowModalOpen(true);
+      } else {
+        showAlert('error', 'That booking could not be found. It may have been deleted.');
+      }
+      router.replace('/owner/bookings/manage', { scroll: false });
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId]);
+
+  // Server-side pagination + filters. Search/filters are debounced/reset to page 1; the 5s poll
+  // re-requests the *current* page so the user is never bounced back to page 1.
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState({ total: 0, pending: 0, confirmed: 0 });
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sourceFilter, setSourceFilter] = useState('ALL');
+
+  const queryRef = useRef({ page: 1, q: '', status: 'ALL', source: 'ALL' });
+  queryRef.current = { page, q: debouncedSearch, status: statusFilter, source: sourceFilter };
+  const requestSeq = useRef(0);
+
+  const fetchBookings = async (showSpinner = false) => {
+    const seq = ++requestSeq.current;
+    if (showSpinner) setLoading(true);
     try {
-      const res = await fetch('/api/v1/bookings');
+      const { page: p, q, status, source } = queryRef.current;
+      const qs = new URLSearchParams({ page: String(p), pageSize: String(PAGE_SIZE) });
+      if (q) qs.set('q', q);
+      if (status !== 'ALL') qs.set('status', status);
+      if (source !== 'ALL') qs.set('source', source);
+
+      const res = await fetch(`/api/v1/bookings?${qs.toString()}`);
       const data = await res.json();
+      if (seq !== requestSeq.current) return; // a newer request superseded this one
+
       if (data.bookings) {
-        setBookings(data.bookings.map((b: any) => ({
-          key: b.id,
-          id: b.id,
-          client: b.customer?.name || 'Unknown',
-          barber: b.barber?.name || 'Unknown',
-          branch: b.shop?.name || 'Global / All',
-          status: b.status === 'CONFIRMED' ? 'Confirmed' : b.status === 'COMPLETED' ? 'Paid' : b.status === 'CANCELLED' ? 'Cancelled' : 'Pending',
-          total: b.totalAmount,
-          date: b.date,
-          // Already paid online (e.g. via the payment gateway at booking time) vs. still needs
-          // payment collected in person — determines whether Payment Method is editable later.
-          paymentStatus: b.payment?.status,
-          paymentMethod: b.payment?.method,
-          source: b.source, // 'WEBSITE' (customer booked it themselves) or 'ADMIN' (staff-created)
-          // Real booked services/products (name/price), for showing what was actually paid instead of a fake line item
-          services: b.services?.map((bs: any) => ({ name: bs.service?.name, price: bs.service?.price })) || [],
-          products: b.products?.map((bp: any) => ({ name: bp.product?.name, price: bp.product?.price })) || [],
-        })));
+        setTotal(data.total ?? 0);
+        if (data.stats) setStats(data.stats);
+        // e.g. the last row of the last page was deleted: step back to the new last page
+        if (data.bookings.length === 0 && data.total > 0 && p > 1) {
+          setPage(Math.max(1, Math.ceil(data.total / PAGE_SIZE)));
+          return;
+        }
+        setBookings(data.bookings.map(toRow));
       }
     } catch (e) {
-      showAlert('error', 'Failed to load bookings');
+      if (showSpinner) showAlert('error', 'Failed to load bookings');
     }
-    setLoading(false);
+    if (seq === requestSeq.current) setLoading(false);
   };
 
+  // Debounce the search box; a new search always starts from page 1
   React.useEffect(() => {
-    fetchBookings();
-    
-    // Set up real-time polling every 5 seconds
-    const intervalId = setInterval(() => {
-      fetchBookings();
-    }, 5000);
-    
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchText.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchText]);
+
+  // Any page/filter change loads immediately (with spinner)...
+  React.useEffect(() => {
+    fetchBookings(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedSearch, statusFilter, sourceFilter]);
+
+  // ...and a real-time poll every 5 seconds keeps the current view fresh (no spinner)
+  React.useEffect(() => {
+    const intervalId = setInterval(() => fetchBookings(false), 5000);
+
     const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
     if (roleMatch) {
       setUserRole(roleMatch[2].toLowerCase());
-      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
-        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-        if (permMatch) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
-            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/bookings/manage');
-            if (pagePerms) {
-              setCanAdd(pagePerms.canAdd);
-              setCanEdit(pagePerms.canEdit);
-              setCanDelete(pagePerms.canDelete);
-            } else {
-              setCanAdd(false);
-              setCanEdit(false);
-              setCanDelete(false);
-            }
-          } catch (e) {}
-        }
-      }
     }
 
     return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const getColumnSearchProps = (dataIndex: string, title: string): TableColumnType<any> => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
-      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-        <Input
-          ref={searchInput}
-          placeholder={`Search ${title}`}
-          value={selectedKeys[0]}
-          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-          onPressEnter={() => confirm()}
-          style={{ marginBottom: 8, display: 'block' }}
-        />
-        <Space>
-          <Button type="primary" onClick={() => confirm()} icon={<SearchOutlined />} size="small" style={{ width: 90, backgroundColor: '#7C4DFF', border: 'none' }}>Search</Button>
-          <Button onClick={() => { clearFilters && clearFilters(); confirm(); }} size="small" style={{ width: 90 }}>Reset</Button>
-        </Space>
-      </div>
-    ),
-    filterIcon: (filtered: boolean) => <SearchOutlined style={{ color: filtered ? '#7C4DFF' : undefined, fontSize: '14px' }} />,
-    onFilter: (value, record) => record[dataIndex].toString().toLowerCase().includes((value as string).toLowerCase()),
-    filterDropdownProps: {
-      onOpenChange: (visible) => {
-        if (visible) setTimeout(() => searchInput.current?.select(), 100);
-      },
-    },
-  });
 
   const handleActionClick = (id: string, type: 'accept' | 'decline' | 'delete') => {
     setSelectedBookingId(id);
@@ -316,7 +344,6 @@ function ManageBookingsContent() {
       dataIndex: 'id',
       key: 'id',
       width: 120,
-      ...getColumnSearchProps('id', 'Booking ID'),
       render: (text: string) => <span className="font-mono text-xs font-bold text-slate-500">{text}</span>,
     },
     {
@@ -324,7 +351,6 @@ function ManageBookingsContent() {
       dataIndex: 'client',
       key: 'client',
       width: 200,
-      ...getColumnSearchProps('client', 'Client'),
       render: (text: string) => <span className="font-bold text-slate-800">{text}</span>,
     },
     {
@@ -332,8 +358,6 @@ function ManageBookingsContent() {
       dataIndex: 'barber',
       key: 'barber',
       width: 200,
-      filters: BARBERS_LIST.map(b => ({ text: b.name, value: b.name })),
-      onFilter: (value: any, record: any) => record.barber === value,
       render: (text: string) => (
         <div className="flex items-center gap-2 text-slate-600">
           <Avatar size="small" icon={<UserOutlined />} className="bg-slate-100" /> {text}
@@ -345,8 +369,6 @@ function ManageBookingsContent() {
       dataIndex: 'source',
       key: 'source',
       width: 120,
-      filters: [{ text: 'Website', value: 'WEBSITE' }, { text: 'Walk-in / Admin', value: 'ADMIN' }],
-      onFilter: (value: any, record: any) => record.source === value,
       render: (source: string) => (
         <Tag color={source === 'WEBSITE' ? 'purple' : 'default'} className="rounded-full px-3 font-semibold border-0">
           {source === 'WEBSITE' ? 'Website' : 'Walk-in / Admin'}
@@ -420,26 +442,26 @@ function ManageBookingsContent() {
       </div>
 
       {/* KPI Stats */}
-      <Row gutter={[16, 16]} className="mb-6">
-        <Col xs={24} sm={8}>
+      <Row gutter={[12, 12]} className="mb-6">
+        <Col xs={8}>
           <Card variant="borderless" className="shadow-sm rounded-2xl">
-            <Statistic title={<span className="text-xs font-bold text-gray-400 uppercase">Requests</span>} value={bookings.length} prefix={<CalendarOutlined style={{ color: '#7C4DFF' }} />} />
+            <Statistic title={<span className="text-xs font-bold text-gray-400 uppercase">Requests</span>} value={stats.total} prefix={<CalendarOutlined style={{ color: '#7C4DFF' }} />} />
           </Card>
         </Col>
-        <Col xs={12} sm={8}>
+        <Col xs={8}>
           <Card variant="borderless" className="shadow-sm rounded-2xl">
             <Statistic 
   title={<span className="text-xs font-bold text-gray-400 uppercase">Pending</span>} 
-  value={bookings.filter(b => b.status === 'Pending').length} 
+  value={stats.pending} 
   styles={{ content: { color: '#F59E0B', fontWeight: 800 } }}
 />
           </Card>
         </Col>
-        <Col xs={12} sm={8}>
+        <Col xs={8}>
           <Card variant="borderless" className="shadow-sm rounded-2xl">
             <Statistic 
   title={<span className="text-xs font-bold text-gray-400 uppercase">Confirmed</span>} 
-  value={bookings.filter(b => b.status === 'Confirmed' || b.status === 'Paid').length} 
+  value={stats.confirmed} 
   styles={{ 
     content: { color: '#10B981', fontWeight: 800 } 
   }} 
@@ -454,13 +476,80 @@ function ManageBookingsContent() {
         className="shadow-sm rounded-3xl overflow-hidden"
         styles={{ body: { padding: 0 } }}
       >
-        <Table 
-          columns={visibleColumns} 
-          dataSource={bookings} 
-          pagination={{ pageSize: 8 }}
+        {/* Search + filters run on the server so they cover every page, not just the loaded one */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 p-4 border-b border-slate-100">
+          <Input
+            allowClear
+            prefix={<SearchOutlined className="text-slate-400" />}
+            placeholder="Search bookings"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="lg:max-w-sm"
+          />
+          <div className="overflow-x-auto">
+            <Segmented
+              value={statusFilter}
+              onChange={(v) => { setStatusFilter(v as string); setPage(1); }}
+              options={[
+                { label: 'All', value: 'ALL' },
+                { label: 'Pending', value: 'PENDING' },
+                { label: 'Confirmed', value: 'CONFIRMED' },
+                { label: 'Paid', value: 'COMPLETED' },
+                { label: 'Cancelled', value: 'CANCELLED' },
+              ]}
+            />
+          </div>
+          <Select
+            value={sourceFilter}
+            onChange={(v) => { setSourceFilter(v); setPage(1); }}
+            className="w-full lg:w-48"
+            options={[
+              { label: 'All sources', value: 'ALL' },
+              { label: 'Website', value: 'WEBSITE' },
+              { label: 'Walk-in / Admin', value: 'ADMIN' },
+            ]}
+          />
+        </div>
+
+        <ResponsiveTable
+          columns={visibleColumns}
+          dataSource={bookings}
+          loading={loading}
+          pagination={{
+            current: page,
+            pageSize: PAGE_SIZE,
+            total,
+            onChange: (p) => setPage(p),
+          }}
           rowKey="key"
-          // x: 1200 ensures it is wider than mobile screens to force swiping
-          scroll={{ x: 1200 }} 
+          // x: 1200 keeps the desktop columns readable; phones get the card list below instead
+          scroll={{ x: 1200 }}
+          renderMobileCard={(record) => (
+            <div className={`rounded-2xl border p-4 ${record.status === 'Pending' ? 'bg-amber-50/60 border-amber-200' : record.source === 'WEBSITE' ? 'bg-purple-50/60 border-purple-100' : 'bg-white border-slate-100'}`}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-800 truncate">{record.client}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{dayjs(record.date).format('MMM DD, YYYY • h:mm A')}</div>
+                </div>
+                <Tag
+                  color={record.status === 'Confirmed' ? 'blue' : record.status === 'Paid' ? 'green' : record.status === 'Pending' ? 'orange' : record.status === 'Cancelled' ? 'red' : 'default'}
+                  className="rounded-full px-3 font-semibold border-0 m-0 shrink-0"
+                >
+                  {record.status.toUpperCase()}
+                </Tag>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-2 text-sm">
+                <span className="text-slate-600 flex items-center gap-1.5 min-w-0">
+                  <UserOutlined className="text-slate-400" /> <span className="truncate">{record.barber}</span>
+                </span>
+                <span className="font-bold text-slate-800 shrink-0">Rs. {record.total.toLocaleString()}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+                <span>{record.source === 'WEBSITE' ? 'Website' : 'Walk-in / Admin'} • {record.branch}</span>
+                <span className="font-mono">{record.id.slice(0, 8)}</span>
+              </div>
+            </div>
+          )}
           className="booking-swipe-table cursor-pointer"
           rowClassName={(record) =>
             record.status === 'Pending'
@@ -500,6 +589,7 @@ function ManageBookingsContent() {
         onGenerateBill={(record) => { setIsRowModalOpen(false); handleGenerateBill(record); }}
         onViewInvoice={(record) => { setIsRowModalOpen(false); handleViewInvoice(record); }}
         canEdit={canEdit}
+        canCancel={canDelete}
         canDelete={canDelete}
       />
 
@@ -512,7 +602,9 @@ function ManageBookingsContent() {
 export default function ManageBookings() {
   return (
     <AlertProvider>
-      <ManageBookingsContent />
+      <Suspense fallback={null}>
+        <ManageBookingsContent />
+      </Suspense>
     </AlertProvider>
   );
 }

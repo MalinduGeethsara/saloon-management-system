@@ -250,7 +250,7 @@ export function NewBookingModal({
             )}
           </Form.List>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Form.Item name="date" label="Date" rules={[{ required: true }]}>
               <DatePicker size="large" format="MMM D, YYYY" className="w-full" suffixIcon={<CalendarOutlined />} />
             </Form.Item>

@@ -83,7 +83,8 @@ export async function getPublicServices() {
         duration: true,
         imageUrl: true,
       },
-      take: 3 // Only get top 3 for the homepage carousel
+      orderBy: { name: 'asc' },
+      take: 6 // Homepage: 6 for the phone hero rail (desktop section shows the first 3)
     });
     return services.map(service => ({
       ...service,
@@ -162,6 +163,9 @@ export async function getPublicShops() {
         id: true,
         name: true,
         address: true,
+        // The booking page shows the opening hours and greys out closed days/times up front
+        status: true,
+        operatingHours: true,
       },
       orderBy: { name: 'asc' }
     });

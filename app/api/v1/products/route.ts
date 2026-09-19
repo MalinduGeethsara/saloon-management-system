@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createProduct, getAllProducts, updateProduct, deleteProduct, getProductById } from '@/lib/controllers/product.controller';
-import { verifySession } from '@/lib/session';
+import { authorize, forbidden } from '@/lib/access.server';
 import { deleteCloudinaryImage } from '@/lib/cloudinary';
 import { serverError } from '@/lib/api-error';
 
@@ -15,21 +15,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await verifySession();
-    if (!session) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isOwnerOrAdmin = ['ADMIN', 'OWNER'].includes(session.role.toUpperCase());
-    let canModify = isOwnerOrAdmin;
-    if (!isOwnerOrAdmin && session.permissions) {
-      const perm = session.permissions.find((p: any) => p.pageKey === '/owner/products' || p.pageKey === '/owner/services');
-      if (perm && perm.canAdd) canModify = true;
-    }
-
-    if (!canModify) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+    if (!(await authorize(['/owner/products', '/owner/services'], 'add'))) return forbidden();
 
     const body = await request.json();
     if (!body.name || body.price === undefined || body.stock === undefined) {
@@ -55,21 +41,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await verifySession();
-    if (!session) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isOwnerOrAdmin = ['ADMIN', 'OWNER'].includes(session.role.toUpperCase());
-    let canModify = isOwnerOrAdmin;
-    if (!isOwnerOrAdmin && session.permissions) {
-      const perm = session.permissions.find((p: any) => p.pageKey === '/owner/products' || p.pageKey === '/owner/services');
-      if (perm && perm.canEdit) canModify = true;
-    }
-
-    if (!canModify) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+    if (!(await authorize(['/owner/products', '/owner/services'], 'edit'))) return forbidden();
 
     const body = await request.json();
     if (!body.id) return NextResponse.json({ message: 'ID is required' }, { status: 400 });
@@ -95,21 +67,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await verifySession();
-    if (!session) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isOwnerOrAdmin = ['ADMIN', 'OWNER'].includes(session.role.toUpperCase());
-    let canModify = isOwnerOrAdmin;
-    if (!isOwnerOrAdmin && session.permissions) {
-      const perm = session.permissions.find((p: any) => p.pageKey === '/owner/products' || p.pageKey === '/owner/services');
-      if (perm && perm.canDelete) canModify = true;
-    }
-
-    if (!canModify) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+    if (!(await authorize(['/owner/products', '/owner/services'], 'delete'))) return forbidden();
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

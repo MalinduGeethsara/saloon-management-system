@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation'; 
+import { AppPagination } from '@/components/ui/AppPagination';
+import { usePagedList } from '@/hooks/usePagedList';
 import { 
   Card, 
   Typography, 
@@ -28,6 +30,7 @@ import {
 import { AlertProvider, useAlert } from "@/components/alerts/AlertSystem";
 import { LocationModal } from "@/components/modals/LocationModal";
 import { ConfirmationModal } from "@/components/modals/ConfirmationModal";
+import { useAccess } from '@/hooks/useAccess';
 
 const { Title, Text } = Typography;
 
@@ -46,9 +49,10 @@ function ShopsContent() {
   const [editingShop, setEditingShop] = useState<any>(null);
   const [shopToDelete, setShopToDelete] = useState<string | null>(null);
 
-  const [canAdd, setCanAdd] = useState(true);
-  const [canEdit, setCanEdit] = useState(true);
-  const [canDelete, setCanDelete] = useState(true);
+  const access = useAccess('/owner/shops');
+  const canAdd = access.add;
+  const canEdit = access.edit;
+  const canDelete = access.delete;
 
   const fetchShops = async () => {
     setLoading(true);
@@ -74,27 +78,6 @@ function ShopsContent() {
   React.useEffect(() => {
     fetchShops();
 
-    const roleMatch = document.cookie.match(new RegExp('(^| )user_role=([^;]+)'));
-    if (roleMatch) {
-      if (roleMatch[2].toLowerCase() !== 'owner' && roleMatch[2].toLowerCase() !== 'admin') {
-        const permMatch = document.cookie.match(new RegExp('(^| )user_permissions=([^;]+)'));
-        if (permMatch) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(permMatch[2]));
-            const pagePerms = perms.find((p: any) => p.pageKey === '/owner/shops');
-            if (pagePerms) {
-              setCanAdd(pagePerms.canAdd);
-              setCanEdit(pagePerms.canEdit);
-              setCanDelete(pagePerms.canDelete);
-            } else {
-              setCanAdd(false);
-              setCanEdit(false);
-              setCanDelete(false);
-            }
-          } catch (e) {}
-        }
-      }
-    }
   }, []);
 
   const handleAdd = () => {
@@ -174,6 +157,7 @@ function ShopsContent() {
     shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     shop.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const shopPaging = usePagedList(filteredShops, 9);
 
   return (
     <div className="max-w-[1600px] mx-auto pb-10 px-4">
@@ -209,7 +193,7 @@ function ShopsContent() {
 
       {/* Grid Layout - Optimized for Mobile Swiping/Stacking */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredShops.map((shop) => (
+          {shopPaging.pageItems.map((shop) => (
             <Card 
               key={shop.key}
               hoverable
@@ -218,7 +202,7 @@ function ShopsContent() {
               cover={
                 <div className="relative h-44 w-full overflow-hidden">
                   <img 
-                    src={shop.imageUrl || 'https://via.placeholder.com/800x400?text=Shop+Image'} 
+                    src={shop.imageUrl || '/images/site/shop-front.jpg'} 
                     alt={shop.name} 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                   />
@@ -312,6 +296,7 @@ function ShopsContent() {
             </Card>
           ))}
       </div>
+      <AppPagination current={shopPaging.page} pageSize={shopPaging.pageSize} total={shopPaging.total} onChange={shopPaging.setPage} />
 
       <LocationModal 
         isOpen={isModalOpen}

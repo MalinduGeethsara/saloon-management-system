@@ -68,7 +68,7 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
       }
     >
       <Form form={form} layout="vertical" onFinish={handleFinish} style={{ marginTop: 16 }}>
-              <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginBottom: 16 }}>
                 <div style={{ width: 120 }}>
                   <Form.Item label="Profile Photo" style={{ marginBottom: 0 }}>
                     <div className="flex justify-center border-2 border-dashed border-gray-200 bg-slate-50 rounded-xl overflow-hidden w-[120px] h-[120px]">
@@ -85,7 +85,7 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
                   <Form.Item name="imageUrl" hidden><Input /></Form.Item>
                 </div>
                 
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: '1 1 220px', minWidth: 0 }}>
                   <Form.Item name="name" label="Full Name" rules={[{ required: true }]}>
                     <Input prefix={<UserOutlined />} placeholder="John Doe" size="large" />
                   </Form.Item>
@@ -95,7 +95,7 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
                 <Form.Item name="phone" label="Phone Number">
                   <Input prefix={<PhoneOutlined />} placeholder="+94 77 123 4567" size="large" />
                 </Form.Item>
@@ -110,7 +110,7 @@ export function StaffModal({ isOpen, onClose, staff, mode, onSave }: StaffModalP
 
              <Divider titlePlacement="left" style={{ fontSize: '12px', color: '#9ca3af' }}>JOB DETAILS</Divider>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
                 <Form.Item name="role" label="Job Role" rules={[{ required: true }]}>
                   <AutoComplete 
                     options={[{ value: 'MANAGER' }, { value: 'BARBER' }, { value: 'CASHIER' }]}

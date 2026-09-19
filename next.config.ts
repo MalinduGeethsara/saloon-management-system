@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // Next.js 16 blocks dev-server requests (data fetching, HMR) from any origin other than
   // localhost by default. Add any LAN IP/hostname you test from here — dev-only, no effect
   // on production builds.
-  allowedDevOrigins: ['172.20.10.2'],
+  allowedDevOrigins: ['172.20.10.2', 'mr-polaa.com', 'www.mr-polaa.com'],
   images: {
     remotePatterns: [
       {

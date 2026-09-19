@@ -2,6 +2,8 @@
 
 import { db, withTransaction } from '@/lib/db';
 import { verifySession } from '@/lib/session';
+import { authorize } from '@/lib/access.server';
+import { notify } from '@/lib/services/notify';
 
 const ROLE_LABELS: Record<string, string> = {
   OWNER: 'Master Stylist',
@@ -36,8 +38,7 @@ function buildBreakdownRow(c: any) {
 
 export async function getMonthlyPayroll(monthStr: string) {
   try {
-    const session = await verifySession();
-    if (!session || !['OWNER', 'ADMIN'].includes(session.role)) {
+    if (!(await authorize('/owner/hr/payroll', 'view'))) {
       return { success: false, message: 'Unauthorized' };
     }
 
@@ -117,8 +118,7 @@ export async function getMonthlyPayroll(monthStr: string) {
 
 export async function processPayroll(monthStr: string) {
   try {
-    const session = await verifySession();
-    if (!session || !['OWNER', 'ADMIN'].includes(session.role)) {
+    if (!(await authorize('/owner/hr/payroll', 'add'))) {
       return { success: false, message: 'Unauthorized' };
     }
 
@@ -179,15 +179,31 @@ export async function processPayroll(monthStr: string) {
 
 export async function markPayrollPaid(payrollId: string) {
   try {
-    const session = await verifySession();
-    if (!session || !['OWNER', 'ADMIN'].includes(session.role)) {
+    const allowed = await authorize('/owner/hr/payroll', 'edit');
+    if (!allowed) {
       return { success: false, message: 'Unauthorized' };
     }
 
-    await db.payroll.update({
+    const before = await db.payroll.findUnique({ where: { id: payrollId }, select: { status: true } });
+    const payroll = await db.payroll.update({
       where: { id: payrollId },
       data: { status: 'PAID' }
     });
+
+    // The employee is told their salary was paid (only the first time it flips to PAID)
+    if (before && before.status !== 'PAID') {
+      const label = new Date(payroll.year, payroll.month, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      const amount = `LKR ${Math.round(payroll.totalAmount).toLocaleString()}`;
+      void notify({
+        event: 'PAYSLIP_PAID',
+        title: 'Salary Paid',
+        desc: `Your salary for ${label} (${amount}) has been paid.`,
+        sms: `MR POLAA: Your salary for ${label} (${amount}) has been paid.`,
+        employeeIds: [payroll.userId],
+        actorId: allowed.session.id,
+        ref: { type: 'PAYROLL', id: payroll.id },
+      });
+    }
 
     return { success: true };
   } catch (error) {

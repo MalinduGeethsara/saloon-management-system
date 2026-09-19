@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { decrypt } from './lib/session';
-
-// Pages each role can access under /owner without needing explicit DB permissions
-const ROLE_OWNER_BYPASSES: Record<string, string[]> = {
-  BARBER:  ['/owner/calendar'],
-  MANAGER: ['/owner/calendar', '/owner/bookings/manage', '/owner/hr/attendance'],
-};
+import { landingFor, pageKeyForPath, resolveAccess } from './lib/access';
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
@@ -15,6 +10,31 @@ export async function middleware(request: NextRequest) {
 
   const session = token ? await decrypt(token) : null;
   const userRole = session?.role;
+
+  // ── First-run / handed-over password: nothing else opens until the person chooses their own ─────
+  if (session?.mustChangePassword) {
+    if (path === '/change-password' || path.startsWith('/api/auth/') || path === '/api/auth') return NextResponse.next();
+    if (path.startsWith('/api/v1/')) {
+      // (the payment gateway's server-to-server call has no session, so it never gets here)
+      return NextResponse.json({ success: false, code: 'PASSWORD_CHANGE_REQUIRED', message: 'Please set a new password first.', error: 'Please set a new password first.' }, { status: 403 });
+    }
+    const staffOrAccount =
+      path.startsWith('/owner') || path.startsWith('/admin') || path === '/barber' || path.startsWith('/barber/') ||
+      path.startsWith('/manager') || path.startsWith('/profile') || path.startsWith('/booking') || path.startsWith('/customer') ||
+      path === '/staff-login' || path === '/login' || path === '/no-access' || (path.startsWith('/staff') && !path.startsWith('/staff-login'));
+    if (staffOrAccount) {
+      url.pathname = '/change-password';
+      url.search = '';
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // ── The change-password page needs a signed-in person ────────────────────
+  if (path === '/change-password' && !session) {
+    url.pathname = '/staff-login';
+    url.searchParams.set('callbackUrl', '/change-password');
+    return NextResponse.redirect(url);
+  }
 
   // ── Customer-side protection ──────────────────────────────────────────────
   const isCustomerPath =
@@ -49,11 +69,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (path === '/staff-login') {
-      if (userRole === 'ADMIN') url.pathname = '/admin';
-      else if (userRole === 'MANAGER') url.pathname = '/owner/bookings/manage';
-      else if (userRole === 'BARBER') url.pathname = '/barber';
-      else url.pathname = '/owner';
+    if (path === '/staff-login' && userRole !== 'CUSTOMER') {
+      url.pathname = landingFor(userRole, (session.permissions as any[]) || []);
       return NextResponse.redirect(url);
     }
 
@@ -71,15 +88,15 @@ export async function middleware(request: NextRequest) {
       }
 
       if (userRole !== 'OWNER') {
-        const bypass = ROLE_OWNER_BYPASSES[userRole] || [];
-        const isBypassed = bypass.some(p => path.startsWith(p));
-
-        if (!isBypassed) {
-          const allowed = (session.permissions as any[]) || [];
-          if (path !== '/owner' && !allowed.some(perm => path.startsWith(perm.pageKey) && perm.canView)) {
-            url.pathname = '/owner';
-            return NextResponse.redirect(url);
-          }
+        // The token's permissions decide which PAGES open (the APIs re-check the database on every call).
+        // A page that is not on the grantable list (Expenses, the Permissions page...) is owner-only.
+        const perms = (session.permissions as any[]) || [];
+        const pageKey = pageKeyForPath(path);
+        const canOpen = !!pageKey && resolveAccess(userRole, perms, pageKey).view;
+        if (!canOpen) {
+          url.pathname = landingFor(userRole, perms);
+          url.search = '';
+          return NextResponse.redirect(url);
         }
       }
     }

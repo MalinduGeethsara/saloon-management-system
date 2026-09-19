@@ -183,7 +183,7 @@ function ForgotPasswordContent() {
   };
 
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
+    <div className="min-h-dvh lg:h-screen lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 bg-zinc-950 text-zinc-100 selection:bg-amber-600 selection:text-white font-sans relative">
 
       {/* Slide-down Notification Bubble */}
       {showNotification && showNotification.show && (
@@ -213,7 +213,7 @@ function ForgotPasswordContent() {
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 z-0 bg-zinc-900">
           <img 
-            src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop" 
+            src="/images/site/barber-chair.jpg" 
             alt="Salon Background" 
             className="w-full h-full object-cover opacity-30 grayscale"
           />
@@ -227,7 +227,7 @@ function ForgotPasswordContent() {
               MR POLAA
             </span>
             <span className="text-[9px] tracking-[0.3em] text-amber-500 font-bold uppercase mt-1.5">
-              Premium Grooming
+              Unisex Salon
             </span>
           </div>
         </Link>
@@ -261,7 +261,7 @@ function ForgotPasswordContent() {
               MR POLAA
             </span>
             <span className="text-[8px] tracking-[0.3em] text-amber-500 font-bold uppercase mt-1.5">
-              Premium Grooming
+              Unisex Salon
             </span>
           </Link>
         </div>
@@ -269,7 +269,7 @@ function ForgotPasswordContent() {
         {/* Back Link */}
         <Link 
           href="/login" 
-          className="absolute top-6 left-6 text-xs font-bold text-zinc-500 hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors duration-300"
+          className="self-start mb-6 lg:mb-0 lg:absolute lg:top-6 lg:left-6 text-xs font-bold text-zinc-500 hover:text-amber-500 uppercase tracking-widest flex items-center gap-2 transition-colors duration-300"
         >
           <ArrowLeftOutlined /> Back to login
         </Link>

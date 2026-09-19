@@ -1,0 +1,130 @@
+name: CI / CD
+
+# Every push and pull request is type-checked, linted, built from scratch and put through the QA
+# suites (functional, security, concurrency, integrity) against a real MySQL 8 (InnoDB).
+# A push to `main` that passes is then deployed to the DigitalOcean droplet.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      # Throwaway values: nothing in CI needs a real secret
+      DATABASE_URL: mysql://root:@127.0.0.1:3306/saloon_ci
+      SESSION_SECRET: ci-session-secret-0123456789abcdef0123456789abcdef
+      NEXT_PUBLIC_APP_URL: https://mr-polaa.com
+      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: demo
+      PAYHERE_MERCHANT_ID: "1200000"
+      PAYHERE_MERCHANT_SECRET: ci-payhere-secret
+      PAYHERE_MODE: sandbox
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install (runs prisma generate)
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      # The QA harness writes its own .env-derived database (saloon_qa) and starts the production build
+      - name: QA suites (functional, security, resilience, integrity)
+        run: |
+          printf 'DATABASE_URL="%s"\n' "$DATABASE_URL" > .env
+          node qa/run.js
+
+      - name: Keep QA results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-results
+          path: qa/results/*.json
+          if-no-files-found: ignore
+
+  # The release is BUILT here, on GitHub's runner (7 GB RAM), and only unpacked on the droplet: a 2 GB
+  # droplet cannot run `next build` (peak 1.5-1.9 GB) next to the live site and MySQL.
+  deploy:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Values that are baked into the browser bundle at build time (public by design), so they must be
+      # the real ones: repo Settings > Secrets and variables > Actions > Variables
+      NEXT_PUBLIC_APP_URL: https://mr-polaa.com
+      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${{ vars.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}
+      NEXT_PUBLIC_CLOUDINARY_API_KEY: ${{ vars.NEXT_PUBLIC_CLOUDINARY_API_KEY }}
+      # Not secret and not used by the build itself, only needed so pages that touch it can be collected
+      DATABASE_URL: mysql://build:build@127.0.0.1:3306/build
+      SESSION_SECRET: build-time-only-value-0123456789abcdef0123456789abcdef
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and build the release
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package (built app + node_modules; Ubuntu 24.04 like the droplet)
+        run: |
+          tar -czf release.tgz \
+            .next public node_modules package.json package-lock.json \
+            next.config.ts prisma deploy
+          ls -lh release.tgz
+
+      - name: Upload and deploy over SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            SSH_OPTS="-o StrictHostKeyChecking=yes"
+          else
+            SSH_OPTS="-o StrictHostKeyChecking=accept-new"
+          fi
+          REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
+          scp -i ~/.ssh/deploy_key $SSH_OPTS release.tgz "$REMOTE:/tmp/mr-polaa-release.tgz"
+          # deploy.sh lives on the droplet (/srv/mr-polaa): unpack, db push, switch, health check, roll back on failure
+          ssh -i ~/.ssh/deploy_key $SSH_OPTS "$REMOTE" "/srv/mr-polaa/deploy.sh ${{ github.sha }} /tmp/mr-polaa-release.tgz"

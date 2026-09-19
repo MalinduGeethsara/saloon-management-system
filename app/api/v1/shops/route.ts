@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { verifySession } from '@/lib/session';
+import { PAGE_KEYS } from '@/lib/access';
+import { authorize, forbidden, getAccess } from '@/lib/access.server';
 import { deleteCloudinaryImage } from '@/lib/cloudinary';
 import { serverError } from '@/lib/api-error';
 
 export async function GET() {
   try {
-    const session = await verifySession();
-    if (!session || !['ADMIN', 'OWNER', 'MANAGER'].includes(session.role)) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
-    }
+    // The branch list feeds dropdowns all over the dashboard: any staff member who has been given a page may read it
+    const found = await getAccess(PAGE_KEYS);
+    if (!found || !found.access.view || (found.session.role === 'BARBER' && found.access.source !== 'row')) return forbidden();
 
     const now = new Date();
     const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -53,10 +53,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await verifySession();
-    if (!session || !['ADMIN', 'OWNER'].includes(session.role)) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
-    }
+    if (!(await authorize('/owner/shops', 'add'))) return forbidden();
 
     const body = await request.json();
     if (!body.name) {
@@ -89,10 +86,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await verifySession();
-    if (!session || !['ADMIN', 'OWNER'].includes(session.role)) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
-    }
+    if (!(await authorize('/owner/shops', 'edit'))) return forbidden();
 
     const body = await request.json();
     if (!body.id) return NextResponse.json({ message: 'ID is required' }, { status: 400 });
@@ -118,10 +112,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await verifySession();
-    if (!session || !['ADMIN', 'OWNER'].includes(session.role)) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
-    }
+    if (!(await authorize('/owner/shops', 'delete'))) return forbidden();
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

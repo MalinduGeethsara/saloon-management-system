@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, CheckCircle, XCircle } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Search } from "lucide-react";
+import { matchesQuery } from "@/hooks/useSearchFilter";
 import dayjs from "dayjs";
+import { usePagedList } from "@/hooks/usePagedList";
+import { AppPagination } from "@/components/ui/AppPagination";
 
 interface AttendanceRecord {
   id: string;
@@ -17,13 +20,13 @@ interface AttendanceRecord {
 
 function AttendanceStat({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
   return (
-    <Card className="border-none shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">{label}</CardTitle>
-        {icon}
+    <Card className="border-none shadow-sm py-4 gap-2 md:py-6 md:gap-6">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 md:px-6">
+        <CardTitle className="text-xs md:text-sm font-medium text-gray-600 leading-tight">{label}</CardTitle>
+        <span className="hidden sm:block">{icon}</span>
       </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold text-[#1A1A1B]">{value}</div>
+      <CardContent className="px-3 md:px-6">
+        <div className="text-2xl md:text-3xl font-bold text-[#1A1A1B]">{value}</div>
       </CardContent>
     </Card>
   );
@@ -37,7 +40,8 @@ export default function AttendancePage() {
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
-        const res = await fetch('/api/v1/attendance');
+        // Today's records only (the page is "today's attendance"): a bounded list, paged client-side
+        const res = await fetch(`/api/v1/attendance?date=${dayjs().format('YYYY-MM-DD')}`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
         if (data.attendance) {
@@ -60,22 +64,38 @@ export default function AttendancePage() {
     fetchAttendance();
   }, []);
 
+  const [search, setSearch] = useState("");
+  const visibleStaff = staff.filter((s) => matchesQuery(search, s.name, s.role, s.status));
+  const { pageItems, page, setPage, pageSize, total } = usePagedList(visibleStaff, 10);
+
   const presentCount = staff.filter(s => s.status === 'Present' || s.status === 'Active').length;
   const absentCount = staff.length - presentCount;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#1A1A1B]">Staff Attendance</h1>
+      <div className="flex flex-wrap justify-between items-center gap-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#1A1A1B]">Staff Attendance</h1>
         <div className="text-sm text-gray-500 font-mono">
           {dayjs().format('dddd, D MMM YYYY')}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-3 gap-3 md:gap-6">
         <AttendanceStat label="Total Staff" value={loading ? '—' : staff.length} icon={<Clock className="text-blue-500" />} />
         <AttendanceStat label="Present Now" value={loading ? '—' : presentCount} icon={<CheckCircle className="text-emerald-500" />} />
         <AttendanceStat label="Absent / On Leave" value={loading ? '—' : absentCount} icon={<XCircle className="text-red-500" />} />
+      </div>
+
+      <div className="relative sm:max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Search staff"
+          aria-label="Search staff"
+          className="w-full h-11 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-base outline-none focus:border-[#7C4DFF]"
+        />
       </div>
 
       <Card className="border-none shadow-sm">
@@ -107,7 +127,7 @@ export default function AttendancePage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  staff.map((s) => (
+                  pageItems.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell className="font-bold">{s.name}</TableCell>
                       <TableCell className="text-gray-500 text-sm capitalize">{s.role.toLowerCase()}</TableCell>
@@ -130,6 +150,8 @@ export default function AttendancePage() {
           )}
         </CardContent>
       </Card>
+
+      <AppPagination current={page} pageSize={pageSize} total={total} onChange={setPage} />
     </div>
   );
 }

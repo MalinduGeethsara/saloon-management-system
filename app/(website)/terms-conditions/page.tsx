@@ -6,7 +6,7 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 
 export default function TermsConditionsPage() {
   return (
-    <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-24 pb-32 overflow-hidden relative">
+    <div className="flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen selection:bg-amber-600 selection:text-white font-sans transition-colors duration-500 pt-10 pb-16 md:pt-24 md:pb-32 overflow-hidden relative">
       
       {/* Decorative Background Glows */}
       <div className="absolute top-[15%] left-[5%] w-[400px] h-[400px] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none"></div>
@@ -35,7 +35,7 @@ export default function TermsConditionsPage() {
                 1. Introduction & Agreement
               </h2>
               <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed font-light text-sm md:text-base">
-                Welcome to <strong>Mr Polaa Barber Shop</strong>. By accessing our services, scheduling appointments online, or visiting our shop, you agree to comply with and be bound by the following terms and conditions. Please read them carefully.
+                Welcome to <strong>Mr Polaa Barber Shop</strong>, operated by <strong>Mr Polaa (PVT) LTD</strong> (&ldquo;we&rdquo;, &ldquo;us&rdquo;). By accessing our services, scheduling appointments online, or visiting our shop, you agree to comply with and be bound by the following terms and conditions. Please read them carefully.
               </p>
             </section>
 
@@ -70,7 +70,7 @@ export default function TermsConditionsPage() {
             {/* Section 4 */}
             <section className="group">
               <h2 className="text-xl md:text-2xl font-black mb-4 text-zinc-900 dark:text-white border-b border-zinc-200 dark:border-zinc-800/80 pb-2 group-hover:border-amber-500/50 transition-colors">
-                4. Premium Grooming Services
+                4. Salon Services
               </h2>
               <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed font-light text-sm md:text-base">
                 Our professional barbers strive to provide high-quality services. Please communicate any preferences, allergies, or skin sensitivities before the start of your service. Mr Polaa Barber Shop is not liable for allergic reactions to standard grooming products if sensitivities were not disclosed in advance.
@@ -93,7 +93,7 @@ export default function TermsConditionsPage() {
                 6. Contact Information
               </h2>
               <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed font-light text-sm md:text-base">
-                If you have any questions or feedback regarding these terms, please contact us at:
+                For cancellations and refunds see our <Link href="/refund-policy" className="text-amber-600 dark:text-amber-500 hover:underline">Refund Policy</Link>, and for how we handle your data see our <Link href="/privacy-policy" className="text-amber-600 dark:text-amber-500 hover:underline">Privacy Policy</Link>. If you have any questions or feedback regarding these terms, please contact us at:
               </p>
               <div className="mt-4 p-4 rounded bg-zinc-100/50 dark:bg-zinc-950/50 border border-zinc-200/50 dark:border-zinc-800/50 flex flex-col gap-2 text-xs md:text-sm font-light">
                 <p><strong>Address:</strong> Mr Polaa Barber Shop, New Road, Walasmulla, Sri Lanka</p>

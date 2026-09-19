@@ -70,6 +70,7 @@ export default function ShopComparisonChart({ data, loading }: { data: ShopRow[]
         columns={columns}
         rowKey="shopId"
         pagination={false}
+        scroll={{ x: 'max-content' }}
         size="small"
         loading={loading}
       />

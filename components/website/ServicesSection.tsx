@@ -74,7 +74,7 @@ export default function ServicesSection({ services }: { services: Service[] }) {
                       </div>
                     </div>
                     <div className="p-6 pt-2 flex flex-col justify-between h-[calc(100%-18rem)]">
-                      <p className="text-zinc-600 dark:text-zinc-500 text-sm leading-relaxed mb-6 font-light transition-colors line-clamp-3">
+                      <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-6 font-light transition-colors line-clamp-3">
                         {service.description || "Premium service tailored to your preferences."}
                       </p>
                       <Magnetic range={30} strength={0.25} className="mt-auto w-fit">
